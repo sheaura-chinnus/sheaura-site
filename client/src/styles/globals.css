@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Sheaura Brand Colors */
+    --sheaura-ivory: 36 33% 97%;
+    --sheaura-cream: 36 33% 94%;
+    --sheaura-beige: 34 27% 88%;
+    --sheaura-champagne: 38 31% 83%;
+    --sheaura-gold: 42 48% 55%;
+    --sheaura-espresso: 25 20% 18%;
+    --sheaura-charcoal: 25 15% 28%;
+
+    /* Semantic Colors */
+    --background: 36 33% 97%;
+    --foreground: 25 20% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 25 20% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 20% 18%;
+    --primary: 42 48% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 34 27% 88%;
+    --secondary-foreground: 25 20% 18%;
+    --muted: 34 27% 88%;
+    --muted-foreground: 25 15% 45%;
+    --accent: 38 31% 83%;
+    --accent-foreground: 25 20% 18%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 34 27% 82%;
+    --input: 34 27% 82%;
+    --ring: 42 48% 55%;
+    --radius: 0.5rem;
+
+    /* Typography */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 25 20% 12%;
+    --foreground: 36 33% 97%;
+    --card: 25 20% 15%;
+    --card-foreground: 36 33% 97%;
+    --popover: 25 20% 15%;
+    --popover-foreground: 36 33% 97%;
+    --primary: 42 48% 60%;
+    --primary-foreground: 25 20% 12%;
+    --secondary: 25 15% 25%;
+    --secondary-foreground: 36 33% 97%;
+    --muted: 25 15% 25%;
+    --muted-foreground: 34 27% 65%;
+    --accent: 25 15% 25%;
+    --accent-foreground: 36 33% 97%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 25 15% 25%;
+    --input: 25 15% 25%;
+    --ring: 42 48% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .animate-in {
+    animation: fade-in 0.3s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .container-sheaura {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .section-spacing {
+    @apply py-16 sm:py-24 lg:py-32;
+  }
+  .hero-spacing {
+    @apply py-24 sm:py-32 lg:py-40;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg bg-secondary px-6 py-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-lg border border-border bg-transparent px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  }
+  .input-field {
+    @apply flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .card-sheaura {
+    @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-shadow hover:shadow-md;
+  }
+  .product-card {
+    @apply relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-300 hover:shadow-lg;
+  }
+  .product-image {
+    @apply aspect-[3/4] w-full object-cover transition-transform duration-500 group-hover:scale-105;
+  }
+}

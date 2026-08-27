@@ -1,0 +1,93 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { Header } from '@/components/layout/Header'
+import { Footer } from '@/components/layout/Footer'
+import { Toaster } from 'react-hot-toast'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from '@/lib/queryClient'
+import { trpc } from '@/lib/trpc'
+import { trpc as trpcClient } from '@/lib/trpc'
+
+// Public pages
+import { HomePage } from '@/pages/HomePage'
+import { ShopPage } from '@/pages/ShopPage'
+import { ProductDetailPage } from '@/pages/ProductDetailPage'
+import { EnquiryPage } from '@/pages/EnquiryPage'
+import { AboutPage } from '@/pages/AboutPage'
+import { ContactPage } from '@/pages/ContactPage'
+import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
+import { TermsPage } from '@/pages/TermsPage'
+import { RentalPolicyPage } from '@/pages/RentalPolicyPage'
+import { ShippingPolicyPage } from '@/pages/ShippingPolicyPage'
+import { PaymentPolicyPage } from '@/pages/PaymentPolicyPage'
+import { RefundPolicyPage } from '@/pages/RefundPolicyPage'
+
+// Admin pages
+import { AdminLayout } from '@/components/layout/AdminLayout'
+import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage'
+import { AdminProductsPage } from '@/pages/admin/AdminProductsPage'
+import { AdminProductCreatePage } from '@/pages/admin/AdminProductCreatePage'
+import { AdminProductEditPage } from '@/pages/admin/AdminProductEditPage'
+import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage'
+import { AdminEnquiriesPage } from '@/pages/admin/AdminEnquiriesPage'
+import { AdminEnquiryDetailPage } from '@/pages/admin/AdminEnquiryDetailPage'
+import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage'
+
+function PublicLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <Header />
+      <main className="flex-1 pt-16">{children}</main>
+      <Footer />
+    </div>
+  )
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminLayout>
+      {children}
+    </AdminLayout>
+  )
+}
+
+export function App() {
+  return (
+    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+      <Routes>
+        {/* Public routes */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path="/enquiry" element={<EnquiryPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/rental-policy" element={<RentalPolicyPage />} />
+          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+          <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+        </Route>
+
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/create" element={<AdminProductCreatePage />} />
+          <Route path="products/:id/edit" element={<AdminProductEditPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="enquiries" element={<AdminEnquiriesPage />} />
+          <Route path="enquiries/:id" element={<AdminEnquiryDetailPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+      <Toaster />
+    </trpc.Provider>
+  )
+}

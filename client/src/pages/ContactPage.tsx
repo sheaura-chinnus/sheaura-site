@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Mail, Phone, MapPin, Clock, Send, Loader2, MapPin as MapPinIcon } from 'lucide-react'
-import { useSiteSettings } from '@/hooks/useSiteSettings'
+import { Mail, Phone, Clock, Send, Loader2, MapPin } from 'lucide-react'
+import { useContactInfo } from '@/hooks/useContactInfo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'react-hot-toast'
-import { cn } from '@/lib/utils'
 
 const contactReasons = [
   { value: 'general', label: 'General Enquiry' },
@@ -21,7 +20,7 @@ const contactReasons = [
 ]
 
 export function ContactPage() {
-  const { data: settings } = useSiteSettings()
+  const contact = useContactInfo()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -95,8 +94,7 @@ export function ContactPage() {
       icon: Mail,
       title: 'Email Us',
       details: [
-        settings?.contactEmail || 'hello@sheaura.com',
-        'support@sheaura.com',
+        contact.email,
       ],
       description: 'We respond within 24 hours',
     },
@@ -104,17 +102,16 @@ export function ContactPage() {
       icon: Phone,
       title: 'Call Us',
       details: [
-        settings?.contactPhone || '+91 98765 43210',
+        contact.phone,
         'Mon–Sat, 10 AM – 7 PM IST',
       ],
       description: 'For urgent enquiries',
     },
     {
-      icon: MapPinIcon,
+      icon: MapPin,
       title: 'Visit Us',
       details: [
-        settings?.contactAddress || '123 Luxury Lane, Bandra West',
-        'Mumbai, Maharashtra 400050',
+        contact.address,
       ],
       description: 'By appointment only',
     },

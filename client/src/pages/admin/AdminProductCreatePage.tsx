@@ -32,8 +32,8 @@ export function AdminProductCreatePage() {
   const { id } = useParams<{ id: string }>()
   const isEditing = !!id
 
-  const { data: categories } = trpc.categories.list.useQuery({ limit: 100 })
-  const { data: product } = trpc.products.byId.useQuery({ id: id || '' }, { enabled: isEditing })
+  const { data: categories } = trpc.categories.adminGetList.useQuery({ limit: 100 })
+  // const { data: product } = trpc.products.adminGetById.useQuery({ id: id || '' }, { enabled: isEditing }) // TODO: populate form when editing
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [images, setImages] = useState<Array<{ url: string; altText: string; isPrimary: boolean; displayOrder: number }>>([])
@@ -63,7 +63,7 @@ export function AdminProductCreatePage() {
   // Load product data when editing
   // Note: In a real app, you'd use useEffect to populate formData from product data
 
-  const createMutation = trpc.products.create.useMutation({
+  const createMutation = trpc.products.createProduct.useMutation({
     onSuccess: () => {
       toast.success(isEditing ? 'Product updated successfully' : 'Product created successfully')
       navigate('/admin/products')
@@ -73,7 +73,7 @@ export function AdminProductCreatePage() {
     },
   })
 
-  const updateMutation = trpc.products.update.useMutation({
+  const updateMutation = trpc.products.updateProduct.useMutation({
     onSuccess: () => {
       toast.success('Product updated successfully')
       navigate('/admin/products')
@@ -116,10 +116,10 @@ export function AdminProductCreatePage() {
       description: formData.description || undefined,
       categoryId: formData.categoryId,
       mode: formData.mode,
-      salePrice: (formData.mode === 'sale' || formData.mode === 'both') ? parseFloat(formData.salePrice) : undefined,
-      rentalPrice: (formData.mode === 'rental' || formData.mode === 'both') ? parseFloat(formData.rentalPrice) : undefined,
+      salePrice: (formData.mode === 'sale' || formData.mode === 'both') ? formData.salePrice : undefined,
+      rentalPrice: (formData.mode === 'rental' || formData.mode === 'both') ? formData.rentalPrice : undefined,
       rentalDurationDays: formData.rentalDurationDays || undefined,
-      depositAmount: formData.depositAmount ? parseFloat(formData.depositAmount) : undefined,
+      depositAmount: formData.depositAmount ? formData.depositAmount : undefined,
       availability: formData.availability as any,
       isFeatured: formData.isFeatured,
       isActive: formData.isActive,
@@ -242,7 +242,7 @@ export function AdminProductCreatePage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories?.map((cat) => (
+                    {categories?.items?.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                     ))}
                   </SelectContent>

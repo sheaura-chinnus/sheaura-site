@@ -1,18 +1,16 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Sparkles, Truck, Shield, Headphones, Star } from 'lucide-react'
+import { ArrowRight, Sparkles, Truck, Shield, Headphones } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { cn, formatCurrency } from '@/lib/utils'
 import { ProductCard } from '@/components/product/ProductCard'
 import { CategoryCard } from '@/components/product/CategoryCard'
 
 export function HomePage() {
   const { data: settings } = useSiteSettings()
-  const { data: featuredProducts } = trpc.products.featured.useQuery({ limit: 8 })
-  const { data: categories } = trpc.categories.list.useQuery()
+  const { data: featuredProducts } = trpc.products.getFeatured.useQuery({ limit: 8 })
+  const { data: categories } = trpc.categories.getList.useQuery()
 
   const heroTitle = settings?.heroTitle || 'Sheaura — Timeless Elegance for Every Occasion'
   const heroSubtitle = settings?.heroSubtitle || 'Discover exquisite jewellery, premium cosmetics, and curated ornaments. Available for purchase or rental.'
@@ -115,7 +113,7 @@ export function HomePage() {
           </div>
 
           {featuredProducts && featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}

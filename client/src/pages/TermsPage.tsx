@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
-import { cn } from '@/lib/utils'
+import { useContactInfo } from '@/hooks/useContactInfo'
 
 export function TermsPage() {
   const { data: settings } = useSiteSettings()
-  const brandName = settings?.brandName || 'Sheaura'
+  const contact = useContactInfo()
+  const brandName = contact.brandName
   const lastUpdated = 'August 24, 2026'
   const effectiveDate = 'August 24, 2026'
 
@@ -190,7 +191,7 @@ export function TermsPage() {
                   <li><strong>Severability:</strong> If any provision is unenforceable, the remainder remains in effect</li>
                   <li><strong>Waiver:</strong> Failure to enforce a right does not waive it</li>
                   <li><strong>Assignment:</strong> We may assign these Terms. You may not assign without our consent</li>
-                  <li><strong>Contact:</strong> Questions? Email <a href="mailto:legal@sheaura.com" className="underline hover:text-primary">legal@sheaura.com</a></li>
+                  <li><strong>Contact:</strong> Questions? {contact.emailHref ? <a href={contact.emailHref} className="underline hover:text-primary">{contact.email}</a> : contact.email}</li>
                 </ul>
               </section>
             </article>

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Instagram, Phone, Mail, MapPin, ArrowRight, Facebook, Twitter } from 'lucide-react'
+import { Instagram, Phone, Mail, ArrowRight, Facebook, Twitter } from 'lucide-react'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
-import { cn } from '@/lib/utils'
+import { useContactInfo } from '@/hooks/useContactInfo'
 
 const footerLinks = {
   shop: [
@@ -27,12 +27,9 @@ const footerLinks = {
 
 export function Footer() {
   const { data: settings } = useSiteSettings()
+  const contact = useContactInfo()
 
-  const phone = settings?.phone || '[PHONE NUMBER]'
-  const email = settings?.email || '[EMAIL ADDRESS]'
-  const whatsapp = settings?.whatsapp || '[WHATSAPP NUMBER OR LINK]'
-  const instagram = settings?.instagram || '[INSTAGRAM URL]'
-  const domain = settings?.domain || '[DOMAIN]'
+  const instagram = settings?.instagram || ''
 
   return (
     <footer className="bg-muted/50 border-t border-border" role="contentinfo">
@@ -42,7 +39,7 @@ export function Footer() {
           <div className="col-span-2 lg:col-span-1">
             <Link to="/" className="font-display text-2xl font-medium text-foreground mb-4 block">Sheaura</Link>
             <p className="text-sm text-muted-foreground mb-6">
-              Timeless elegance for every occasion. Curated jewellery, premium cosmetics, and exquisite ornaments.
+              Timeless elegance for every occasion. Curated fashion & costume jewellery, premium cosmetics, and occasion ornaments.
             </p>
             <div className="flex space-x-4">
               {instagram && instagram !== '[INSTAGRAM URL]' && (
@@ -133,15 +130,23 @@ export function Footer() {
             <address className="not-italic space-y-3 text-sm text-muted-foreground">
               <div className="flex items-start space-x-3">
                 <Phone className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
-                <a href={`tel:${phone}`} className="hover:text-primary transition-colors">{phone}</a>
+                {contact.phoneHref ? (
+                  <a href={contact.phoneHref} className="hover:text-primary transition-colors">{contact.phone}</a>
+                ) : (
+                  <span>{contact.phone}</span>
+                )}
               </div>
               <div className="flex items-start space-x-3">
                 <Mail className="h-5 w-5 shrink-0 mt-0.5" aria-hidden="true" />
-                <a href={`mailto:${email}`} className="hover:text-primary transition-colors">{email}</a>
+                {contact.emailHref ? (
+                  <a href={contact.emailHref} className="hover:text-primary transition-colors">{contact.email}</a>
+                ) : (
+                  <span>{contact.email}</span>
+                )}
               </div>
-              {whatsapp && whatsapp !== '[WHATSAPP NUMBER OR LINK]' && (
+              {contact.whatsappHref && (
                 <a
-                  href={whatsapp.startsWith('http') ? whatsapp : `https://wa.me/${whatsapp.replace(/\D/g, '')}`}
+                  href={contact.whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 text-sm hover:text-primary transition-colors"

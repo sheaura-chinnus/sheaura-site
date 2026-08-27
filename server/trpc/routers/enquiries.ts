@@ -1,9 +1,33 @@
 import { z } from 'zod'
-import { publicProcedure, protectedProcedure, adminProcedure } from '../index.js'
+import { router, publicProcedure, protectedProcedure, shopOrderReceiverProcedure, adminProcedure } from '../index.js'
 import { db } from '../../db/index.js'
 import { enquiries, enquiryItems, products, users, productImages } from '../../db/schema.js'
 import { eq, desc, asc, count, and, or, ilike, sql, inArray } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
+import { audit } from '../audit.js'
+
+// Helper function to check if user can access an enquiry
+async function canAccessEnquiry(ctx: { user: { id: string; role: string } }, enquiryId: string): Promise<boolean> {
+  const user = ctx.user
+
+  // Admins can access all enquiries
+  if (user.role === 'admin') {
+    return true
+  }
+
+  // Shop order receivers can only access enquiries assigned to them
+  if (user.role === 'shop_order_receiver') {
+    const enquiry = await db
+      .select({ assignedTo: enquiries.assignedTo })
+      .from(enquiries)
+      .where(eq(enquiries.id, enquiryId))
+      .limit(1)
+
+    return enquiry.length > 0 && enquiry[0].assignedTo === user.id
+  }
+
+  return false
+}
 
 const createEnquirySchema = z.object({
   name: z.string().min(1).max(255),
@@ -37,9 +61,14 @@ const enquiryFilterSchema = z.object({
   sortBy: z.enum(['newest', 'oldest']).default('newest'),
 })
 
-export const enquiriesRouter = {
+const assignEnquirySchema = z.object({
+  id: z.string().uuid(),
+  assignedTo: z.string().uuid().nullable(), // null to unassign
+})
+
+export const enquiriesRouter = router({
   // Public: Create enquiry
-  create: publicProcedure
+  createEnquiry: publicProcedure
     .input(createEnquirySchema)
     .mutation(async ({ input }) => {
       // Validate all products exist and are published/available
@@ -120,7 +149,7 @@ export const enquiriesRouter = {
     }),
 
   // Protected: Get user's enquiries
-  myEnquiries: protectedProcedure
+  getMyEnquiries: protectedProcedure
     .input(z.object({
       page: z.number().min(1).default(1),
       limit: z.number().min(1).max(50).default(10),
@@ -140,21 +169,17 @@ export const enquiriesRouter = {
             returnDate: enquiries.returnDate,
             deliveryPickup: enquiries.deliveryPickup,
             createdAt: enquiries.createdAt,
-            items: {
-              id: enquiryItems.id,
-              productId: enquiryItems.productId,
-              quantity: enquiryItems.quantity,
-              mode: enquiryItems.mode,
-              unitPrice: enquiryItems.unitPrice,
-              product: {
-                id: products.id,
-                name: products.name,
-                slug: products.slug,
-                mode: products.mode,
-                salePrice: products.salePrice,
-                rentalPrice: products.rentalPrice,
-              },
-            },
+            itemId: enquiryItems.id,
+            itemProductId: enquiryItems.productId,
+            itemQuantity: enquiryItems.quantity,
+            itemMode: enquiryItems.mode,
+            itemUnitPrice: enquiryItems.unitPrice,
+            productId: products.id,
+            productName: products.name,
+            productSlug: products.slug,
+            productMode: products.mode,
+            productSalePrice: products.salePrice,
+            productRentalPrice: products.rentalPrice,
           })
           .from(enquiries)
           .leftJoin(enquiryItems, eq(enquiryItems.enquiryId, enquiries.id))
@@ -182,8 +207,22 @@ export const enquiriesRouter = {
             items: [],
           })
         }
-        if (row.items.id) {
-          enquiryMap.get(row.id).items.push(row.items)
+        if (row.itemId) {
+          enquiryMap.get(row.id).items.push({
+            id: row.itemId,
+            productId: row.itemProductId,
+            quantity: row.itemQuantity,
+            mode: row.itemMode,
+            unitPrice: row.itemUnitPrice,
+            product: {
+              id: row.productId,
+              name: row.productName,
+              slug: row.productSlug,
+              mode: row.productMode,
+              salePrice: row.productSalePrice,
+              rentalPrice: row.productRentalPrice,
+            },
+          })
         }
       }
 
@@ -196,14 +235,19 @@ export const enquiriesRouter = {
       }
     }),
 
-  // Admin: List all enquiries with filters
-  adminList: adminProcedure
+  // Admin/Shop Order Receiver: List all enquiries with filters
+  adminGetList: shopOrderReceiverProcedure
     .input(enquiryFilterSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { status, search, dateFrom, dateTo, page, limit, sortBy } = input
       const offset = (page - 1) * limit
 
       const conditions = []
+
+      // Shop order receivers only see enquiries assigned to them
+      if (ctx.user.role === 'shop_order_receiver') {
+        conditions.push(eq(enquiries.assignedTo, ctx.user.id))
+      }
 
       if (status) {
         conditions.push(eq(enquiries.status, status))
@@ -272,10 +316,16 @@ export const enquiriesRouter = {
       }
     }),
 
-  // Admin: Get enquiry details with items
-  adminGet: adminProcedure
+  // Admin/Shop Order Receiver: Get enquiry details with items
+  adminGetById: shopOrderReceiverProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // IDOR check
+      const hasAccess = await canAccessEnquiry(ctx, input.id)
+      if (!hasAccess) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized to access this enquiry' })
+      }
+
       const enquiry = await db
         .select({
           id: enquiries.id,
@@ -314,18 +364,14 @@ export const enquiriesRouter = {
           quantity: enquiryItems.quantity,
           mode: enquiryItems.mode,
           unitPrice: enquiryItems.unitPrice,
-          product: {
-            id: products.id,
-            name: products.name,
-            slug: products.slug,
-            mode: products.mode,
-            salePrice: products.salePrice,
-            rentalPrice: products.rentalPrice,
-            images: {
-              url: productImages.url,
-              altText: productImages.altText,
-            },
-          },
+          productId2: products.id,
+          productName: products.name,
+          productSlug: products.slug,
+          productMode: products.mode,
+          productSalePrice: products.salePrice,
+          productRentalPrice: products.rentalPrice,
+          imageUrl: productImages.url,
+          imageAltText: productImages.altText,
         })
         .from(enquiryItems)
         .leftJoin(products, eq(enquiryItems.productId, products.id))
@@ -335,17 +381,48 @@ export const enquiriesRouter = {
         )
         .where(eq(enquiryItems.enquiryId, input.id))
 
+      // Transform items to match expected structure
+      const transformedItems = items.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        mode: item.mode,
+        unitPrice: item.unitPrice,
+        product: {
+          id: item.productId2,
+          name: item.productName,
+          slug: item.productSlug,
+          mode: item.productMode,
+          salePrice: item.productSalePrice,
+          rentalPrice: item.productRentalPrice,
+          images: item.imageUrl ? [{
+            url: item.imageUrl,
+            altText: item.imageAltText,
+          }] : [],
+        },
+      }))
+
       return {
         ...enquiry[0],
-        items,
+        items: transformedItems,
       }
     }),
 
-  // Admin: Update enquiry status
-  updateStatus: adminProcedure
+  // Admin/Shop Order Receiver: Update enquiry status
+  updateEnquiryStatus: shopOrderReceiverProcedure
     .input(updateEnquiryStatusSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, status, adminNotes } = input
+
+      // IDOR check
+      const hasAccess = await canAccessEnquiry(ctx, id)
+      if (!hasAccess) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized to update this enquiry' })
+      }
+
+      // Get old status for audit
+      const oldEnquiry = await db.select({ status: enquiries.status, adminNotes: enquiries.adminNotes }).from(enquiries).where(eq(enquiries.id, id)).limit(1)
+      const oldStatus = oldEnquiry[0]?.status
 
       const [enquiry] = await db
         .update(enquiries)
@@ -357,12 +434,39 @@ export const enquiriesRouter = {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Enquiry not found' })
       }
 
+      // Audit log
+      await audit.enquiryStatusUpdated(ctx, id, oldStatus, status, adminNotes)
+
       return enquiry
     }),
 
-  // Admin: Get dashboard stats
-  stats: adminProcedure
-    .query(async () => {
+  // Admin: Assign enquiry to shop order receiver
+  assignEnquiry: adminProcedure
+    .input(assignEnquirySchema)
+    .mutation(async ({ input, ctx }) => {
+      const { id, assignedTo } = input
+
+      const [enquiry] = await db
+        .update(enquiries)
+        .set({ assignedTo, updatedAt: new Date() })
+        .where(eq(enquiries.id, id))
+        .returning()
+
+      if (!enquiry) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Enquiry not found' })
+      }
+
+      // Audit log
+      await audit.enquiryAssigned(ctx, id, assignedTo)
+
+      return enquiry
+    }),
+
+  // Admin/Shop Order Receiver: Get dashboard stats
+  getStats: shopOrderReceiverProcedure
+    .query(async ({ ctx }) => {
+      const whereClause = ctx.user.role === 'shop_order_receiver' ? eq(enquiries.assignedTo, ctx.user.id) : undefined
+
       const [
         totalProducts,
         publishedProducts,
@@ -374,8 +478,8 @@ export const enquiriesRouter = {
         db.select({ count: count() }).from(products),
         db.select({ count: count() }).from(products).where(eq(products.isPublished, true)),
         db.select({ count: count() }).from(products).where(and(eq(products.isPublished, true), eq(products.isFeatured, true))),
-        db.select({ count: count() }).from(enquiries).where(eq(enquiries.status, 'new')),
-        db.select({ count: count() }).from(enquiries).where(inArray(enquiries.status, ['new', 'contacted', 'reserved'])),
+        db.select({ count: count() }).from(enquiries).where(and(whereClause, eq(enquiries.status, 'new'))),
+        db.select({ count: count() }).from(enquiries).where(and(whereClause, inArray(enquiries.status, ['new', 'contacted', 'reserved']))),
         db.select({ count: count() }).from(products).where(inArray(products.availability, ['low_stock', 'out_of_stock'])),
       ])
 
@@ -388,4 +492,4 @@ export const enquiriesRouter = {
         lowStockProducts: lowStockProducts[0].count,
       }
     }),
-}
+})

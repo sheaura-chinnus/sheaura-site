@@ -1,9 +1,10 @@
 import { z } from 'zod'
-import { publicProcedure, adminProcedure } from '../index.js'
+import { router, publicProcedure, adminProcedure } from '../index.js'
 import { db } from '../../db/index.js'
 import { categories, products } from '../../db/schema.js'
-import { eq, desc, asc, count, and, sql, or, ilike } from 'drizzle-orm'
+import { eq, asc, count, and, sql, or, ilike } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
+import { audit } from '../audit.js'
 
 const createCategorySchema = z.object({
   name: z.string().min(1).max(100),
@@ -18,9 +19,9 @@ const updateCategorySchema = createCategorySchema.partial().extend({
   id: z.string().uuid(),
 })
 
-export const categoriesRouter = {
+export const categoriesRouter = router({
   // Public: Get all active categories
-  list: publicProcedure
+  getList: publicProcedure
     .query(async () => {
       const items = await db
         .select({
@@ -43,7 +44,7 @@ export const categoriesRouter = {
     }),
 
   // Public: Get category by slug
-  bySlug: publicProcedure
+  getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
       const category = await db
@@ -60,7 +61,7 @@ export const categoriesRouter = {
     }),
 
   // Admin: Get all categories (including inactive)
-  adminList: adminProcedure
+  adminGetList: adminProcedure
     .input(z.object({
       page: z.number().min(1).default(1),
       limit: z.number().min(1).max(100).default(50),
@@ -120,23 +121,33 @@ export const categoriesRouter = {
     }),
 
   // Admin: Create category
-  create: adminProcedure
+  createCategory: adminProcedure
     .input(createCategorySchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.slug, input.slug)).limit(1)
       if (existing.length > 0) {
         throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
       }
 
       const [category] = await db.insert(categories).values(input).returning()
+
+      // Audit log
+      await audit.categoryCreated(ctx, category.id, input)
+
       return category
     }),
 
   // Admin: Update category
-  update: adminProcedure
+  updateCategory: adminProcedure
     .input(updateCategorySchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input
+
+      // Get old data for audit
+      const oldCategory = await db.select().from(categories).where(eq(categories.id, id)).limit(1)
+      if (oldCategory.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found' })
+      }
 
       if (data.slug) {
         const existing = await db.select({ id: categories.id }).from(categories).where(and(eq(categories.slug, data.slug), sql`${categories.id} != ${id}`)).limit(1)
@@ -151,17 +162,16 @@ export const categoriesRouter = {
         .where(eq(categories.id, id))
         .returning()
 
-      if (!category) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found' })
-      }
+      // Audit log
+      await audit.categoryUpdated(ctx, id, oldCategory[0], category)
 
       return category
     }),
 
   // Admin: Toggle active status
-  toggleActive: adminProcedure
+  toggleActiveStatus: adminProcedure
     .input(z.object({ id: z.string().uuid(), isActive: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [category] = await db
         .update(categories)
         .set({ isActive: input.isActive, updatedAt: new Date() })
@@ -172,24 +182,37 @@ export const categoriesRouter = {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found' })
       }
 
+      // Audit log
+      await audit.categoryActiveToggled(ctx, input.id, input.isActive)
+
       return category
     }),
 
   // Admin: Delete category (only if no products)
-  delete: adminProcedure
+  deleteCategory: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const productCount = await db.select({ count: count() }).from(products).where(eq(products.categoryId, input.id))
       if (productCount[0].count > 0) {
         throw new TRPCError({ code: 'CONFLICT', message: 'Cannot delete category with products. Archive products first.' })
       }
 
+      // Get old data for audit
+      const oldCategory = await db.select().from(categories).where(eq(categories.id, input.id)).limit(1)
+      if (oldCategory.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found' })
+      }
+
       await db.delete(categories).where(eq(categories.id, input.id))
+
+      // Audit log
+      await audit.categoryDeleted(ctx, input.id, oldCategory[0])
+
       return { success: true }
     }),
 
   // Admin: Reorder categories
-  reorder: adminProcedure
+  reorderCategories: adminProcedure
     .input(z.object({
       categoryIds: z.array(z.string().uuid()),
     }))
@@ -200,6 +223,7 @@ export const categoriesRouter = {
           .set({ displayOrder: i, updatedAt: new Date() })
           .where(eq(categories.id, input.categoryIds[i]))
       }
+      // Note: Reorder doesn't have a specific audit function, but could be added
       return { success: true }
     }),
-}
+})

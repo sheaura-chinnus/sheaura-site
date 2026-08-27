@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useSiteSettings } from '@/hooks/useSiteSettings'
-import { cn } from '@/lib/utils'
+import { useContactInfo } from '@/hooks/useContactInfo'
 
 export function PaymentPolicyPage() {
-  const { data: settings } = useSiteSettings()
-  const brandName = settings?.brandName || 'Sheaura'
+  const contact = useContactInfo()
+  const brandName = contact.brandName
   const lastUpdated = 'August 24, 2026'
   const effectiveDate = 'August 24, 2026'
 
@@ -201,9 +200,9 @@ export function PaymentPolicyPage() {
                 </p>
                 <address className="not-italic text-muted-foreground mt-4 space-y-1">
                   <p><strong>{brandName} Payments</strong></p>
-                  <p>Email: <a href="mailto:payments@sheaura.com" className="underline hover:text-primary">payments@sheaura.com</a></p>
-                  <p>Phone: <a href="tel:+919876543210" className="underline hover:text-primary">+91 98765 43210</a></p>
-                  <p>WhatsApp: <a href="https://wa.me/919876543210" className="underline hover:text-primary" target="_blank" rel="noopener noreferrer">+91 98765 43210</a></p>
+                  <p>Email: {contact.emailHref ? <a href={contact.emailHref} className="underline hover:text-primary">{contact.email}</a> : contact.email}</p>
+                  <p>Phone: {contact.phoneHref ? <a href={contact.phoneHref} className="underline hover:text-primary">{contact.phone}</a> : contact.phone}</p>
+                  <p>WhatsApp: {contact.whatsappHref ? <a href={contact.whatsappHref} className="underline hover:text-primary" target="_blank" rel="noopener noreferrer">{contact.whatsapp}</a> : contact.whatsapp}</p>
                 </address>
               </section>
             </article>

@@ -1,30 +1,29 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { ArrowLeft, ShoppingBag, Calendar, Shield, Truck, RotateCcw, Heart, Share2, Check } from 'lucide-react'
+import { ShoppingBag, Calendar, Shield, Truck, RotateCcw, Heart, Share2, Check } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { useEnquiryBasket } from '@/hooks/useEnquiryBasket'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { cn, formatCurrency, truncate } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { toast } from 'react-hot-toast'
 
 export function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const [mainImage, setMainImage] = useState(0)
-  const [selectedAction, setSelectedAction] = useState<'sale' | 'rental' | null>(null)
   const { data: settings } = useSiteSettings()
   const { addItem } = useEnquiryBasket()
   const currency = settings?.currency || 'INR'
 
-  const { data: product, isLoading, error } = trpc.products.bySlug.useQuery(
+  const { data: product, isLoading, error } = trpc.products.getBySlug.useQuery(
     { slug: slug! },
     { enabled: !!slug }
   )
 
-  const { data: related } = trpc.products.related.useQuery(
+  const { data: related } = trpc.products.getRelated.useQuery(
     {
       productId: product?.id || '',
       categoryId: product?.categoryId || '',
@@ -68,21 +67,39 @@ export function ProductDetailPage() {
   const hasRental = product.mode === 'rental' || product.mode === 'both'
   const isAvailable = product.availability === 'available' || product.availability === 'low_stock'
 
-  const handleEnquiry = (action: 'sale' | 'rental') => {
+  const getSalePrice = () => {
+    if (!hasSale || product.salePrice === null || product.salePrice === undefined) return undefined
+    return typeof product.salePrice === 'string' ? parseFloat(product.salePrice) : product.salePrice
+  }
+
+  const getRentalPrice = () => {
+    if (!hasRental || product.rentalPrice === null || product.rentalPrice === undefined) return undefined
+    return typeof product.rentalPrice === 'string' ? parseFloat(product.rentalPrice) : product.rentalPrice
+  }
+
+  const getDepositAmount = () => {
+    if (product.depositAmount === null || product.depositAmount === undefined) return undefined
+    return typeof product.depositAmount === 'string' ? parseFloat(product.depositAmount) : product.depositAmount
+  }
+
+  const handleEnquiry = (action: 'sale' | 'rental', directCheckout = false) => {
     addItem({
       productId: product.id,
       productName: product.name,
       productSlug: product.slug,
       productImage: images[0]?.url,
       mode: action,
-      salePrice: hasSale ? (typeof product.salePrice === 'string' ? parseFloat(product.salePrice) : product.salePrice) : undefined,
-      rentalPrice: hasRental ? (typeof product.rentalPrice === 'string' ? parseFloat(product.rentalPrice) : product.rentalPrice) : undefined,
-      rentalDurationDays: product.rentalDurationDays,
-      depositAmount: product.depositAmount ? (typeof product.depositAmount === 'string' ? parseFloat(product.depositAmount) : product.depositAmount) : undefined,
-      category: product.category.name,
-      categorySlug: product.category.slug,
+      salePrice: getSalePrice(),
+      rentalPrice: getRentalPrice(),
+      rentalDurationDays: product.rentalDurationDays ?? 7,
+      depositAmount: getDepositAmount(),
+      category: product.category?.name || '',
+      categorySlug: product.category?.slug || '',
     })
-    toast.success(`Added to enquiry basket`)
+    toast.success(`Added ${product.name} to cart`)
+    if (directCheckout) {
+      navigate('/enquiry')
+    }
   }
 
   return (
@@ -93,7 +110,7 @@ export function ProductDetailPage() {
           <ol className="flex items-center space-x-2 text-sm text-muted-foreground">
             <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
             <li><span aria-hidden="true">/</span></li>
-            <li><Link to={`/shop?category=${product.category.slug}`} className="hover:text-primary transition-colors">{product.category.name}</Link></li>
+            <li><Link to={`/shop?category=${product.category?.slug}`} className="hover:text-primary transition-colors">{product.category?.name}</Link></li>
             <li><span aria-hidden="true">/</span></li>
             <li className="text-foreground font-medium truncate max-w-[200px]">{product.name}</li>
           </ol>
@@ -133,23 +150,26 @@ export function ProductDetailPage() {
             {/* Thumbnails */}
             {images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
-                {images.map((img, idx) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setMainImage(idx)}
-                    className={cn(
-                      'aspect-square rounded-lg overflow-hidden border-2 transition-colors',
-                      idx === mainImage ? 'border-primary' : 'border-transparent hover:border-border'
-                    )}
-                    aria-label={`View image ${idx + 1}`}
-                  >
-                    {img.url ? (
-                      <img src={img.url} alt={img.altText || `${product.name} ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                    ) : (
-                      <div className="w-full h-full bg-muted/50" />
-                    )}
-                  </button>
-                ))}
+                {images.map((img, idx) => {
+                  if (!img) return null
+                  return (
+                    <button
+                      key={img.id}
+                      onClick={() => setMainImage(idx)}
+                      className={cn(
+                        'aspect-square rounded-lg overflow-hidden border-2 transition-colors',
+                        idx === mainImage ? 'border-primary' : 'border-transparent hover:border-border'
+                      )}
+                      aria-label={`View image ${idx + 1}`}
+                    >
+                      {img.url ? (
+                        <img src={img.url} alt={img.altText || `${product.name} ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                      ) : (
+                        <div className="w-full h-full bg-muted/50" />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -158,8 +178,8 @@ export function ProductDetailPage() {
           <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Link to={`/shop?category=${product.category.slug}`} className="text-sm font-medium text-primary uppercase tracking-wider hover:text-primary/80 transition-colors">
-                  {product.category.name}
+                <Link to={`/shop?category=${product.category?.slug}`} className="text-sm font-medium text-primary uppercase tracking-wider hover:text-primary/80 transition-colors">
+                  {product.category?.name}
                 </Link>
                 {product.isFeatured && <Badge variant="secondary">Featured</Badge>}
               </div>
@@ -171,7 +191,7 @@ export function ProductDetailPage() {
 
             {/* Price Information */}
             <div className="space-y-4">
-              {hasSale && (
+              {hasSale && product.salePrice !== null && product.salePrice !== undefined && (
                 <div className="p-5 rounded-xl border border-border bg-card">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-foreground flex items-center gap-2">
@@ -183,13 +203,18 @@ export function ProductDetailPage() {
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">Own this exquisite piece forever</p>
-                  <Button className="w-full" onClick={() => handleEnquiry('sale')} disabled={!isAvailable}>
-                    Enquire to Buy
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={() => handleEnquiry('sale', false)} disabled={!isAvailable}>
+                      Add to Cart
+                    </Button>
+                    <Button onClick={() => handleEnquiry('sale', true)} disabled={!isAvailable}>
+                      Buy Now
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {hasRental && (
+              {hasRental && product.rentalPrice !== null && product.rentalPrice !== undefined && (
                 <div className="p-5 rounded-xl border border-border bg-card">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-foreground flex items-center gap-2">
@@ -203,15 +228,20 @@ export function ProductDetailPage() {
                       <span className="text-sm text-muted-foreground"> / {product.rentalDurationDays || 7} days</span>
                     </div>
                   </div>
-                  {product.depositAmount && (
+                  {product.depositAmount !== null && product.depositAmount !== undefined && (
                     <p className="text-sm text-muted-foreground mb-1">
                       Refundable deposit: {formatCurrency(product.depositAmount, currency)}
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground mb-3">Perfect for your special occasion</p>
-                  <Button variant="outline" className="w-full" onClick={() => handleEnquiry('rental')} disabled={!isAvailable}>
-                    Enquire to Rent
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" onClick={() => handleEnquiry('rental', false)} disabled={!isAvailable}>
+                      Add to Cart
+                    </Button>
+                    <Button variant="secondary" onClick={() => handleEnquiry('rental', true)} disabled={!isAvailable}>
+                      Rent Now
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

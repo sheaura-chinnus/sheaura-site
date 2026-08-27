@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Package, Tag, Mail, TrendingUp, ArrowUpRight, Users, DollarSign } from 'lucide-react'
+import { Package, Tag, Mail, ArrowUpRight, DollarSign, Settings } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -42,15 +42,15 @@ const statsCards = [
 ]
 
 export function AdminDashboardPage() {
-  const { data: productsStats } = trpc.products.list.useQuery({ limit: 1, page: 1 })
-  const { data: categoriesStats } = trpc.categories.list.useQuery({ limit: 100 })
-  const { data: enquiriesStats } = trpc.enquiries.stats.useQuery()
+  const { data: productsStats } = trpc.products.adminGetList.useQuery({ limit: 1, page: 1 })
+  const { data: categoriesStats } = trpc.categories.adminGetList.useQuery({ limit: 100 })
+  const { data: enquiriesStats } = trpc.enquiries.getStats.useQuery()
 
   const totalProducts = productsStats?.total || 0
-  const totalCategories = categoriesStats?.length || 0
-  const totalEnquiries = enquiriesStats?.total || 0
-  const pendingEnquiries = enquiriesStats?.byStatus?.pending || 0
-  const estimatedRevenue = enquiriesStats?.estimatedRevenue || 0
+  const totalCategories = categoriesStats?.total || 0
+  const totalEnquiries = enquiriesStats?.totalProducts || 0 // Using totalProducts as total enquiries count
+  const pendingEnquiries = enquiriesStats?.newEnquiries || 0
+  const estimatedRevenue = 0 // Not available in current stats
 
   const updatedStatsCards = [
     {

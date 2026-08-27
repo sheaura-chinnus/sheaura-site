@@ -6,7 +6,7 @@ export const productCategoryEnum = pgEnum('product_category', ['jewellery', 'cos
 export const productModeEnum = pgEnum('product_mode', ['sale', 'rental', 'both'])
 export const productAvailabilityEnum = pgEnum('product_availability', ['available', 'low_stock', 'out_of_stock', 'discontinued'])
 export const enquiryStatusEnum = pgEnum('enquiry_status', ['new', 'contacted', 'reserved', 'fulfilled', 'cancelled', 'rejected'])
-export const userRoleEnum = pgEnum('user_role', ['user', 'admin'])
+export const userRoleEnum = pgEnum('user_role', ['user', 'shop_order_receiver', 'admin'])
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -79,6 +79,7 @@ export const productImages = pgTable('product_images', {
 export const enquiries = pgTable('enquiries', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 50 }),
@@ -95,6 +96,7 @@ export const enquiries = pgTable('enquiries', {
   emailIdx: index('enquiries_email_idx').on(table.email),
   statusIdx: index('enquiries_status_idx').on(table.status),
   createdAtIdx: index('enquiries_created_at_idx').on(table.createdAt),
+  assignedToIdx: index('enquiries_assigned_to_idx').on(table.assignedTo),
 }))
 
 export const enquiryItems = pgTable('enquiry_items', {
@@ -120,9 +122,32 @@ export const siteSettings = pgTable('site_settings', {
   keyIdx: uniqueIndex('site_settings_key_idx').on(table.key),
 }))
 
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: varchar('action', { length: 100 }).notNull(),
+  entityType: varchar('entity_type', { length: 50 }).notNull(),
+  entityId: uuid('entity_id'),
+  oldData: text('old_data'),
+  newData: text('new_data'),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index('audit_logs_user_idx').on(table.userId),
+  entityIdx: index('audit_logs_entity_idx').on(table.entityType, table.entityId),
+  createdAtIdx: index('audit_logs_created_at_idx').on(table.createdAt),
+}))
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   enquiries: many(enquiries),
+  assignedEnquiries: many(enquiries, { relationName: 'assignedEnquiries' }),
+  auditLogs: many(auditLogs),
+}))
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }))
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -141,6 +166,7 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
 
 export const enquiriesRelations = relations(enquiries, ({ one, many }) => ({
   user: one(users, { fields: [enquiries.userId], references: [users.id] }),
+  assignee: one(users, { fields: [enquiries.assignedTo], references: [users.id], relationName: 'assignedEnquiries' }),
   items: many(enquiryItems),
 }))
 
@@ -164,3 +190,5 @@ export type EnquiryItem = typeof enquiryItems.$inferSelect
 export type NewEnquiryItem = typeof enquiryItems.$inferInsert
 export type SiteSetting = typeof siteSettings.$inferSelect
 export type NewSiteSetting = typeof siteSettings.$inferInsert
+export type AuditLog = typeof auditLogs.$inferSelect
+export type NewAuditLog = typeof auditLogs.$inferInsert

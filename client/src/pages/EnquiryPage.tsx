@@ -1,33 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Trash2, Plus, Minus, ArrowLeft, Mail, Phone, MapPin, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Trash2, Plus, Minus, ArrowLeft, Mail, Phone, MapPin, Loader2, CheckCircle, Lock, UserPlus } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useEnquiryBasket } from '@/hooks/useEnquiryBasket'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Toaster } from 'react-hot-toast'
-import { toast } from 'react-hot-toast'
-import { cn, formatCurrency } from '@/lib/utils'
+import { Toaster, toast } from 'react-hot-toast'
+import { formatCurrency } from '@/lib/utils'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 export function EnquiryPage() {
   const navigate = useNavigate()
   const { data: settings } = useSiteSettings()
+  const { user, isAuthenticated } = useAuth()
   const currency = settings?.currency || 'INR'
   const {
     items,
-    totalItems,
-    totalSalePrice,
-    totalRentalPrice,
-    totalDeposit,
     removeItem,
     updateQuantity,
     clearBasket,
   } = useEnquiryBasket()
+
+  // Computed values
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
+  const totalSalePrice = items
+    .filter(item => item.mode === 'sale')
+    .reduce((sum, item) => sum + (item.salePrice || 0) * item.quantity, 0)
+  const totalRentalPrice = items
+    .filter(item => item.mode === 'rental')
+    .reduce((sum, item) => sum + (item.rentalPrice || 0) * item.quantity, 0)
+  const totalDeposit = items
+    .filter(item => item.mode === 'rental' && item.depositAmount)
+    .reduce((sum, item) => sum + (item.depositAmount || 0) * item.quantity, 0)
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -77,8 +86,42 @@ export function EnquiryPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const createEnquiryMutation = trpc.enquiries.createEnquiry.useMutation({
+    onSuccess: () => {
+      toast.success('Enquiry submitted successfully! We\'ll get back to you soon.')
+      clearBasket()
+      navigate('/')
+      setIsSubmitting(false)
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to submit enquiry. Please try again.')
+      setIsSubmitting(false)
+    },
+  })
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || '',
+        email: prev.email || user.email || '',
+      }))
+    }
+  }, [user])
+
+  const handleGoogleLogin = () => {
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || ''
+    window.location.href = `${apiUrl}/auth/google`
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!isAuthenticated) {
+      toast.error('Authentication required: Please sign in before checking out.')
+      navigate('/login?redirect=/enquiry')
+      return
+    }
 
     if (!validateForm()) return
     if (items.length === 0) {
@@ -88,41 +131,22 @@ export function EnquiryPage() {
 
     setIsSubmitting(true)
 
-    try {
-      const enquiryItems = items.map(item => ({
-        productId: item.productId,
-        mode: item.mode,
-        quantity: item.quantity,
-        salePrice: item.salePrice,
-        rentalPrice: item.rentalPrice,
-        rentalDurationDays: item.rentalDurationDays,
-        depositAmount: item.depositAmount,
-      }))
+    const enquiryItems = items.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      mode: item.mode,
+    }))
 
-      await trpc.enquiries.create.mutate({
-        items: enquiryItems,
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        message: formData.message || undefined,
-      })
-
-      toast.success('Enquiry submitted successfully! We\'ll get back to you soon.')
-      clearBasket()
-      navigate('/')
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to submit enquiry. Please try again.')
-    } finally {
-      setIsSubmitting(false)
-    }
+    createEnquiryMutation.mutate({
+      items: enquiryItems,
+      name: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message || undefined,
+    })
   }
 
   const getModeLabel = (mode: 'sale' | 'rental') => mode === 'sale' ? 'Purchase' : 'Rental'
-  const getModeIcon = (mode: 'sale' | 'rental') => mode === 'sale' ? <Mail className="h-4 w-4" /> : <Phone className="h-4 w-4" />
 
   if (items.length === 0) {
     return (
@@ -465,21 +489,42 @@ export function EnquiryPage() {
                       />
                     </div>
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      size="lg"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Submitting...
-                        </>
-                      ) : (
-                        'Submit Enquiry'
-                      )}
-                    </Button>
+                    {!isAuthenticated ? (
+                      <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 space-y-3 text-center">
+                        <div className="flex items-center justify-center gap-2 text-sm font-medium text-foreground">
+                          <Lock className="h-4 w-4 text-primary" />
+                          <span>Sign in required to place enquiry</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Log in with your Google account to submit your enquiry, receive instant updates, and view your order history.
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={handleGoogleLogin}
+                          variant="default"
+                          className="w-full gap-2"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Sign in with Google to Continue
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        size="lg"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          'Submit Enquiry'
+                        )}
+                      </Button>
+                    )}
 
                     <p className="text-xs text-muted-foreground text-center">
                       By submitting, you agree to our{' '}

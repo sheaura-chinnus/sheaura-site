@@ -1,17 +1,29 @@
 import { useState } from 'react'
-import { Plus, Search, Edit, Trash2, GripVertical, ChevronUp, ChevronDown, Save, X, Loader2 } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Save, X, Loader2 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 
 export function AdminCategoriesPage() {
-  const { data: categories, isLoading, refetch } = trpc.categories.list.useQuery({ limit: 100 })
+  interface CategoryItem {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  imageUrl: string | null
+  displayOrder: number
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+  productCount: number
+}
+
+const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.useQuery({ limit: 100 })
 
   const [isCreating, setIsCreating] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -24,7 +36,7 @@ export function AdminCategoriesPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const createMutation = trpc.categories.create.useMutation({
+  const createMutation = trpc.categories.createCategory.useMutation({
     onSuccess: () => {
       toast.success('Category created successfully')
       setIsCreating(false)
@@ -36,7 +48,7 @@ export function AdminCategoriesPage() {
     },
   })
 
-  const updateMutation = trpc.categories.update.useMutation({
+  const updateMutation = trpc.categories.updateCategory.useMutation({
     onSuccess: () => {
       toast.success('Category updated successfully')
       setEditingId(null)
@@ -48,7 +60,7 @@ export function AdminCategoriesPage() {
     },
   })
 
-  const deleteMutation = trpc.categories.delete.useMutation({
+  const deleteMutation = trpc.categories.deleteCategory.useMutation({
     onSuccess: () => {
       toast.success('Category deleted successfully')
       refetch()
@@ -58,7 +70,7 @@ export function AdminCategoriesPage() {
     },
   })
 
-  const reorderMutation = trpc.categories.reorder.useMutation({
+  const reorderMutation = trpc.categories.reorderCategories.useMutation({
     onSuccess: () => {
       toast.success('Order updated')
       refetch()
@@ -74,7 +86,7 @@ export function AdminCategoriesPage() {
       slug: '',
       description: '',
       imageUrl: '',
-      displayOrder: categories?.length || 0,
+      displayOrder: categories?.items?.length || 0,
     })
   }
 
@@ -101,7 +113,7 @@ export function AdminCategoriesPage() {
     }
   }
 
-  const startEdit = (category: typeof categories[0]) => {
+  const startEdit = (category: CategoryItem) => {
     setEditingId(category.id)
     setFormData({
       name: category.name,
@@ -124,20 +136,20 @@ export function AdminCategoriesPage() {
     }
   }
 
-  const moveUp = (category: typeof categories[0], index: number) => {
-    if (index === 0) return
-    const newOrder = [...(categories || [])]
+  const moveUp = (_category: CategoryItem, index: number) => {
+    if (index === 0 || !categories?.items) return
+    const newOrder = [...categories.items]
     const [moved] = newOrder.splice(index, 1)
     newOrder.splice(index - 1, 0, moved)
-    reorderMutation.mutate({ categories: newOrder.map((c, i) => ({ id: c.id, displayOrder: i })) })
+    reorderMutation.mutate({ categoryIds: newOrder.map((c) => c.id) })
   }
 
-  const moveDown = (category: typeof categories[0], index: number) => {
-    if (!categories || index === categories.length - 1) return
-    const newOrder = [...categories]
+  const moveDown = (_category: CategoryItem, index: number) => {
+    if (!categories?.items || index === categories.items.length - 1) return
+    const newOrder = [...categories.items]
     const [moved] = newOrder.splice(index, 1)
     newOrder.splice(index + 1, 0, moved)
-    reorderMutation.mutate({ categories: newOrder.map((c, i) => ({ id: c.id, displayOrder: i })) })
+    reorderMutation.mutate({ categoryIds: newOrder.map((c) => c.id) })
   }
 
   if (isLoading) {
@@ -273,7 +285,7 @@ export function AdminCategoriesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {categories?.map((category, index) => (
+                {categories?.items?.map((category, index) => (
                   <tr key={category.id} className={cn('transition-colors', editingId === category.id && 'bg-primary/5')}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -289,7 +301,7 @@ export function AdminCategoriesPage() {
                           </button>
                           <button
                             onClick={() => moveDown(category, index)}
-                            disabled={!categories || index === categories.length - 1 || isSubmitting}
+                            disabled={!categories?.items || index === categories.items.length - 1 || isSubmitting}
                             className="p-1 rounded hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
                             aria-label="Move down"
                           >
@@ -357,7 +369,7 @@ export function AdminCategoriesPage() {
             </table>
           </div>
 
-          {(!categories || categories.length === 0) && (
+          {(!categories?.items || categories.items.length === 0) && (
             <div className="p-12 text-center">
               <svg className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />

@@ -13,7 +13,9 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_CALLBACK_URL) {
   console.warn('⚠️  Google OAuth credentials not configured. Google login will not work.')
 }
 
-passport.serializeUser((user: any, done) => {
+import type { User } from '../db/schema.js'
+
+passport.serializeUser((user: User, done) => {
   done(null, user.id)
 })
 
@@ -35,39 +37,51 @@ if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET && GOOGLE_CALLBACK_URL) {
         callbackURL: GOOGLE_CALLBACK_URL,
         scope: ['profile', 'email'],
       },
-      async (accessToken, refreshToken, profile, done) => {
+      async (_accessToken, _refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value
           if (!email) {
             return done(new Error('No email found in Google profile'), false)
           }
 
+          const OWNER_EMAIL = 'sheaura360@gmail.com'
+          const isOwner = email.toLowerCase() === OWNER_EMAIL.toLowerCase()
+
           // Check if user exists
           let user = await db.select().from(users).where(eq(users.email, email)).limit(1)
 
           if (user.length > 0) {
-            // Update user with Google info if needed
+            // Update user with Google info and promote owner to admin if needed
             const existingUser = user[0]
+            const updateFields: Partial<typeof users.$inferInsert> = {
+              updatedAt: new Date(),
+            }
             if (!existingUser.avatarUrl && profile.photos?.[0]?.value) {
+              updateFields.avatarUrl = profile.photos[0].value
+            }
+            if (!existingUser.name && profile.displayName) {
+              updateFields.name = profile.displayName
+            }
+            if (isOwner && existingUser.role !== 'admin') {
+              updateFields.role = 'admin'
+            }
+
+            if (Object.keys(updateFields).length > 1) {
               await db.update(users)
-                .set({
-                  avatarUrl: profile.photos[0].value,
-                  name: existingUser.name || profile.displayName,
-                  updatedAt: new Date(),
-                })
+                .set(updateFields)
                 .where(eq(users.id, existingUser.id))
               user = await db.select().from(users).where(eq(users.id, existingUser.id)).limit(1)
             }
             return done(null, user[0])
           }
 
-          // Create new user
+          // Create new user (Owner receives admin, all others receive user/customer)
           const newUser = await db.insert(users).values({
             id: uuidv4(),
             email,
             name: profile.displayName,
             avatarUrl: profile.photos?.[0]?.value,
-            role: 'user',
+            role: isOwner ? 'admin' : 'user',
           }).returning()
 
           return done(null, newUser[0])

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Tag, Calendar, Star } from 'lucide-react'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useEnquiryBasket } from '@/hooks/useEnquiryBasket'
@@ -10,23 +10,23 @@ interface ProductCardProps {
     id: string
     name: string
     slug: string
-    shortDescription?: string
-    tags: string[]
+    shortDescription?: string | null
+    tags?: string[]
     mode: 'sale' | 'rental' | 'both'
-    salePrice?: number | string | null
-    rentalPrice?: number | string | null
+    salePrice: string | null
+    rentalPrice: string | null
     rentalDurationDays?: number | null
-    depositAmount?: number | string | null
-    availability: string
-    isFeatured: boolean
-    category: {
+    depositAmount?: string | null
+    availability?: string | null
+    isFeatured?: boolean | null
+    category?: {
       id: string
       name: string
       slug: string
-    }
+    } | null
     primaryImage?: {
       url: string
-      altText?: string
+      altText?: string | null
     } | null
   }
   compact?: boolean
@@ -46,12 +46,12 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
       productSlug: product.slug,
       productImage: product.primaryImage?.url,
       mode,
-      salePrice: hasSale ? (typeof product.salePrice === 'string' ? parseFloat(product.salePrice) : product.salePrice) : undefined,
-      rentalPrice: hasRental ? (typeof product.rentalPrice === 'string' ? parseFloat(product.rentalPrice) : product.rentalPrice) : undefined,
-      rentalDurationDays: product.rentalDurationDays,
-      depositAmount: product.depositAmount ? (typeof product.depositAmount === 'string' ? parseFloat(product.depositAmount) : product.depositAmount) : undefined,
-      category: product.category.name,
-      categorySlug: product.category.slug,
+      salePrice: hasSale && product.salePrice ? parseFloat(product.salePrice) : undefined,
+      rentalPrice: hasRental && product.rentalPrice ? parseFloat(product.rentalPrice) : undefined,
+      rentalDurationDays: product.rentalDurationDays ?? undefined,
+      depositAmount: product.depositAmount ? parseFloat(product.depositAmount) : undefined,
+      category: product.category?.name || '',
+      categorySlug: product.category?.slug || '',
     })
   }
 
@@ -83,12 +83,12 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
           <div className="flex items-center gap-2">
             {hasSale && (
               <span className="text-lg font-semibold text-foreground">
-                {formatCurrency(product.salePrice)}
+                {formatCurrency(product.salePrice || '0')}
               </span>
             )}
             {hasRental && (
               <span className="text-sm text-primary">
-                {formatCurrency(product.rentalPrice)} / {product.rentalDurationDays || 7}d
+                {formatCurrency(product.rentalPrice || '0')} / {product.rentalDurationDays || 7}d
               </span>
             )}
           </div>
@@ -152,7 +152,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
       <div className="p-5">
         <div className="flex items-start justify-between gap-2 mb-2">
           <span className="text-xs font-medium text-primary uppercase tracking-wider">
-            {product.category.name}
+            {product.category?.name || 'Uncategorized'}
           </span>
           {product.availability === 'out_of_stock' && (
             <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
@@ -174,7 +174,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
           {hasSale && (
             <div className="flex items-center gap-2">
               <span className="text-lg font-semibold text-foreground">
-                {formatCurrency(product.salePrice)}
+                {formatCurrency(product.salePrice || '0')}
               </span>
               <Button
                 size="sm"
@@ -194,7 +194,7 @@ export function ProductCard({ product, compact = false }: ProductCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2">
                   <span className="text-lg font-semibold text-foreground">
-                    {formatCurrency(product.rentalPrice)}
+                    {formatCurrency(product.rentalPrice || '0')}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     / {product.rentalDurationDays || 7} days

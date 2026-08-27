@@ -1,24 +1,23 @@
-import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Search, Filter, ChevronLeft, ChevronRight, Mail, Package, Calendar, User, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Mail, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import { toast } from 'react-hot-toast'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
-  { value: 'pending', label: 'Pending' },
+  { value: 'new', label: 'New' },
   { value: 'contacted', label: 'Contacted' },
-  { value: 'quoted', label: 'Quoted' },
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'reserved', label: 'Reserved' },
+  { value: 'fulfilled', label: 'Fulfilled' },
   { value: 'cancelled', label: 'Cancelled' },
+  { value: 'rejected', label: 'Rejected' },
 ]
 
 const SORT_OPTIONS = [
@@ -28,33 +27,32 @@ const SORT_OPTIONS = [
 ]
 
 const statusIcons = {
-  pending: Clock,
+  new: Clock,
   contacted: Mail,
-  quoted: Package,
-  confirmed: CheckCircle,
-  completed: CheckCircle,
+  reserved: CheckCircle,
+  fulfilled: CheckCircle,
   cancelled: XCircle,
+  rejected: XCircle,
 }
 
 const statusColors = {
-  pending: 'warning',
+  new: 'warning',
   contacted: 'secondary',
-  quoted: 'default',
-  confirmed: 'success',
-  completed: 'success',
+  reserved: 'default',
+  fulfilled: 'success',
   cancelled: 'destructive',
+  rejected: 'destructive',
 } as const
 
 export function AdminEnquiriesPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const page = parseInt(searchParams.get('page') || '1')
   const search = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
   const sortBy = searchParams.get('sortBy') || 'newest'
 
-  const { data, isLoading } = trpc.enquiries.list.useQuery({
+  const { data, isLoading } = trpc.enquiries.adminGetList.useQuery({
     search: search || undefined,
     status: status as any || undefined,
     sortBy: sortBy as any,
@@ -62,7 +60,7 @@ export function AdminEnquiriesPage() {
     limit: 20,
   })
 
-  const updateStatusMutation = trpc.enquiries.updateStatus.useMutation({
+  const updateStatusMutation = trpc.enquiries.updateEnquiryStatus.useMutation({
     onSuccess: () => {
       toast.success('Status updated')
     },
@@ -97,12 +95,12 @@ export function AdminEnquiriesPage() {
 
   const getNextStatuses = (currentStatus: string) => {
     const flow: Record<string, string[]> = {
-      pending: ['contacted', 'cancelled'],
-      contacted: ['quoted', 'cancelled'],
-      quoted: ['confirmed', 'cancelled'],
-      confirmed: ['completed', 'cancelled'],
-      completed: [],
+      new: ['contacted', 'cancelled', 'rejected'],
+      contacted: ['reserved', 'cancelled', 'rejected'],
+      reserved: ['fulfilled', 'cancelled'],
+      fulfilled: [],
       cancelled: [],
+      rejected: [],
     }
     return flow[currentStatus] || []
   }
@@ -201,29 +199,16 @@ export function AdminEnquiriesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-foreground">{enquiry.fullName}</p>
+                        <p className="font-medium text-foreground">{enquiry.name}</p>
                         <p className="text-sm text-muted-foreground">{enquiry.email}</p>
                         <p className="text-sm text-muted-foreground">{enquiry.phone}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4 hidden md:table-cell">
-                      <div className="flex flex-wrap gap-1">
-                        {enquiry.items.slice(0, 3).map((item, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {item.productName} ({item.mode})
-                          </Badge>
-                        ))}
-                        {enquiry.items.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{enquiry.items.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
+                      <span className="text-sm text-muted-foreground">View details for items</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-medium text-foreground">
-                        {formatCurrency(enquiry.estimatedTotal, 'INR')}
-                      </span>
+                      <span className="text-muted-foreground">—</span>
                     </td>
                     <td className="px-6 py-4">
                       {getStatusBadge(enquiry.status)}

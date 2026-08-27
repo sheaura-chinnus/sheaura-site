@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink } from '@trpc/client'
+import superjson from 'superjson'
 import { Toaster } from 'react-hot-toast'
 import { ThemeProvider } from 'next-themes'
 import { App } from './App'
@@ -20,9 +21,17 @@ const queryClient = new QueryClient({
 })
 
 const trpcClient = trpc.createClient({
+  transformer: superjson,
   links: [
     httpBatchLink({
       url: '/trpc',
+      headers() {
+        const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
+        const token = match ? decodeURIComponent(match[1]) : ''
+        return {
+          'x-csrf-token': token,
+        }
+      },
     }),
   ],
 })

@@ -1,15 +1,14 @@
 import { useSearchParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { Filter, X, ChevronDown, ShoppingBag, Calendar, Tag } from 'lucide-react'
+import { useState } from 'react'
+import { Filter, X, ChevronDown, ShoppingBag } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { ProductCard } from '@/components/product/ProductCard'
-import { cn, formatCurrency } from '@/lib/utils'
 import { Separator } from '@/components/ui/separator'
+import { cn } from '@/lib/utils'
 
 const SORT_OPTIONS = [
   { value: 'featured', label: 'Featured' },
@@ -18,11 +17,7 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
 ]
 
-const CATEGORIES = [
-  { value: 'jewellery', label: 'Jewellery' },
-  { value: 'cosmetics', label: 'Cosmetics' },
-  { value: 'ornaments', label: 'Ornaments' },
-]
+// Categories are now loaded dynamically from the database
 
 const MODE_OPTIONS = [
   { value: 'sale', label: 'For Sale' },
@@ -41,6 +36,13 @@ export function ShopPage() {
   const { data: settings } = useSiteSettings()
   const currency = settings?.currency || 'INR'
 
+  // Dynamic categories from database
+  const { data: dbCategories } = trpc.categories.getList.useQuery()
+  const CATEGORIES = (dbCategories || []).map((cat: { slug: string; name: string }) => ({
+    value: cat.slug,
+    label: cat.name,
+  }))
+
   // Parse search params
   const category = searchParams.get('category') || ''
   const mode = searchParams.get('mode') || ''
@@ -52,7 +54,7 @@ export function ShopPage() {
   const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined
   const availability = searchParams.get('availability') || ''
 
-  const { data, isLoading, error } = trpc.products.list.useQuery({
+  const { data, isLoading, error } = trpc.products.getList.useQuery({
     category: category || undefined,
     mode: mode as 'sale' | 'rental' | 'both' | undefined,
     minPrice,
@@ -96,11 +98,16 @@ export function ShopPage() {
               {mode && ` — ${MODE_OPTIONS.find(m => m.value === mode)?.label}`}
             </h1>
             <p className="text-muted-foreground text-lg">
-              {search && `Search results for "${search}"`} ||
-              {featured && 'Handpicked featured products'} ||
-              {category && `Browse our curated ${CATEGORIES.find(c => c.value === category)?.label?.toLowerCase()} collection`} ||
-              {mode && `Explore products available for ${MODE_OPTIONS.find(m => m.value === mode)?.label?.toLowerCase()}`} ||
-              'Discover our complete collection of jewellery, cosmetics, and ornaments'
+              {search
+                ? `Search results for "${search}"`
+                : featured
+                ? 'Handpicked featured products'
+                : category
+                ? `Browse our curated ${CATEGORIES.find(c => c.value === category)?.label?.toLowerCase()} collection`
+                : mode
+                ? `Explore products available for ${MODE_OPTIONS.find(m => m.value === mode)?.label?.toLowerCase()}`
+                : 'Discover our complete collection of rental ornaments, cosmetics, and more'
+              }
             </p>
           </div>
         </div>
@@ -125,7 +132,7 @@ export function ShopPage() {
                 <ChevronDown className={cn('h-4 w-4 transition-transform', isFilterOpen && 'rotate-180')} />
               </button>
 
-              <div className={cn('space-y-6', isFilterOpen || 'lg:block', !isFilterOpen && 'lg:hidden', 'hidden')}>
+              <div className={cn('space-y-6', !isFilterOpen && 'hidden lg:block')}>
                 {/* Search */}
                 <div>
                   <label htmlFor="search" className="block text-sm font-medium mb-2">Search</label>
@@ -252,7 +259,7 @@ export function ShopPage() {
 
                 <div className="flex items-center gap-2">
                   <label htmlFor="sort" className="text-sm text-muted-foreground hidden sm:block">Sort by:</label>
-                  <Select value={sortBy} onValueChange={(v) => updateFilters({ sortBy: v })} className="w-48 sm:w-56">
+                  <Select value={sortBy} onValueChange={(v) => updateFilters({ sortBy: v })}>
                     <SelectTrigger id="sort">
                       <SelectValue />
                     </SelectTrigger>
@@ -267,7 +274,7 @@ export function ShopPage() {
 
               {/* Product Grid */}
               {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {[...Array(8)].map((_, i) => (
                     <div key={i} className="product-card animate-pulse">
                       <div className="aspect-[3/4] bg-muted/50" />
@@ -300,7 +307,7 @@ export function ShopPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                     {data.items.map((product) => (
                       <ProductCard key={product.id} product={product} />
                     ))}

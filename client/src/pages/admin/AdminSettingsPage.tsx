@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { Save, Loader2, RefreshCw, Eye, Edit2, Globe, Mail, Phone, Instagram, DollarSign, Shield, Truck, CreditCard, Settings } from 'lucide-react'
+import { Save, Loader2, RefreshCw, Globe, Mail, Shield, Truck, CreditCard, Settings } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/utils'
@@ -99,13 +98,13 @@ const SETTING_GROUPS = {
 type SettingGroupKey = keyof typeof SETTING_GROUPS
 
 export function AdminSettingsPage() {
-  const { data: settings, isLoading, refetch } = trpc.siteSettings.adminList.useQuery()
+  const { data: settings, isLoading, refetch } = trpc.siteSettings.adminGetList.useQuery()
 
   const [activeTab, setActiveTab] = useState<SettingGroupKey>('brand')
   const [formData, setFormData] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const bulkUpdateMutation = trpc.siteSettings.bulkUpdate.useMutation({
+  const bulkUpdateMutation = trpc.siteSettings.bulkUpdateSettings.useMutation({
     onSuccess: () => {
       toast.success('Settings saved successfully')
       refetch()
@@ -190,14 +189,14 @@ export function AdminSettingsPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 lg:grid-cols-8 gap-1">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SettingGroupKey)} className="w-full">
+        <TabsList className="flex w-full overflow-x-auto gap-1 p-1">
           {(Object.keys(SETTING_GROUPS) as SettingGroupKey[]).map((groupKey) => {
             const group = SETTING_GROUPS[groupKey]
             return (
-              <TabsTrigger key={groupKey} value={groupKey} className="gap-2 py-2 px-3 text-sm">
+              <TabsTrigger key={groupKey} value={groupKey} className="gap-2 py-2 px-3 text-sm whitespace-nowrap flex-shrink-0">
                 <group.icon className="h-4 w-4" />
-                {group.label}
+                <span className="hidden sm:inline">{group.label}</span>
               </TabsTrigger>
             )
           })}

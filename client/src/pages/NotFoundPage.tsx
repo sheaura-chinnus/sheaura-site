@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Home, Search, Sparkles, ArrowLeft } from 'lucide-react'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 export function NotFoundPage() {
   const { data: settings } = useSiteSettings()

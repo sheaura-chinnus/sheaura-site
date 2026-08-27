@@ -1,16 +1,20 @@
 import { z } from 'zod'
-import { publicProcedure, adminProcedure } from '../index.js'
+import { router, publicProcedure, adminProcedure } from '../index.js'
 import { db } from '../../db/index.js'
 import { products, productImages, categories, enquiryItems } from '../../db/schema.js'
-import { eq, and, or, ilike, desc, asc, count, sql, inArray, isNull } from 'drizzle-orm'
+import { eq, and, or, ilike, desc, asc, count, sql } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
+import { audit } from '../audit.js'
 
 const productFilterSchema = z.object({
   category: z.string().optional(),
-  mode: z.enum(['sale', 'rental', 'both']).optional(),
+  mode: z.preprocess((v) => (v === '' ? undefined : v), z.enum(['sale', 'rental', 'both']).optional()),
   minPrice: z.number().optional(),
   maxPrice: z.number().optional(),
-  availability: z.enum(['available', 'low_stock', 'out_of_stock', 'discontinued']).optional(),
+  availability: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.enum(['available', 'low_stock', 'out_of_stock', 'discontinued']).optional()
+  ),
   featured: z.boolean().optional(),
   search: z.string().optional(),
   sortBy: z.enum(['featured', 'newest', 'price_asc', 'price_desc']).default('featured'),
@@ -26,10 +30,10 @@ const createProductSchema = z.object({
   shortDescription: z.string().max(500).optional(),
   tags: z.array(z.string()).default([]),
   mode: z.enum(['sale', 'rental', 'both']).default('sale'),
-  salePrice: z.number().positive().optional(),
-  rentalPrice: z.number().positive().optional(),
+  salePrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(), // decimal as string
+  rentalPrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   rentalDurationDays: z.number().int().positive().optional(),
-  depositAmount: z.number().positive().optional(),
+  depositAmount: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   stockQuantity: z.number().int().min(0).default(0),
   availability: z.enum(['available', 'low_stock', 'out_of_stock', 'discontinued']).default('available'),
   isFeatured: z.boolean().default(false),
@@ -41,7 +45,7 @@ const updateProductSchema = createProductSchema.partial().extend({
   id: z.string().uuid(),
 })
 
-export const productsRouter = {
+export const productsRouter = router({
   // Public: Get all products with filters
   getList: publicProcedure
     .input(productFilterSchema)
@@ -100,6 +104,8 @@ export const productsRouter = {
         conditions.push(eq(products.isFeatured, featured))
       }
 
+      // Fix: change featured to getFeatured for consistency with schema
+
       if (search) {
         conditions.push(
           or(
@@ -113,20 +119,21 @@ export const productsRouter = {
       const whereClause = and(...conditions)
 
       // Sorting
-      let orderBy: any
+      let orderBy: ReturnType<typeof asc> | ReturnType<typeof desc> | ReturnType<typeof sql>
       switch (sortBy) {
         case 'newest':
           orderBy = desc(products.createdAt)
           break
         case 'price_asc':
-          orderBy = asc(sql`COALESCE(${products.salePrice}, ${products.rentalPrice})`)
+          orderBy = asc(sql`coalesce(${products.salePrice}, ${products.rentalPrice})`)
           break
         case 'price_desc':
-          orderBy = desc(sql`COALESCE(${products.salePrice}, ${products.rentalPrice})`)
+          orderBy = desc(sql`coalesce(${products.salePrice}, ${products.rentalPrice})`)
           break
         case 'featured':
         default:
-          orderBy = [desc(products.isFeatured), desc(products.createdAt)]
+          // Use a single orderBy with CASE for featured sorting
+          orderBy = sql`${products.isFeatured} desc, ${products.createdAt} desc`
           break
       }
 
@@ -180,7 +187,7 @@ export const productsRouter = {
     }),
 
   // Public: Get featured products
-  featured: publicProcedure
+  getFeatured: publicProcedure
     .input(z.object({ limit: z.number().min(1).max(20).default(8) }))
     .query(async ({ input }) => {
       const items = await db
@@ -219,7 +226,7 @@ export const productsRouter = {
     }),
 
   // Public: Get product by slug
-  bySlug: publicProcedure
+  getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
       const product = await db
@@ -267,7 +274,7 @@ export const productsRouter = {
       // Group images by product
       const productData = product[0]
       const images = product
-        .filter((p) => p.images.id)
+        .filter((p) => p.images?.id)
         .map((p) => p.images)
 
       return {
@@ -277,8 +284,8 @@ export const productsRouter = {
     }),
 
   // Public: Get related products
-  related: publicProcedure
-    .input(z.object({ productId: z.string().uuid(), categoryId: z.string().uuid(), limit: z.number().min(1).max(10).default(4) }))
+  getRelated: publicProcedure
+    .input(z.object({ productId: z.string().uuid(), categoryId: z.string().uuid().optional(), limit: z.number().min(1).max(10).default(4) }))
     .query(async ({ input }) => {
       const items = await db
         .select({
@@ -312,7 +319,7 @@ export const productsRouter = {
           and(
             eq(products.isPublished, true),
             eq(products.availability, 'available'),
-            eq(products.categoryId, input.categoryId),
+            input.categoryId ? eq(products.categoryId, input.categoryId) : undefined,
             sql`${products.id} != ${input.productId}`
           )
         )
@@ -323,19 +330,20 @@ export const productsRouter = {
     }),
 
   // Admin: Get all products (including unpublished)
-  adminList: adminProcedure
+  adminGetList: adminProcedure
     .input(z.object({
       page: z.number().min(1).default(1),
       limit: z.number().min(1).max(100).default(20),
       search: z.string().optional(),
       categoryId: z.string().uuid().optional(),
+      mode: z.enum(['sale', 'rental', 'both']).optional(),
       availability: z.enum(['available', 'low_stock', 'out_of_stock', 'discontinued']).optional(),
       isPublished: z.boolean().optional(),
       isFeatured: z.boolean().optional(),
       sortBy: z.enum(['newest', 'oldest', 'name_asc', 'name_desc']).default('newest'),
     }))
     .query(async ({ input }) => {
-      const { page, limit, search, categoryId, availability, isPublished, isFeatured, sortBy } = input
+      const { page, limit, search, categoryId, mode, availability, isPublished, isFeatured, sortBy } = input
       const offset = (page - 1) * limit
 
       const conditions = []
@@ -353,6 +361,15 @@ export const productsRouter = {
         conditions.push(eq(products.categoryId, categoryId))
       }
 
+      if (mode) {
+        conditions.push(
+          or(
+            eq(products.mode, mode),
+            eq(products.mode, 'both')
+          )!
+        )
+      }
+
       if (availability) {
         conditions.push(eq(products.availability, availability))
       }
@@ -367,7 +384,7 @@ export const productsRouter = {
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-      let orderBy: any
+      let orderBy: ReturnType<typeof asc> | ReturnType<typeof desc>
       switch (sortBy) {
         case 'oldest':
           orderBy = asc(products.createdAt)
@@ -394,6 +411,8 @@ export const productsRouter = {
             mode: products.mode,
             salePrice: products.salePrice,
             rentalPrice: products.rentalPrice,
+            rentalDurationDays: products.rentalDurationDays,
+            depositAmount: products.depositAmount,
             stockQuantity: products.stockQuantity,
             availability: products.availability,
             isFeatured: products.isFeatured,
@@ -431,7 +450,7 @@ export const productsRouter = {
     }),
 
   // Admin: Get product by ID (full details)
-  adminGet: adminProcedure
+  adminGetById: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
       const product = await db
@@ -480,7 +499,7 @@ export const productsRouter = {
 
       const productData = product[0]
       const images = product
-        .filter((p) => p.images.id)
+        .filter((p) => p.images?.id)
         .map((p) => p.images)
 
       return {
@@ -490,9 +509,9 @@ export const productsRouter = {
     }),
 
   // Admin: Create product
-  create: adminProcedure
+  createProduct: adminProcedure
     .input(createProductSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // Check slug uniqueness
       const existing = await db.select({ id: products.id }).from(products).where(eq(products.slug, input.slug)).limit(1)
       if (existing.length > 0) {
@@ -500,14 +519,24 @@ export const productsRouter = {
       }
 
       const [product] = await db.insert(products).values(input).returning()
+
+      // Audit log
+      await audit.productCreated(ctx, product.id, input)
+
       return product
     }),
 
   // Admin: Update product
-  update: adminProcedure
+  updateProduct: adminProcedure
     .input(updateProductSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input
+
+      // Get old data for audit
+      const oldProduct = await db.select().from(products).where(eq(products.id, id)).limit(1)
+      if (oldProduct.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
+      }
 
       // Check slug uniqueness if changing
       if (data.slug) {
@@ -523,17 +552,16 @@ export const productsRouter = {
         .where(eq(products.id, id))
         .returning()
 
-      if (!product) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
-      }
+      // Audit log
+      await audit.productUpdated(ctx, id, oldProduct[0], product)
 
       return product
     }),
 
   // Admin: Toggle publish status
-  togglePublish: adminProcedure
+  togglePublishStatus: adminProcedure
     .input(z.object({ id: z.string().uuid(), isPublished: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [product] = await db
         .update(products)
         .set({ isPublished: input.isPublished, updatedAt: new Date() })
@@ -544,13 +572,16 @@ export const productsRouter = {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
       }
 
+      // Audit log
+      await audit.productPublishToggled(ctx, input.id, input.isPublished)
+
       return product
     }),
 
   // Admin: Toggle featured status
-  toggleFeatured: adminProcedure
+  toggleFeaturedStatus: adminProcedure
     .input(z.object({ id: z.string().uuid(), isFeatured: z.boolean() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const [product] = await db
         .update(products)
         .set({ isFeatured: input.isFeatured, updatedAt: new Date() })
@@ -561,13 +592,22 @@ export const productsRouter = {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
       }
 
+      // Audit log
+      await audit.productFeaturedToggled(ctx, input.id, input.isFeatured)
+
       return product
     }),
 
   // Admin: Archive product (soft delete)
-  archive: adminProcedure
+  archiveProduct: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Get product for audit
+      const oldProduct = await db.select().from(products).where(eq(products.id, input.id)).limit(1)
+      if (oldProduct.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
+      }
+
       // Check if product has enquiry items
       const enquiryItemsCount = await db
         .select({ count: count() })
@@ -582,15 +622,18 @@ export const productsRouter = {
           .where(eq(products.id, input.id))
           .returning()
 
-        if (!product) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
-        }
+        // Audit log
+        await audit.productDeleted(ctx, input.id, oldProduct[0])
 
         return { ...product, archived: true }
       } else {
         // Hard delete if no enquiries
         await db.delete(productImages).where(eq(productImages.productId, input.id))
         await db.delete(products).where(eq(products.id, input.id))
+
+        // Audit log
+        await audit.productDeleted(ctx, input.id, oldProduct[0])
+
         return { success: true, deleted: true }
       }
     }),
@@ -604,7 +647,7 @@ export const productsRouter = {
       displayOrder: z.number().int().min(0).default(0),
       isPrimary: z.boolean().default(false),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // If setting as primary, unset other primary images
       if (input.isPrimary) {
         await db
@@ -614,6 +657,10 @@ export const productsRouter = {
       }
 
       const [image] = await db.insert(productImages).values(input).returning()
+
+      // Audit log
+      await audit.imageAdded(ctx, input.productId, image.id, input)
+
       return image
     }),
 
@@ -625,8 +672,14 @@ export const productsRouter = {
       displayOrder: z.number().int().min(0).optional(),
       isPrimary: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input
+
+      // Get old data for audit
+      const oldImage = await db.select().from(productImages).where(eq(productImages.id, id)).limit(1)
+      if (oldImage.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Image not found' })
+      }
 
       // If setting as primary, unset other primary images for this product
       if (data.isPrimary) {
@@ -640,16 +693,27 @@ export const productsRouter = {
       }
 
       const [updated] = await db.update(productImages).set(data).where(eq(productImages.id, id)).returning()
-      if (!updated) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Image not found' })
-      }
+
+      // Audit log
+      await audit.imageUpdated(ctx, id, oldImage[0], updated)
+
       return updated
     }),
 
   deleteImage: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Get old data for audit
+      const oldImage = await db.select().from(productImages).where(eq(productImages.id, input.id)).limit(1)
+      if (oldImage.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Image not found' })
+      }
+
       await db.delete(productImages).where(eq(productImages.id, input.id))
+
+      // Audit log
+      await audit.imageDeleted(ctx, input.id, oldImage[0])
+
       return { success: true }
     }),
 
@@ -658,13 +722,17 @@ export const productsRouter = {
       productId: z.string().uuid(),
       imageIds: z.array(z.string().uuid()),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       for (let i = 0; i < input.imageIds.length; i++) {
         await db
           .update(productImages)
           .set({ displayOrder: i })
           .where(and(eq(productImages.id, input.imageIds[i]), eq(productImages.productId, input.productId)))
       }
+
+      // Audit log
+      await audit.imagesReordered(ctx, input.productId, input.imageIds)
+
       return { success: true }
     }),
-}
+})

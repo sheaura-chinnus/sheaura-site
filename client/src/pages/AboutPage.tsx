@@ -3,7 +3,6 @@ import { Sparkles, Gem, Leaf, Heart, Truck, Shield, Award, Users } from 'lucide-
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
 
 const features = [
   {
@@ -18,8 +17,8 @@ const features = [
   },
   {
     icon: Leaf,
-    title: 'Ethical Sourcing',
-    description: 'Commitment to responsible sourcing, conflict-free materials, and sustainable practices.',
+    title: 'Quality & Craft',
+    description: 'Commitment to skin-safe materials, durable craftsmanship, and premium fashion jewellery standards.',
   },
   {
     icon: Heart,

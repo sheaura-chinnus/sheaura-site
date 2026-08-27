@@ -1,13 +1,12 @@
 import { db, type Database } from '../db/index.js'
-import { users } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import type { Request } from 'express'
 
 export interface UserSession {
   id: string
   email: string
   name: string | null
   avatarUrl: string | null
-  role: 'user' | 'admin'
+  role: 'user' | 'shop_order_receiver' | 'admin'
 }
 
 export interface TRPCContext {
@@ -31,33 +30,18 @@ export async function createContext(opts: { req: Request }): Promise<TRPCContext
 
 async function getUserFromRequest(req: Request): Promise<UserSession | null> {
   try {
-    // Check for Manus session cookie
-    const cookieHeader = req.headers.get('cookie')
-    if (!cookieHeader) return null
-
-    const sessionCookie = cookieHeader
-      .split(';')
-      .map(c => c.trim())
-      .find(c => c.startsWith('manus_session='))
-
-    if (!sessionCookie) return null
-
-    const sessionValue = decodeURIComponent(sessionCookie.split('=')[1])
-    const session = JSON.parse(sessionValue)
-
-    if (!session.userId) return null
-
-    // Fetch user from database
-    const user = await db.select().from(users).where(eq(users.id, session.userId)).limit(1)
-    if (user.length === 0) return null
-
-    return {
-      id: user[0].id,
-      email: user[0].email,
-      name: user[0].name,
-      avatarUrl: user[0].avatarUrl,
-      role: user[0].role,
+    // Get user from Passport session (req.user is set by passport.session() middleware)
+    if (req.user && typeof req.user === 'object' && 'id' in req.user) {
+      const user = req.user as { id: string; email: string; name: string | null; avatarUrl: string | null; role: 'user' | 'shop_order_receiver' | 'admin' }
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        role: user.role,
+      }
     }
+    return null
   } catch {
     return null
   }

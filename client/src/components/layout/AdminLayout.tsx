@@ -1,11 +1,11 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import { LayoutDashboard, Package, Tag, Mail, Settings, LogOut, Menu, X, ChevronLeft, ChevronRight, User } from 'lucide-react'
-import { trpc } from '@/lib/trpc'
+import { LayoutDashboard, Package, Tag, Mail, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { useAuth, useDemoLogin, useLogout } from '@/hooks/useAuth'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -19,14 +19,25 @@ export function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const { data: session } = trpc.auth.getSession.useQuery()
+  const { user, isAuthenticated } = useAuth()
+  const demoLogin = useDemoLogin()
+  const logout = useLogout()
 
-  const handleLogout = () => {
-    // In a real app, this would call the logout mutation
+  const handleLogout = async () => {
+    await logout.mutateAsync()
     navigate('/')
   }
+
+  const handleAdminLogin = async () => {
+    await demoLogin.mutateAsync({ role: 'admin' })
+  }
+
+  const handleGoogleLogin = () => {
+    window.location.href = '/auth/google'
+  }
+
+  const isAdmin = user?.role === 'admin'
 
   return (
     <div className="flex h-screen bg-muted/30">
@@ -89,17 +100,17 @@ export function AdminLayout() {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 px-3 py-2">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || 'User'} />
+              <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
               <AvatarFallback className="text-xs">
-                {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
+                {user?.name?.charAt(0).toUpperCase() || 'A'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {session?.user?.name || 'Admin User'}
+                {user?.name || 'Guest User'}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {session?.user?.email || 'admin@sheaura.com'}
+                {user?.email || (isAdmin ? 'admin@sheaura.com' : 'Not signed in')}
               </p>
             </div>
           </div>
@@ -124,36 +135,73 @@ export function AdminLayout() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {!isAdmin && (
+              <Button
+                size="sm"
+                onClick={handleAdminLogin}
+                disabled={demoLogin.isPending}
+                className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5 text-xs sm:text-sm font-medium"
+              >
+                <KeyRound className="h-4 w-4" />
+                <span>{demoLogin.isPending ? 'Logging in...' : 'Sign in as Admin (1-Click)'}</span>
+              </Button>
+            )}
+
             <Link to="/" className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               View Site
             </Link>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={session?.user?.image || undefined} alt={session?.user?.name || 'User'} />
-                    <AvatarFallback>
-                      {session?.user?.name?.charAt(0).toUpperCase() || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1">
-                  <p className="text-sm font-medium text-foreground truncate">{session?.user?.name || 'Admin User'}</p>
-                  <p className="text-xs text-muted-foreground truncate">{session?.user?.email || 'admin@sheaura.com'}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
+                      <AvatarFallback>
+                        {user?.name?.charAt(0).toUpperCase() || 'A'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <div className="px-2 py-1">
+                    <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Admin User'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email || 'admin@sheaura.com'}</p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" size="sm" onClick={handleGoogleLogin} className="gap-2">
+                <UserPlus className="h-4 w-4" />
+                <span>Sign in with Google</span>
+              </Button>
+            )}
           </div>
         </header>
+
+        {/* Not Admin Banner */}
+        {!isAdmin && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-800 dark:text-amber-300">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <ShieldAlert className="h-5 w-5 flex-shrink-0 text-amber-600" />
+              <span>You are viewing the admin panel as guest. Click to authenticate with Admin privileges to edit products & settings.</span>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button size="sm" onClick={handleAdminLogin} disabled={demoLogin.isPending} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+                1-Click Admin Access
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleGoogleLogin} className="text-xs gap-1">
+                Google Login
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">

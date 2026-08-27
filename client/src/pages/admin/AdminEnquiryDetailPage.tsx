@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Mail, Phone, Calendar, MapPin, Package, CheckCircle, XCircle, Clock, AlertCircle, Edit, MessageSquare, Download, Share2, MoreHorizontal } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
@@ -8,9 +9,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Separator } from '@/components/ui/separator'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'react-hot-toast'
-import { cn, formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 
 const statusIcons = {
   new: Clock,
@@ -42,9 +43,9 @@ const statusFlow: Record<string, string[]> = {
 export function AdminEnquiryDetailPage() {
   const { id } = useParams<{ id: string }>()
 
-  const { data: enquiry, isLoading, refetch } = trpc.enquiries.adminGet.useQuery({ id: id! })
+  const { data: enquiry, isLoading, refetch } = trpc.enquiries.adminGetById.useQuery({ id: id! })
 
-  const updateStatusMutation = trpc.enquiries.updateStatus.useMutation({
+  const updateStatusMutation = trpc.enquiries.updateEnquiryStatus.useMutation({
     onSuccess: () => {
       toast.success('Status updated')
       refetch()
@@ -261,12 +262,12 @@ export function AdminEnquiryDetailPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Submitted</span>
-                <span className="font-medium">{formatDate(enquiry.createdAt, 'PPp')}</span>
+                <span className="font-medium">{formatDate(enquiry.createdAt)}</span>
               </div>
               {enquiry.updatedAt !== enquiry.createdAt && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Last Updated</span>
-                  <span className="font-medium">{formatDate(enquiry.updatedAt, 'PPp')}</span>
+                  <span className="font-medium">{formatDate(enquiry.updatedAt)}</span>
                 </div>
               )}
             </CardContent>
@@ -294,7 +295,7 @@ export function AdminEnquiryDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {enquiry.items.map((item, index) => (
+                {enquiry.items.map((item) => (
                   <div key={item.id} className="flex gap-4 p-4 border border-border rounded-lg">
                     <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
                       {item.product.images?.[0]?.url ? (
@@ -473,5 +474,3 @@ export function AdminEnquiryDetailPage() {
   )
 }
 
-// Add required imports
-import { useState } from 'react'

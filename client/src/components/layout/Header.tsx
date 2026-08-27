@@ -48,7 +48,8 @@ export function Header() {
   }
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || ''}/auth/google`
+    const apiUrl = (import.meta as any).env?.VITE_API_URL || ''
+    window.location.href = `${apiUrl}/auth/google`
   }
 
   if (isLoading) {
@@ -114,52 +115,67 @@ export function Header() {
 
             {/* User Menu */}
             {isAuthenticated && user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent transition-colors" aria-label="Account menu">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatarUrl || undefined} alt={user.name || 'User'} />
-                      <AvatarFallback>{user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/account" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center">
-                      <User className="h-4 w-4 mr-2" />
-                      My Account
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/enquiry" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center">
-                      <ShoppingBag className="h-4 w-4 mr-2" />
-                      My Enquiries
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.role === 'admin' && (
+              <div className="flex items-center gap-3">
+                {user.role === 'admin' && (
+                  <Link to="/admin">
+                    <Button size="sm" variant="default" className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm">
+                      <Settings className="h-3.5 w-3.5" />
+                      <span>Admin Panel</span>
+                    </Button>
+                  </Link>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent transition-colors" aria-label="Account menu">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.image || undefined} alt={user.name || 'User'} />
+                        <AvatarFallback>{user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
+                          {user.role === 'admin' && (
+                            <span className="text-[10px] bg-amber-500/15 text-amber-600 font-semibold px-1.5 py-0.5 rounded uppercase">Admin</span>
+                          )}
+                        </div>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Admin Dashboard
+                      <Link to="/account" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center">
+                        <User className="h-4 w-4 mr-2" />
+                        My Account
                       </Link>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem asChild>
+                      <Link to="/enquiry" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center">
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        My Enquiries
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" onClick={() => setIsMenuOpen(false)} className="flex w-full items-center font-medium text-amber-600">
+                          <Settings className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             ) : (
-              <Button variant="ghost" size="sm" onClick={handleGoogleLogin} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleGoogleLogin} className="gap-2">
                 <UserPlus className="h-4 w-4" />
                 <span>Sign in with Google</span>
               </Button>

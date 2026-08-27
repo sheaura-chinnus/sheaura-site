@@ -1,17 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Plus, Search, MoreHorizontal, Edit, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { toast } from 'react-hot-toast'
 
-const STATUS_OPTIONS = [
+const ADMIN_STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
   { value: 'available', label: 'Available' },
   { value: 'low_stock', label: 'Low Stock' },
@@ -26,36 +26,57 @@ const MODE_OPTIONS = [
   { value: 'both', label: 'Both' },
 ]
 
-const SORT_OPTIONS = [
+const ADMIN_SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
   { value: 'name_asc', label: 'Name A-Z' },
   { value: 'name_desc', label: 'Name Z-A' },
-  { value: 'price_asc', label: 'Price Low-High' },
-  { value: 'price_desc', label: 'Price High-Low' },
 ]
 
 export function AdminProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
+  // Fetch categories for filter dropdown
+  const { data: categoriesList } = trpc.categories.getList.useQuery()
+
   const page = parseInt(searchParams.get('page') || '1')
-  const search = searchParams.get('search') || ''
+  const urlSearch = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
   const mode = searchParams.get('mode') || ''
+  const categoryFilter = searchParams.get('category') || ''
   const sortBy = searchParams.get('sortBy') || 'newest'
 
-  const { data, isLoading } = trpc.products.list.useQuery({
-    search: search || undefined,
+  // Local debounced search state to prevent flashing on every keystroke
+  const [searchInput, setSearchInput] = useState(urlSearch)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== urlSearch) {
+        updateFilters({ search: searchInput.trim() || undefined })
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
+  // Find category ID from slug
+  const selectedCategoryId = categoryFilter
+    ? categoriesList?.find((c: { slug: string }) => c.slug === categoryFilter)?.id
+    : undefined
+
+  const { data, isLoading } = trpc.products.adminGetList.useQuery({
+    search: urlSearch || undefined,
     availability: status as any || undefined,
+    categoryId: selectedCategoryId,
     mode: mode as any || undefined,
+    isPublished: undefined,
+    isFeatured: undefined,
     sortBy: sortBy as any,
     page,
     limit: 20,
   })
 
-  const deleteMutation = trpc.products.delete.useMutation({
+  const deleteMutation = trpc.products.archiveProduct.useMutation({
     onSuccess: () => {
       toast.success('Product deleted successfully')
       setDeleteConfirm(null)
@@ -151,8 +172,8 @@ export function AdminProductsPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input
                 placeholder="Search products..."
-                value={search}
-                onChange={(e) => updateFilters({ search: e.target.value || undefined })}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -164,7 +185,7 @@ export function AdminProductsPage() {
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((opt) => (
+                  {ADMIN_STATUS_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -181,12 +202,24 @@ export function AdminProductsPage() {
                 </SelectContent>
               </Select>
 
+              <Select value={categoryFilter} onValueChange={(v) => updateFilters({ category: v || undefined })}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {(categoriesList || []).map((cat: { slug: string; name: string }) => (
+                    <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <Select value={sortBy} onValueChange={(v) => updateFilters({ sortBy: v })}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SORT_OPTIONS.map((opt) => (
+                  {ADMIN_SORT_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -237,7 +270,7 @@ export function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 hidden md:table-cell">
-                      <span className="text-sm text-foreground">{product.category.name}</span>
+                      <span className="text-sm text-foreground">{product.category?.name || '—'}</span>
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell">
                       {getModeBadge(product.mode)}

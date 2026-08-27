@@ -6,10 +6,10 @@ import { useContactInfo } from '@/hooks/useContactInfo'
 const footerLinks = {
   shop: [
     { name: 'All Products', href: '/shop' },
-    { name: 'Jewellery', href: '/shop?category=jewellery' },
-    { name: 'Cosmetics', href: '/shop?category=cosmetics' },
-    { name: 'Ornaments', href: '/shop?category=ornaments' },
-    { name: 'Rental Collection', href: '/shop?mode=rental' },
+    { name: 'Rental Ornaments', href: '/rental-ornaments' },
+    { name: 'Fashion Jewellery', href: '/shop?category=jewellery' },
+    { name: 'Cosmetics & Beauty', href: '/shop?category=cosmetics' },
+    { name: 'Occasion Ornaments', href: '/shop?category=ornaments' },
   ],
   company: [
     { name: 'About Us', href: '/about' },
@@ -29,7 +29,7 @@ export function Footer() {
   const { data: settings } = useSiteSettings()
   const contact = useContactInfo()
 
-  const instagram = settings?.instagram || ''
+  const instagram = settings?.instagramUrl || settings?.instagram || ''
 
   return (
     <footer className="bg-muted/50 border-t border-border" role="contentinfo">
@@ -37,9 +37,11 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
-            <Link to="/" className="font-display text-2xl font-medium text-foreground mb-4 block">Sheaura</Link>
+            <Link to="/" className="font-display text-2xl font-medium text-foreground mb-4 block">
+              {settings?.brandName || 'Sheaura'}
+            </Link>
             <p className="text-sm text-muted-foreground mb-6">
-              Timeless elegance for every occasion. Curated fashion & costume jewellery, premium cosmetics, and occasion ornaments.
+              {settings?.footerText || 'Timeless elegance for every occasion. Curated fashion & costume jewellery, premium cosmetics, and occasion rental ornaments.'}
             </p>
             <div className="flex space-x-4">
               {instagram && instagram !== '[INSTAGRAM URL]' && (
@@ -165,7 +167,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-border">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Sheaura. All rights reserved.
+              {settings?.copyrightText || `© ${new Date().getFullYear()} ${settings?.brandName || 'Sheaura'}. All rights reserved.`}
             </p>
             <div className="flex flex-wrap items-center space-x-6 text-sm text-muted-foreground">
               <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>

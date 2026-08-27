@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // Public pages
 import { HomePage } from '@/pages/HomePage'
@@ -28,6 +29,11 @@ import { AdminCategoriesPage } from '@/pages/admin/AdminCategoriesPage'
 import { AdminEnquiriesPage } from '@/pages/admin/AdminEnquiriesPage'
 import { AdminEnquiryDetailPage } from '@/pages/admin/AdminEnquiryDetailPage'
 import { AdminSettingsPage } from '@/pages/admin/AdminSettingsPage'
+import { AdminLogoMediaPage } from '@/pages/admin/AdminLogoMediaPage'
+import { AdminHomepageContentPage } from '@/pages/admin/AdminHomepageContentPage'
+import { AdminNavigationFooterPage } from '@/pages/admin/AdminNavigationFooterPage'
+import { AdminPoliciesPage } from '@/pages/admin/AdminPoliciesPage'
+import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage'
 
 function PublicLayout(): React.ReactElement {
   return (
@@ -45,39 +51,47 @@ function AdminRoute() {
 
 export function App() {
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/shop" element={<ShopPage />} />
-        <Route path="/product/:slug" element={<ProductDetailPage />} />
-        <Route path="/enquiry" element={<EnquiryPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/rental-policy" element={<RentalPolicyPage />} />
-        <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
-        <Route path="/payment-policy" element={<PaymentPolicyPage />} />
-        <Route path="/refund-policy" element={<RefundPolicyPage />} />
-        <Route path="/login" element={<LoginPage />} />
-      </Route>
+    <ErrorBoundary>
+      <Routes>
+        {/* Public routes */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/rental-ornaments" element={<ShopPage defaultMode="rental" />} />
+          <Route path="/product/:slug" element={<ProductDetailPage />} />
+          <Route path="/enquiry" element={<EnquiryPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/rental-policy" element={<RentalPolicyPage />} />
+          <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
+          <Route path="/payment-policy" element={<PaymentPolicyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/login" element={<LoginPage />} />
+        </Route>
 
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminRoute />}>
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboardPage />} />
-        <Route path="products" element={<AdminProductsPage />} />
-        <Route path="products/create" element={<AdminProductCreatePage />} />
-        <Route path="products/:id/edit" element={<AdminProductEditPage />} />
-        <Route path="categories" element={<AdminCategoriesPage />} />
-        <Route path="enquiries" element={<AdminEnquiriesPage />} />
-        <Route path="enquiries/:id" element={<AdminEnquiryDetailPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
-      </Route>
+        {/* Admin routes */}
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="logo-media" element={<AdminLogoMediaPage />} />
+          <Route path="homepage" element={<AdminHomepageContentPage />} />
+          <Route path="navigation" element={<AdminNavigationFooterPage />} />
+          <Route path="policies" element={<AdminPoliciesPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+          <Route path="products/create" element={<AdminProductCreatePage />} />
+          <Route path="products/:id/edit" element={<AdminProductEditPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="enquiries" element={<AdminEnquiriesPage />} />
+          <Route path="enquiries/:id" element={<AdminEnquiryDetailPage />} />
+          <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+        </Route>
 
-      {/* 404 */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </ErrorBoundary>
   )
 }

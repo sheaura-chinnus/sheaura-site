@@ -3,10 +3,10 @@ import { useSiteSettings } from './useSiteSettings'
 export function useContactInfo() {
   const { data: settings } = useSiteSettings()
 
-  const phone = settings?.phone || ''
-  const email = settings?.email || ''
-  const whatsapp = settings?.whatsapp || ''
-  const address = settings?.address || ''
+  const phone = settings?.contactPhone || settings?.phone || ''
+  const email = settings?.contactEmail || settings?.email || ''
+  const whatsapp = settings?.whatsappNumber || settings?.whatsapp || ''
+  const address = settings?.locationServiceArea || settings?.address || ''
   const brandName = settings?.brandName || 'Sheaura'
 
   const rawPhoneClean = phone ? phone.replace(/\D/g, '') : ''

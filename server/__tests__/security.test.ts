@@ -1,49 +1,19 @@
 import 'dotenv/config'
-import { describe, it, expect } from 'vitest'
-import http from 'http'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import { db } from '../db/index.js'
 import { products } from '../db/schema.js'
-
-function makeRequest(
-  urlPath: string,
-  options: {
-    method?: string
-    headers?: Record<string, string>
-    body?: string
-    port?: number
-  } = {}
-): Promise<{ statusCode: number; headers: http.IncomingHttpHeaders; body: string }> {
-  return new Promise((resolve, reject) => {
-    const method = options.method || 'GET'
-    const port = options.port || 4000
-    const reqOptions: http.RequestOptions = {
-      hostname: 'localhost',
-      port,
-      path: urlPath,
-      method,
-      headers: options.headers || {},
-    }
-
-    const req = http.request(reqOptions, (res) => {
-      let body = ''
-      res.on('data', (chunk) => (body += chunk))
-      res.on('end', () => {
-        resolve({ statusCode: res.statusCode || 500, headers: res.headers, body })
-      })
-    })
-
-    req.on('error', (err) => reject(err))
-
-    if (options.body) {
-      req.write(options.body)
-    }
-    req.end()
-  })
-}
+import { startTestServer, stopTestServer, makeRequest } from './testHelper.js'
 
 describe('Stage 6 — Security & Authorization Automated Tests', () => {
+  beforeAll(async () => {
+    await startTestServer()
+  })
+
+  afterAll(async () => {
+    await stopTestServer()
+  })
 
   describe('1. Unauthenticated Access & Deny-by-Default Protection', () => {
     it('should deny unauthenticated access to Express /admin routes with 401', async () => {
@@ -80,7 +50,6 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: inputStr,
-        port: 3000,
       })
       expect(res.statusCode).toBe(403)
       expect(res.body).toContain('Invalid CSRF token')
@@ -88,7 +57,7 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
 
     it('should allow POST mutation when valid x-csrf-token header and session cookie are sent', async () => {
       // Step A: GET request to acquire CSRF cookie & session
-      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D', { port: 3000 })
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
       const setCookies = getRes.headers['set-cookie'] || []
       let csrfToken = ''
       setCookies.forEach((c) => {
@@ -124,12 +93,8 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
           'x-csrf-token': csrfToken,
         },
         body: payload,
-        port: 3000,
       })
 
-      if (postRes.statusCode !== 200) {
-        console.log('DEBUG postRes:', postRes.statusCode, postRes.body)
-      }
       expect(postRes.statusCode).toBe(200)
       expect(postRes.body).toContain('enquiryId')
     })

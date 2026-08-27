@@ -30,7 +30,7 @@ const AVAILABILITY_OPTIONS = [
   { value: 'low_stock', label: 'Low Stock' },
 ]
 
-export function ShopPage() {
+export function ShopPage({ defaultMode }: { defaultMode?: 'sale' | 'rental' | 'both' } = {}) {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const { data: settings } = useSiteSettings()
@@ -45,7 +45,7 @@ export function ShopPage() {
 
   // Parse search params
   const category = searchParams.get('category') || ''
-  const mode = searchParams.get('mode') || ''
+  const mode = searchParams.get('mode') || defaultMode || ''
   const search = searchParams.get('search') || ''
   const featured = searchParams.get('featured') === 'true'
   const sortBy = searchParams.get('sortBy') || 'featured'
@@ -53,6 +53,8 @@ export function ShopPage() {
   const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined
   const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined
   const availability = searchParams.get('availability') || ''
+
+  const isRentalPage = mode === 'rental' || defaultMode === 'rental'
 
   const { data, isLoading, error } = trpc.products.getList.useQuery({
     category: category || undefined,
@@ -68,9 +70,9 @@ export function ShopPage() {
   })
 
   // Update URL when filters change
-  const updateFilters = (newParams: Record<string, string | undefined>) => {
+  const updateFilters = (newFilters: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams)
-    Object.entries(newParams).forEach(([key, value]) => {
+    Object.entries(newFilters).forEach(([key, value]) => {
       if (value) {
         params.set(key, value)
       } else {
@@ -82,10 +84,10 @@ export function ShopPage() {
   }
 
   const clearFilters = () => {
-    setSearchParams({})
+    setSearchParams(defaultMode ? { mode: defaultMode } : {})
   }
 
-  const hasActiveFilters = category || mode || search || featured || minPrice !== undefined || maxPrice !== undefined || availability
+  const hasActiveFilters = category || (mode && mode !== defaultMode) || search || featured || minPrice !== undefined || maxPrice !== undefined || availability
 
   return (
     <div className="animate-fade-in">
@@ -94,19 +96,23 @@ export function ShopPage() {
         <div className="container-sheaura">
           <div className="max-w-3xl mx-auto text-center">
             <h1 id="shop-title" className="font-display text-3xl sm:text-4xl lg:text-5xl font-medium text-foreground mb-4">
-              {category ? CATEGORIES.find(c => c.value === category)?.label : 'Shop Collection'}
-              {mode && ` — ${MODE_OPTIONS.find(m => m.value === mode)?.label}`}
+              {isRentalPage
+                ? 'Rental Ornaments'
+                : category
+                ? CATEGORIES.find(c => c.value === category)?.label
+                : 'Shop Collection'}
+              {!isRentalPage && mode && ` — ${MODE_OPTIONS.find(m => m.value === mode)?.label}`}
             </h1>
             <p className="text-muted-foreground text-lg">
               {search
                 ? `Search results for "${search}"`
+                : isRentalPage
+                ? 'Curated bridal, wedding, and festive occasion ornaments available for rental with transparent deposit terms.'
                 : featured
-                ? 'Handpicked featured products'
+                ? 'Handpicked featured fashion jewellery and accessories'
                 : category
                 ? `Browse our curated ${CATEGORIES.find(c => c.value === category)?.label?.toLowerCase()} collection`
-                : mode
-                ? `Explore products available for ${MODE_OPTIONS.find(m => m.value === mode)?.label?.toLowerCase()}`
-                : 'Discover our complete collection of rental ornaments, cosmetics, and more'
+                : 'Discover our complete collection of fashion jewellery, cosmetics, and occasion accessories.'
               }
             </p>
           </div>

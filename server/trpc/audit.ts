@@ -19,13 +19,20 @@ export async function createAuditLog(
     const ipAddress = ctx.req.ip ?? ctx.req.headers['x-forwarded-for'] as string | undefined
     const userAgent = ctx.req.headers['user-agent'] ?? undefined
 
+    const isUuid = input.entityId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.entityId)
+    const validEntityId = isUuid ? input.entityId : null
+    const additionalMeta = !isUuid && input.entityId ? { targetKey: input.entityId } : {}
+
+    const oldDataObj = input.oldData ? { ...input.oldData, ...additionalMeta } : (Object.keys(additionalMeta).length > 0 ? additionalMeta : null)
+    const newDataObj = input.newData ? { ...input.newData, ...additionalMeta } : (Object.keys(additionalMeta).length > 0 ? additionalMeta : null)
+
     const logEntry: NewAuditLog = {
       userId,
       action: input.action,
       entityType: input.entityType,
-      entityId: input.entityId ?? null,
-      oldData: input.oldData ? JSON.stringify(input.oldData) : null,
-      newData: input.newData ? JSON.stringify(input.newData) : null,
+      entityId: validEntityId,
+      oldData: oldDataObj ? JSON.stringify(oldDataObj) : null,
+      newData: newDataObj ? JSON.stringify(newDataObj) : null,
       ipAddress: ipAddress ?? null,
       userAgent: userAgent ?? null,
     }
@@ -186,5 +193,29 @@ export const audit = {
       entityType: 'product_image',
       entityId: productId,
       newData: { imageIds },
+    }),
+
+  logoUploaded: (ctx: TRPCContext, mediaId: string, filename: string, mimeType: string, fileSize: number) =>
+    createAuditLog(ctx, {
+      action: 'LOGO_UPLOADED',
+      entityType: 'media_asset',
+      entityId: mediaId,
+      newData: { filename, mimeType, fileSize },
+    }),
+
+  logoReplaced: (ctx: TRPCContext, newMediaId: string, oldMediaId: string | null, filename: string) =>
+    createAuditLog(ctx, {
+      action: 'LOGO_REPLACED',
+      entityType: 'media_asset',
+      entityId: newMediaId,
+      oldData: oldMediaId ? { previousMediaId: oldMediaId } : undefined,
+      newData: { filename },
+    }),
+
+  logoDeleted: (ctx: TRPCContext, mediaId: string | null) =>
+    createAuditLog(ctx, {
+      action: 'LOGO_DELETED',
+      entityType: 'media_asset',
+      entityId: mediaId ?? undefined,
     }),
 }

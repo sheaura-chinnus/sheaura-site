@@ -139,6 +139,26 @@ export const auditLogs = pgTable('audit_logs', {
   createdAtIdx: index('audit_logs_created_at_idx').on(table.createdAt),
 }))
 
+export const mediaAssets = pgTable('media_assets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  filename: varchar('filename', { length: 255 }).notNull(),
+  mimeType: varchar('mime_type', { length: 100 }).notNull(),
+  fileSize: integer('file_size').notNull(),
+  width: integer('width'),
+  height: integer('height'),
+  altText: varchar('alt_text', { length: 255 }),
+  storageType: varchar('storage_type', { length: 50 }).notNull().default('db'), // 's3' | 'supabase' | 'db'
+  storageKey: varchar('storage_key', { length: 500 }),
+  data: text('data'), // Base64 data for 'db' storage
+  checksum: varchar('checksum', { length: 64 }),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  createdAtIdx: index('media_assets_created_at_idx').on(table.createdAt),
+  storageKeyIdx: index('media_assets_storage_key_idx').on(table.storageKey),
+}))
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   enquiries: many(enquiries),
@@ -192,3 +212,5 @@ export type SiteSetting = typeof siteSettings.$inferSelect
 export type NewSiteSetting = typeof siteSettings.$inferInsert
 export type AuditLog = typeof auditLogs.$inferSelect
 export type NewAuditLog = typeof auditLogs.$inferInsert
+export type MediaAsset = typeof mediaAssets.$inferSelect
+export type NewMediaAsset = typeof mediaAssets.$inferInsert

@@ -3,7 +3,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 import { db } from '../db/index.js'
-import { products } from '../db/schema.js'
+import { products, enquiries, enquiryItems, categories } from '../db/schema.js'
+import { eq, like, sql } from 'drizzle-orm'
 import { startTestServer, stopTestServer, makeRequest } from './testHelper.js'
 
 describe('Stage 6 — Security & Authorization Automated Tests', () => {
@@ -12,6 +13,14 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
   })
 
   afterAll(async () => {
+    // Clean up test enquiries created during tests
+    const testEnquiries = await db.select({ id: enquiries.id }).from(enquiries).where(eq(enquiries.email, 'valid@example.com'))
+    for (const e of testEnquiries) {
+      await db.delete(enquiryItems).where(eq(enquiryItems.enquiryId, e.id))
+      await db.delete(enquiries).where(eq(enquiries.id, e.id))
+    }
+    // Clean up any temporary test products
+    await db.delete(products).where(like(products.slug, 'sec-test-prod-%'))
     await stopTestServer()
   })
 
@@ -69,7 +78,23 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
 
       // Dynamically fetch a valid product ID directly from DB
       const existingProds = await db.select({ id: products.id }).from(products).limit(1)
-      const targetProductId = existingProds[0]?.id || 'cb6a8b7c-4eb8-4651-aa73-e494b4aec651'
+      let targetProductId = existingProds[0]?.id
+      if (!targetProductId) {
+        let cat = await db.select({ id: categories.id }).from(categories).limit(1)
+        let catId = cat[0]?.id
+        if (!catId) {
+          const [newCat] = await db.insert(categories).values({
+            name: 'Security Test Cat',
+            slug: `sec-test-${Date.now()}`,
+          }).returning()
+          catId = newCat.id
+        }
+        const prodSlug = `sec-test-prod-${Date.now()}`
+        const res = await db.execute(
+          sql`INSERT INTO products (name, slug, category_id, rental_price, mode, stock_quantity, is_published, availability) VALUES ('Security Test Ornament', ${prodSlug}, ${catId}, '1500', 'rental', 1, true, 'available') RETURNING id`
+        )
+        targetProductId = (res.rows[0] as any)?.id
+      }
 
       // Step B: Send POST with x-csrf-token header
       const payload = JSON.stringify({
@@ -79,7 +104,7 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
             email: 'valid@example.com',
             phone: '9999999999',
             eventDate: '2026-12-01T00:00:00.000Z',
-            items: [{ productId: targetProductId, quantity: 1, mode: 'sale' }],
+            items: [{ productId: targetProductId, quantity: 1, mode: 'rental' }],
           },
           meta: { values: { eventDate: ['Date'] } },
         },

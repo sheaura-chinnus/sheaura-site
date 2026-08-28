@@ -10,3 +10,5 @@ coverage/
 *.md
 cookies.txt
 .claude/settings.local.json
+scratch/
+

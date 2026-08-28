@@ -176,4 +176,239 @@ describe('Stage 7 — Sheaura Admin Editor, Media, Navigation & Security Tests',
       expect(defaultText.toLowerCase()).toContain('cosmetics')
     })
   })
+
+  describe('7. Admin Featured Products & Category Removal', () => {
+    it('should reject unauthenticated calls to products.toggleFeaturedStatus with 401 UNAUTHORIZED', async () => {
+      // Step A: Acquire CSRF token
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/products.toggleFeaturedStatus?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              id: '00000000-0000-0000-0000-000000000000',
+              isFeatured: false,
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+    })
+
+    it('should reject unauthenticated calls to products.removeFeaturedFromCategory with 401 UNAUTHORIZED', async () => {
+      // Step A: Acquire CSRF token
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/products.removeFeaturedFromCategory?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {},
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+    })
+
+    it('should allow public retrieval of getFeatured with optional categoryId', async () => {
+      const res = await makeRequest('/trpc/products.getFeatured?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22limit%22%3A4%7D%7D%7D')
+      expect(res.statusCode).toBe(200)
+      const json = JSON.parse(res.body)
+      expect(Array.isArray(json[0]?.result?.data?.json)).toBe(true)
+    })
+  })
+
+  describe('8. Admin Bulk Product Operations & Authorizations', () => {
+    it('should reject unauthenticated calls to products.bulkUpdateProducts with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/products.bulkUpdateProducts?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              ids: ['00000000-0000-0000-0000-000000000000'],
+              availability: 'available',
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Not authenticated')
+    })
+
+    it('should reject unauthenticated calls to products.bulkDeleteProducts with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/products.bulkDeleteProducts?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              ids: ['00000000-0000-0000-0000-000000000000'],
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Not authenticated')
+    })
+  })
+
+  describe('9. Stock Management & Out-of-Stock Protections', () => {
+    it('should reject unauthenticated calls to products.clearAllProducts with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/products.clearAllProducts?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: null,
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Not authenticated')
+    })
+
+    it('should reject unauthenticated calls to enquiries.markItemsOutOfStock with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/enquiries.markItemsOutOfStock?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              enquiryId: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Not authenticated')
+    })
+
+    it('should reject unauthenticated calls to enquiries.markItemsAvailable with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/enquiries.markItemsAvailable?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              enquiryId: '00000000-0000-0000-0000-000000000000',
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Not authenticated')
+    })
+  })
 })

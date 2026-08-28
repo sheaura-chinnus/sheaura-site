@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Mail, Phone, Calendar, MapPin, Package, CheckCircle, XCircle, Clock, AlertCircle, Edit, MessageSquare, Download, Share2, MoreHorizontal } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Mail, Phone, Calendar, MapPin, Package, CheckCircle, XCircle, Clock, AlertCircle, Edit, MessageSquare, Download, Share2, MoreHorizontal, Trash2, Ban, CheckCircle2, Sparkles } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'react-hot-toast'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, cn } from '@/lib/utils'
 
 const statusIcons = {
   new: Clock,
@@ -43,6 +43,7 @@ const statusFlow: Record<string, string[]> = {
 export function AdminEnquiryDetailPage() {
   const { id } = useParams<{ id: string }>()
 
+  const navigate = useNavigate()
   const { data: enquiry, isLoading, refetch } = trpc.enquiries.adminGetById.useQuery({ id: id! })
 
   const updateStatusMutation = trpc.enquiries.updateEnquiryStatus.useMutation({
@@ -52,6 +53,46 @@ export function AdminEnquiryDetailPage() {
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update status')
+    },
+  })
+
+  const deleteMutation = trpc.enquiries.deleteEnquiry.useMutation({
+    onSuccess: () => {
+      toast.success('Enquiry deleted successfully')
+      navigate('/admin/enquiries')
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to delete enquiry')
+    },
+  })
+
+  const markOutOfStockMutation = trpc.enquiries.markItemsOutOfStock.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Marked ${result.count} item(s) Out of Stock (In Rental)`)
+      refetch()
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to update items')
+    },
+  })
+
+  const markAvailableMutation = trpc.enquiries.markItemsAvailable.useMutation({
+    onSuccess: (result) => {
+      toast.success(`Marked ${result.count} item(s) Available (Returned)`)
+      refetch()
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to update items')
+    },
+  })
+
+  const singleProductUpdateMutation = trpc.products.bulkUpdateProducts.useMutation({
+    onSuccess: () => {
+      toast.success('Item availability updated')
+      refetch()
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to update item')
     },
   })
 
@@ -134,6 +175,20 @@ export function AdminEnquiryDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {getStatusBadge(enquiry.status)}
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 border-destructive/30 text-xs gap-1.5 h-9"
+            onClick={() => {
+              if (confirm(`Delete enquiry from "${enquiry.name}"? This action cannot be undone.`)) {
+                deleteMutation.mutate({ id: enquiry.id })
+              }
+            }}
+            disabled={deleteMutation.isPending}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>Delete Enquiry</span>
+          </Button>
         </div>
       </div>
 
@@ -290,41 +345,125 @@ export function AdminEnquiryDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Items */}
           <Card className="card-sheaura">
-            <CardHeader>
-              <CardTitle className="font-display text-lg">Enquiry Items ({enquiry.items.length})</CardTitle>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="font-display text-lg">Enquiry Items ({enquiry.items.length})</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Track stock quantity and rental availability for these ornaments.
+                </p>
+              </div>
+
+              {/* Quick Bulk Stock Actions for Enquiry */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => markOutOfStockMutation.mutate({ enquiryId: enquiry.id })}
+                  disabled={markOutOfStockMutation.isPending}
+                  className="text-xs h-8 gap-1.5 text-amber-700 dark:text-amber-300 hover:bg-amber-50"
+                >
+                  <Ban className="h-3.5 w-3.5" />
+                  <span>Mark All Out of Stock</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => markAvailableMutation.mutate({ enquiryId: enquiry.id })}
+                  disabled={markAvailableMutation.isPending}
+                  className="text-xs h-8 gap-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  <span>Mark All Available</span>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
+              {/* Notice when booking status is active */}
+              {(enquiry.status === 'reserved' || enquiry.status === 'fulfilled') && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200">
+                  <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
+                  <span>
+                    This rental is currently active. All included ornaments are automatically marked <strong>Out of Stock</strong> in the public catalogue.
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-4">
-                {enquiry.items.map((item) => (
-                  <div key={item.id} className="flex gap-4 p-4 border border-border rounded-lg">
-                    <div className="w-20 h-20 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
-                      {item.product.images?.[0]?.url ? (
-                        <img src={item.product.images[0].url} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="h-8 w-8 text-muted-foreground/50" />
+                {enquiry.items.map((item) => {
+                  const isItemAvailable = item.product.availability === 'available'
+                  return (
+                    <div key={item.id} className="flex flex-col sm:flex-row gap-4 p-4 border border-border rounded-lg justify-between sm:items-center">
+                      <div className="flex gap-4 items-center">
+                        <div className="w-16 h-16 rounded-lg bg-muted/50 overflow-hidden flex-shrink-0">
+                          {item.product.images?.[0]?.url ? (
+                            <img src={item.product.images[0].url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-6 w-6 text-muted-foreground/50" />
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <Link to={`/product/${item.product.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground hover:text-primary transition-colors block truncate">
-                            {item.product.name}
-                          </Link>
-                          <p className="text-sm text-muted-foreground truncate">Mode: {item.mode} • Qty: {item.quantity}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="outline" className="font-mono text-xs font-bold px-1.5 py-0">
+                              {item.product.itemCode || 'SH-ORNAMENT'}
+                            </Badge>
+                            <Link to={`/product/${item.product.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-foreground hover:text-primary transition-colors truncate">
+                              {item.product.name}
+                            </Link>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-muted-foreground">
+                            <span>Requested Qty: <strong className="text-foreground">{item.quantity}</strong></span>
+                            <span>•</span>
+                            <span className={cn(
+                              'font-mono font-bold px-1.5 py-0.5 rounded text-[11px]',
+                              (item.product.stockQuantity ?? 1) > 0 ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10' : 'text-destructive bg-destructive/10'
+                            )}>
+                              Stock Qty: {item.product.stockQuantity ?? 1}
+                            </span>
+                            <span>•</span>
+                            <Badge
+                              variant={isItemAvailable ? 'secondary' : 'destructive'}
+                              className="text-[10px] uppercase font-bold"
+                            >
+                              {isItemAvailable ? 'Available' : 'Out of Stock (In Rental)'}
+                            </Badge>
+                          </div>
                         </div>
-                        <span className="font-medium text-foreground whitespace-nowrap">
+                      </div>
+
+                      {/* Single Item Action */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/60">
+                        <span className="font-medium text-foreground whitespace-nowrap text-sm">
                           {formatCurrency(Number(item.unitPrice) * item.quantity, 'INR')}
                         </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        <Badge variant="outline" className="text-xs capitalize">{item.mode}</Badge>
-                        <Badge variant="secondary" className="text-xs">₹{Number(item.unitPrice).toLocaleString()} each</Badge>
+                        {isItemAvailable ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => singleProductUpdateMutation.mutate({ ids: [item.productId], availability: 'out_of_stock' })}
+                            disabled={singleProductUpdateMutation.isPending}
+                            className="text-xs h-7 text-amber-700 dark:text-amber-300 hover:bg-amber-50"
+                          >
+                            <Ban className="h-3 w-3 mr-1" />
+                            <span>Mark Out of Stock</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => singleProductUpdateMutation.mutate({ ids: [item.productId], availability: 'available' })}
+                            disabled={singleProductUpdateMutation.isPending}
+                            className="text-xs h-7 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50"
+                          >
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            <span>Mark Available</span>
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <div className="mt-4 pt-4 border-t border-border flex justify-end">
                 <span className="text-lg font-bold text-foreground">

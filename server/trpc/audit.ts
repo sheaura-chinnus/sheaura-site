@@ -137,6 +137,14 @@ export const audit = {
       newData: { assignedTo },
     }),
 
+  enquiryDeleted: (ctx: TRPCContext, enquiryId: string, name?: string) =>
+    createAuditLog(ctx, {
+      action: 'ENQUIRY_DELETED',
+      entityType: 'enquiry',
+      entityId: enquiryId,
+      oldData: { name },
+    }),
+
   settingUpdated: (ctx: TRPCContext, key: string, oldValue: string | null, newValue: string | null) =>
     createAuditLog(ctx, {
       action: 'SETTING_UPDATED',

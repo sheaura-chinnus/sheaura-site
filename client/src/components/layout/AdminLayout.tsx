@@ -174,12 +174,12 @@ export function AdminLayout() {
         <header className="sticky top-0 z-30 h-16 bg-background/95 backdrop-blur-sm border-b border-border flex items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-4">
             <button
-              className="lg:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+              className="lg:hidden p-2 rounded-xl border border-border/80 bg-background text-foreground hover:bg-accent shadow-xs transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setSidebarOpen(true)}
               aria-label="Open sidebar"
               aria-expanded={sidebarOpen}
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5 stroke-[2.2] text-foreground" />
             </button>
             <h1 className="font-display text-xl font-medium text-foreground hidden sm:block">
               {navigation.find(n => location.pathname === n.href || location.pathname.startsWith(n.href))?.name || 'Admin'}

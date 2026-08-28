@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Search, ChevronLeft, ChevronRight, Mail, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Mail, Eye, MoreHorizontal, CheckCircle, XCircle, Clock, AlertCircle, Trash2 } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -52,7 +52,7 @@ export function AdminEnquiriesPage() {
   const status = searchParams.get('status') || ''
   const sortBy = searchParams.get('sortBy') || 'newest'
 
-  const { data, isLoading } = trpc.enquiries.adminGetList.useQuery({
+  const { data, isLoading, refetch } = trpc.enquiries.adminGetList.useQuery({
     search: search || undefined,
     status: status as any || undefined,
     sortBy: sortBy as any,
@@ -63,9 +63,30 @@ export function AdminEnquiriesPage() {
   const updateStatusMutation = trpc.enquiries.updateEnquiryStatus.useMutation({
     onSuccess: () => {
       toast.success('Status updated')
+      refetch()
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to update status')
+    },
+  })
+
+  const deleteMutation = trpc.enquiries.deleteEnquiry.useMutation({
+    onSuccess: () => {
+      toast.success('Enquiry deleted successfully')
+      refetch()
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to delete enquiry')
+    },
+  })
+
+  const clearTestMutation = trpc.enquiries.clearTestEnquiries.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Cleared ${res.count} fake/test enquiry entries`)
+      refetch()
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to clear test enquiries')
     },
   })
 
@@ -122,11 +143,25 @@ export function AdminEnquiriesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-medium text-foreground">Enquiries</h1>
-          <p className="text-muted-foreground mt-1">Manage customer enquiries and orders</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground">Rental Enquiries</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage customer enquiries and date bookings</p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground hidden sm:block">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (confirm('Clean all fake and automated test enquiries from the database?')) {
+                clearTestMutation.mutate()
+              }
+            }}
+            disabled={clearTestMutation.isPending}
+            className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 border-destructive/30"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Clean Fake/Test Enquiries</span>
+          </Button>
+          <span className="text-xs bg-muted px-3 py-1.5 rounded-full text-muted-foreground font-medium">
             {data?.total || 0} total enquiries
           </span>
         </div>
@@ -245,6 +280,19 @@ export function AdminEnquiriesPage() {
                               </DropdownMenuItem>
                             )
                           })}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
+                            onClick={() => {
+                              if (confirm(`Delete enquiry from "${enquiry.name}"? This action cannot be undone.`)) {
+                                deleteMutation.mutate({ id: enquiry.id })
+                              }
+                            }}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Delete Enquiry</span>
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

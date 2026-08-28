@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingBag, Search, LogOut, UserPlus, Settings, ArrowRight } from 'lucide-react'
-import { useState } from 'react'
+import { Menu, X, ShoppingBag, Search, LogOut, Settings, ArrowRight, MessageCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -14,44 +14,61 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { useEnquiryBasket } from '@/hooks/useEnquiryBasket'
+import { useEnquiryList } from '@/hooks/useEnquiryBasket'
 import { useAuth, useLogout } from '@/hooks/useAuth'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 const navigation = [
   { name: 'Home', href: '/' },
-  { name: 'Shop', href: '/shop' },
   { name: 'Rental Ornaments', href: '/rental-ornaments' },
-  { name: 'Fashion Jewellery', href: '/shop?category=jewellery' },
-  { name: 'Cosmetics', href: '/shop?category=cosmetics' },
-  { name: 'Occasion Ornaments', href: '/shop?category=ornaments' },
-  { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
+  { name: 'How Rental Works', href: '/#rental-process' },
+  { name: 'About Sheaura', href: '/about' },
+  { name: 'Contact & WhatsApp', href: '/contact' },
+  { name: 'Rental Policies', href: '/rental-policy' },
 ]
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { itemCount } = useEnquiryBasket()
+  const { itemCount } = useEnquiryList()
   const { user, isLoading, isAuthenticated } = useAuth()
   const { data: settings } = useSiteSettings()
   const logout = useLogout()
 
   const brandName = settings?.brandName || 'Sheaura'
-  const logoUrl = settings?.logoUrl || ''
-  const logoAltText = settings?.logoAltText || `${brandName} Logo`
-  const announcementEnabled = settings?.announcementEnabled === 'true' && Boolean(settings?.announcementText)
+  const logoUrl = settings?.siteLogoMediaId
+    ? `/api/media/${settings.siteLogoMediaId}`
+    : settings?.siteLogoUrl || null
+  const logoAltText = settings?.siteLogoAltText || `${brandName} Logo`
+  const announcementEnabled = settings?.announcementEnabled === 'true' && !!settings?.announcementText
+
+  // Lock body scroll when mobile menu is open to ensure smooth scrolling inside menu
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isMenuOpen])
+
+  // Close mobile menu on page navigation
+  useEffect(() => {
+    setIsMenuOpen(false)
+  }, [location.pathname])
 
   const isActive = (href: string) => {
-    if (href === '/') return location.pathname === '/'
-    if (href === '/rental-ornaments') {
-      return location.pathname === '/rental-ornaments' || location.search.includes('mode=rental')
+    if (href === '/') {
+      return location.pathname === '/'
     }
-    if (href.includes('?')) {
-      const [path, query] = href.split('?')
-      return location.pathname === path && location.search.includes(query)
+    if (href.includes('#')) {
+      const [path] = href.split('#')
+      return location.pathname === path
     }
     return location.pathname.startsWith(href)
   }
@@ -59,11 +76,6 @@ export function Header() {
   const handleLogout = async () => {
     await logout.mutateAsync()
     navigate('/')
-  }
-
-  const handleGoogleLogin = () => {
-    const apiUrl = (import.meta as any).env?.VITE_API_URL || ''
-    window.location.href = `${apiUrl}/auth/google`
   }
 
   return (
@@ -92,7 +104,7 @@ export function Header() {
               <img
                 src={logoUrl}
                 alt={logoAltText}
-                className="h-8 md:h-9 w-auto max-w-[150px] object-contain"
+                className="h-8 md:h-9 w-auto max-w-[130px] sm:max-w-[160px] object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
                   const fallbackEl = document.getElementById('header-brand-name-fallback')
@@ -102,24 +114,24 @@ export function Header() {
             ) : null}
             <span
               id="header-brand-name-fallback"
-              className={cn(
-                'font-display text-xl font-medium text-foreground tracking-tight',
-                logoUrl ? 'hidden' : 'inline-block'
-              )}
+              style={{ display: logoUrl ? 'none' : 'inline-block' }}
+              className="font-display text-xl sm:text-2xl font-bold tracking-tight text-primary uppercase"
             >
               {brandName}
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex lg:items-center lg:space-x-6 xl:space-x-8">
+          <div className="hidden lg:flex items-center space-x-7">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary whitespace-nowrap',
-                  isActive(item.href) ? 'text-primary font-semibold' : 'text-foreground/80'
+                  'text-sm font-medium transition-colors hover:text-primary',
+                  isActive(item.href)
+                    ? 'text-primary font-semibold'
+                    : 'text-muted-foreground'
                 )}
               >
                 {item.name}
@@ -127,173 +139,233 @@ export function Header() {
             ))}
           </div>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
-            {/* Search */}
+          {/* Right Action Icons */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Search Button */}
             <button
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 rounded-lg text-foreground/60 hover:bg-accent hover:text-foreground transition-colors"
-              aria-label="Search products"
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Search rental catalogue"
             >
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Enquiry Basket */}
+            {/* Rental Enquiry List Button */}
             <Link
               to="/enquiry"
-              className="relative p-2 rounded-lg text-foreground/60 hover:bg-accent hover:text-foreground transition-colors"
-              aria-label={`Enquiry Basket (${itemCount} items)`}
+              className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label={`Rental Enquiry List, ${itemCount} items`}
             >
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                  {itemCount > 9 ? '9+' : itemCount}
+                <span className="absolute top-1 right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] sm:text-xs font-bold shadow-sm">
+                  {itemCount}
                 </span>
               )}
             </Link>
 
-            {/* User Menu */}
-            {isLoading ? (
-              <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
-            ) : isAuthenticated && user ? (
-              <div className="flex items-center gap-3">
-                {user.role === 'admin' && (
-                  <Link to="/admin">
-                    <Button size="sm" variant="default" className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm">
-                      <Settings className="h-3.5 w-3.5" />
-                      <span>Admin Panel</span>
-                    </Button>
-                  </Link>
-                )}
+            {/* Admin Controls (Only when authenticated as admin) */}
+            {!isLoading && isAuthenticated && user?.role === 'admin' && (
+              <div className="hidden sm:flex items-center gap-2">
+                <Link to="/admin">
+                  <Button size="sm" variant="default" className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm text-xs h-8">
+                    <Settings className="h-3.5 w-3.5" />
+                    <span>Admin</span>
+                  </Button>
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-accent transition-colors" aria-label="Account menu">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.image || undefined} alt={user.name || 'User'} />
-                        <AvatarFallback>{user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}</AvatarFallback>
+                    <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-accent transition-colors min-h-[44px] min-w-[44px]" aria-label="Admin menu">
+                      <Avatar className="h-7 w-7">
+                        <AvatarImage src={user.image || undefined} alt={user.name || 'Admin'} />
+                        <AvatarFallback className="text-xs bg-amber-100 text-amber-800">A</AvatarFallback>
                       </Avatar>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
-                          {user.role === 'admin' && (
-                            <span className="text-[10px] bg-amber-500/15 text-amber-600 font-semibold px-1.5 py-0.5 rounded uppercase">Admin</span>
-                          )}
-                        </div>
-                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-                      </div>
+                  <DropdownMenuContent className="w-48" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal text-xs">
+                      <p className="font-medium truncate">{user.name || 'Admin'}</p>
+                      <p className="text-muted-foreground truncate">{user.email}</p>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/enquiry" className="flex w-full items-center">
-                        <ShoppingBag className="h-4 w-4 mr-2" />
-                        My Enquiries
+                      <Link to="/admin" className="text-xs cursor-pointer">
+                        <Settings className="h-3.5 w-3.5 mr-2" />
+                        Admin Dashboard
                       </Link>
                     </DropdownMenuItem>
-                    {user.role === 'admin' && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="flex w-full items-center font-medium text-amber-600">
-                          <Settings className="h-4 w-4 mr-2" />
-                          Admin Dashboard
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                      <LogOut className="h-4 w-4 mr-2" />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive text-xs cursor-pointer">
+                      <LogOut className="h-3.5 w-3.5 mr-2" />
                       Log out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-            ) : (
-              <Button variant="outline" size="sm" onClick={handleGoogleLogin} className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                <span>Sign in</span>
-              </Button>
             )}
-          </div>
 
-          {/* Three-Bar / Mobile Menu Button */}
-          <button
-            className="lg:hidden p-2 rounded-lg text-foreground hover:bg-accent transition-colors"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
-            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            {/* Three-Bar / Mobile Menu Toggle Button */}
+            <button
+              className={cn(
+                "lg:hidden p-2.5 rounded-xl border border-border/80 bg-background text-foreground hover:bg-accent hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-primary shrink-0",
+                isMenuOpen && "bg-accent text-primary border-primary/40"
+              )}
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6 stroke-[2.2] text-foreground" />
+              ) : (
+                <Menu className="h-6 w-6 stroke-[2.2] text-foreground" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Three-Bar Menu */}
+        {/* Mobile Three-Bar Menu Full Drawer (100% Scrollable & Touch Friendly) */}
         {isMenuOpen && (
-          <div id="mobile-menu" className="lg:hidden py-4 border-t border-border animate-slide-down">
-            <div className="flex flex-col space-y-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    'px-3 py-2.5 text-base font-medium rounded-lg transition-colors',
-                    isActive(item.href)
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-foreground hover:bg-accent'
-                  )}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <Separator className="my-2" />
-              <div className="px-2">
-                <Link
-                  to="/enquiry"
-                  className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="flex items-center gap-2">
-                    <ShoppingBag className="h-5 w-5" />
-                    <span>Enquiry Basket</span>
-                  </span>
-                  {itemCount > 0 && (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                      {itemCount}
-                    </span>
-                  )}
-                </Link>
-              </div>
-              <div className="px-2 pt-2 space-y-2">
-                {isAuthenticated && user ? (
-                  <>
-                    {user.role === 'admin' && (
-                      <Link
-                        to="/admin"
-                        className="flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg text-amber-600 bg-amber-500/10 hover:bg-amber-500/20"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <Settings className="h-5 w-5" />
-                        Admin Dashboard
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-base font-medium rounded-lg text-destructive hover:bg-destructive/10 text-left"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      Log out
-                    </button>
-                  </>
-                ) : (
-                  <Button variant="outline" className="w-full justify-center gap-2" onClick={handleGoogleLogin}>
-                    <UserPlus className="h-4 w-4" />
-                    <span>Sign in with Google</span>
-                  </Button>
+          <div
+            id="mobile-menu"
+            className={cn(
+              "lg:hidden fixed inset-x-0 bottom-0 z-50 bg-background/98 backdrop-blur-md overflow-y-auto overscroll-contain border-t border-border shadow-2xl flex flex-col justify-between",
+              announcementEnabled ? "top-[calc(4rem+2rem)]" : "top-16"
+            )}
+            style={{ height: announcementEnabled ? 'calc(100dvh - 6rem)' : 'calc(100dvh - 4rem)' }}
+          >
+            <div className="container-sheaura py-5 space-y-4">
+              {/* Quick Mobile Search */}
+              <div className="relative">
+                <Input
+                  type="search"
+                  placeholder="Search rental ornaments or codes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      setIsMenuOpen(false)
+                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
+                    }
+                  }}
+                  className="w-full pl-10 pr-12 h-11 text-sm bg-muted/40 rounded-xl"
+                />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false)
+                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-xs font-medium"
+                  >
+                    Go
+                  </button>
                 )}
               </div>
+
+              {/* Primary Navigation Links */}
+              <div className="flex flex-col space-y-1">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={cn(
+                      'flex items-center justify-between px-4 py-3 text-base font-medium rounded-xl transition-colors min-h-[48px]',
+                      isActive(item.href)
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-foreground hover:bg-accent active:bg-accent/80'
+                    )}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span>{item.name}</span>
+                    <ArrowRight className="h-4 w-4 opacity-40" />
+                  </Link>
+                ))}
+              </div>
+
+              <Separator />
+
+              {/* Rental Enquiry List Mobile Card */}
+              <Link
+                to="/enquiry"
+                className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 active:bg-emerald-500/20 transition-colors min-h-[54px]"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
+                    <ShoppingBag className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-foreground block text-sm">Rental Enquiry List</span>
+                    <span className="text-xs text-muted-foreground">View selected item codes</span>
+                  </div>
+                </div>
+                {itemCount > 0 ? (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold shadow-sm">
+                    {itemCount}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">0 items</span>
+                )}
+              </Link>
+
+              {/* WhatsApp Direct Connect in Menu */}
+              {settings?.whatsappNumber && (
+                <a
+                  href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello Sheaura, I am browsing your rental ornaments catalogue and have an enquiry.')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-4 rounded-xl bg-muted/40 border border-border hover:bg-muted/70 transition-colors min-h-[54px]"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <span className="font-display font-medium text-foreground block text-sm">Direct WhatsApp Enquiry</span>
+                      <span className="text-xs text-muted-foreground">{settings.whatsappNumber}</span>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </a>
+              )}
+
+              {/* Admin Section (when authenticated) */}
+              {isAuthenticated && user?.role === 'admin' && (
+                <div className="pt-2 space-y-2 border-t border-border">
+                  <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider block px-1">
+                    Sheaura Admin
+                  </span>
+                  <Link
+                    to="/admin"
+                    className="flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 min-h-[48px]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium rounded-xl text-destructive hover:bg-destructive/10 text-left min-h-[48px]"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Log Out ({user.email})</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Drawer Footer */}
+            <div className="p-6 border-t border-border/80 bg-muted/20 text-center space-y-1 mt-auto">
+              <p className="text-xs font-medium text-foreground">Sheaura Rental Ornaments</p>
+              <p className="text-[11px] text-muted-foreground">
+                Exquisite Imitation & Occasion Jewellery on Rent
+              </p>
             </div>
           </div>
         )}
@@ -301,39 +373,37 @@ export function Header() {
         {/* Search Modal */}
         {isSearchOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center pt-16 md:pt-24 bg-black/50 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 z-50 flex items-start justify-center pt-16 md:pt-24 bg-black/50 backdrop-blur-sm animate-fade-in px-4"
             onClick={() => setIsSearchOpen(false)}
           >
             <div
-              className="w-full max-w-md mx-4 bg-background rounded-xl shadow-xl overflow-hidden animate-slide-down"
+              className="w-full max-w-md bg-background rounded-xl shadow-xl overflow-hidden animate-slide-down border border-border"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 border-b border-border flex items-center space-x-2">
-                <Search className="h-5 w-5 text-muted-foreground" />
+              <div className="p-4 flex items-center gap-2 border-b border-border">
+                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
                 <Input
-                  placeholder="Search products..."
-                  className="flex-1 bg-transparent border-0 focus-visible:ring-0"
                   autoFocus
+                  placeholder="Search rental ornaments by name or code..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const value = (e.target as HTMLInputElement).value
-                      if (value.trim()) {
-                        setIsSearchOpen(false)
-                        navigate(`/shop?search=${encodeURIComponent(value.trim())}`)
-                      }
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      setIsSearchOpen(false)
+                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
                     }
                   }}
+                  className="border-0 focus-visible:ring-0 text-sm sm:text-base h-10 px-0 shadow-none"
                 />
                 <button
                   onClick={() => setIsSearchOpen(false)}
-                  className="p-1 text-muted-foreground hover:text-foreground"
-                  aria-label="Close search"
+                  className="p-1 rounded text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="p-4">
-                <p className="text-sm text-muted-foreground">Type a keyword and press Enter to search catalogue.</p>
+              <div className="p-4 bg-muted/20 text-xs text-muted-foreground">
+                <p>Press Enter to view results, or search by code like &quot;SH-001&quot; or category name.</p>
               </div>
             </div>
           </div>

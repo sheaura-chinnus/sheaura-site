@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Save, X, Loader2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Save, X, Loader2, Star } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -353,11 +354,19 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => startEdit(category)}>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            to={`/admin/products?category=${category.slug}&featured=true`}
+                            title={`View & manage featured products in ${category.name}`}
+                          >
+                            <Button variant="ghost" size="icon" className="text-amber-600 hover:text-amber-700 hover:bg-amber-500/10">
+                              <Star className="h-4 w-4 fill-amber-500/30 text-amber-600" />
+                            </Button>
+                          </Link>
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(category)} title="Edit category">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(category.id, category.name)} disabled={deleteMutation.isPending}>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(category.id, category.name)} disabled={deleteMutation.isPending} title="Delete category">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>

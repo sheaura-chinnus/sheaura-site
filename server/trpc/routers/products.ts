@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { router, publicProcedure, adminProcedure } from '../index.js'
-import { db } from '../../db/index.js'
+import { db, checkHasItemCodeColumn } from '../../db/index.js'
 import { products, productImages, categories, enquiryItems } from '../../db/schema.js'
-import { eq, and, or, ilike, desc, asc, count, sql } from 'drizzle-orm'
+import { eq, and, or, ilike, desc, asc, count, sql, inArray } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { audit } from '../audit.js'
 
@@ -20,16 +20,17 @@ const productFilterSchema = z.object({
   sortBy: z.enum(['featured', 'newest', 'price_asc', 'price_desc']).default('featured'),
   page: z.number().min(1).default(1),
   limit: z.number().min(1).max(50).default(12),
-})
+}).optional().default({})
 
 const createProductSchema = z.object({
+  itemCode: z.string().min(2).max(50).regex(/^[A-Za-z0-9-_]+$/, 'Item code must contain only letters, numbers, hyphens, or underscores').optional(),
   name: z.string().min(1).max(255),
   slug: z.string().min(1).max(255).regex(/^[a-z0-9-]+$/),
   categoryId: z.string().uuid(),
   description: z.string().optional(),
   shortDescription: z.string().max(500).optional(),
   tags: z.array(z.string()).default([]),
-  mode: z.enum(['sale', 'rental', 'both']).default('sale'),
+  mode: z.enum(['sale', 'rental', 'both']).default('rental'),
   salePrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(), // decimal as string
   rentalPrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   rentalDurationDays: z.number().int().positive().optional(),
@@ -44,6 +45,13 @@ const createProductSchema = z.object({
 const updateProductSchema = createProductSchema.partial().extend({
   id: z.string().uuid(),
 })
+
+async function getItemCodeSql() {
+  const hasCol = await checkHasItemCodeColumn()
+  return hasCol
+    ? sql<string>`coalesce(${products.itemCode}, 'SH-' || upper(substring(replace(${products.id}::text, '-', ''), 1, 6)))`
+    : sql<string>`'SH-' || upper(substring(replace(${products.id}::text, '-', ''), 1, 6))`
+}
 
 export const productsRouter = router({
   // Public: Get all products with filters
@@ -137,10 +145,13 @@ export const productsRouter = router({
           break
       }
 
+      const itemCodeSql = await getItemCodeSql()
+
       const [items, totalResult] = await Promise.all([
         db
           .select({
             id: products.id,
+            itemCode: itemCodeSql,
             name: products.name,
             slug: products.slug,
             categoryId: products.categoryId,
@@ -188,11 +199,22 @@ export const productsRouter = router({
 
   // Public: Get featured products
   getFeatured: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(20).default(8) }))
+    .input(z.object({ limit: z.number().min(1).max(50).default(8), categoryId: z.string().uuid().optional() }))
     .query(async ({ input }) => {
+      const itemCodeSql = await getItemCodeSql()
+      const conditions = [
+        eq(products.isPublished, true),
+        eq(products.isFeatured, true),
+        eq(products.availability, 'available'),
+      ]
+      if (input.categoryId) {
+        conditions.push(eq(products.categoryId, input.categoryId))
+      }
+
       const items = await db
         .select({
           id: products.id,
+          itemCode: itemCodeSql,
           name: products.name,
           slug: products.slug,
           shortDescription: products.shortDescription,
@@ -218,7 +240,7 @@ export const productsRouter = router({
           productImages,
           and(eq(productImages.productId, products.id), eq(productImages.isPrimary, true))
         )
-        .where(and(eq(products.isPublished, true), eq(products.isFeatured, true), eq(products.availability, 'available')))
+        .where(and(...conditions))
         .orderBy(desc(products.createdAt))
         .limit(input.limit)
 
@@ -229,9 +251,11 @@ export const productsRouter = router({
   getBySlug: publicProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {
+      const itemCodeSql = await getItemCodeSql()
       const product = await db
         .select({
           id: products.id,
+          itemCode: itemCodeSql,
           name: products.name,
           slug: products.slug,
           categoryId: products.categoryId,
@@ -287,9 +311,11 @@ export const productsRouter = router({
   getRelated: publicProcedure
     .input(z.object({ productId: z.string().uuid(), categoryId: z.string().uuid().optional(), limit: z.number().min(1).max(10).default(4) }))
     .query(async ({ input }) => {
+      const itemCodeSql = await getItemCodeSql()
       const items = await db
         .select({
           id: products.id,
+          itemCode: itemCodeSql,
           name: products.name,
           slug: products.slug,
           shortDescription: products.shortDescription,
@@ -401,10 +427,13 @@ export const productsRouter = router({
           break
       }
 
+      const itemCodeSql = await getItemCodeSql()
+
       const [items, totalResult] = await Promise.all([
         db
           .select({
             id: products.id,
+            itemCode: itemCodeSql,
             name: products.name,
             slug: products.slug,
             categoryId: products.categoryId,
@@ -453,9 +482,11 @@ export const productsRouter = router({
   adminGetById: adminProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ input }) => {
+      const itemCodeSql = await getItemCodeSql()
       const product = await db
         .select({
           id: products.id,
+          itemCode: itemCodeSql,
           name: products.name,
           slug: products.slug,
           categoryId: products.categoryId,
@@ -518,10 +549,38 @@ export const productsRouter = router({
         throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
       }
 
-      const [product] = await db.insert(products).values(input).returning()
+      const hasCol = await checkHasItemCodeColumn()
+
+      // Normalize or generate itemCode
+      let itemCode = input.itemCode?.trim().toUpperCase()
+      if (!itemCode) {
+        const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase()
+        itemCode = `SH-${randomSuffix}`
+      }
+
+      // Check itemCode uniqueness
+      if (hasCol) {
+        const existingCode = await db
+          .select({ id: products.id })
+          .from(products)
+          .where(sql`upper(${products.itemCode}) = ${itemCode}`)
+          .limit(1)
+        if (existingCode.length > 0) {
+          throw new TRPCError({ code: 'CONFLICT', message: `Item code "${itemCode}" is already in use. Please enter a unique item code.` })
+        }
+      }
+
+      const insertValues: any = { ...input }
+      if (hasCol) {
+        insertValues.itemCode = itemCode
+      } else {
+        delete insertValues.itemCode
+      }
+
+      const [product] = await db.insert(products).values(insertValues).returning()
 
       // Audit log
-      await audit.productCreated(ctx, product.id, input)
+      await audit.productCreated(ctx, product.id, { ...input, itemCode })
 
       return product
     }),
@@ -543,6 +602,26 @@ export const productsRouter = router({
         const existing = await db.select({ id: products.id }).from(products).where(and(eq(products.slug, data.slug), sql`${products.id} != ${id}`)).limit(1)
         if (existing.length > 0) {
           throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+        }
+      }
+
+      const hasCol = await checkHasItemCodeColumn()
+
+      // Check itemCode uniqueness if changing
+      if (data.itemCode) {
+        const itemCode = data.itemCode.trim().toUpperCase()
+        if (hasCol) {
+          const existingCode = await db
+            .select({ id: products.id })
+            .from(products)
+            .where(and(sql`upper(${products.itemCode}) = ${itemCode}`, sql`${products.id} != ${id}`))
+            .limit(1)
+          if (existingCode.length > 0) {
+            throw new TRPCError({ code: 'CONFLICT', message: `Item code "${itemCode}" is already in use. Please enter a unique item code.` })
+          }
+          data.itemCode = itemCode
+        } else {
+          delete data.itemCode
         }
       }
 
@@ -596,6 +675,28 @@ export const productsRouter = router({
       await audit.productFeaturedToggled(ctx, input.id, input.isFeatured)
 
       return product
+    }),
+
+  // Admin: Remove featured status from all products in a category (or all categories)
+  removeFeaturedFromCategory: adminProcedure
+    .input(z.object({ categoryId: z.string().uuid().optional() }))
+    .mutation(async ({ input, ctx }) => {
+      const conditions = [eq(products.isFeatured, true)]
+      if (input.categoryId) {
+        conditions.push(eq(products.categoryId, input.categoryId))
+      }
+
+      const updated = await db
+        .update(products)
+        .set({ isFeatured: false, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning({ id: products.id, name: products.name })
+
+      for (const item of updated) {
+        await audit.productFeaturedToggled(ctx, item.id, false)
+      }
+
+      return { success: true, count: updated.length }
     }),
 
   // Admin: Archive product (soft delete)
@@ -734,5 +835,75 @@ export const productsRouter = router({
       await audit.imagesReordered(ctx, input.productId, input.imageIds)
 
       return { success: true }
+    }),
+
+  // Admin: Bulk update products (catalogue category, availability, isFeatured, isPublished)
+  bulkUpdateProducts: adminProcedure
+    .input(z.object({
+      ids: z.array(z.string().uuid()).min(1),
+      categoryId: z.string().uuid().optional(),
+      availability: z.enum(['available', 'low_stock', 'out_of_stock', 'discontinued']).optional(),
+      isFeatured: z.boolean().optional(),
+      isPublished: z.boolean().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { ids, ...updates } = input
+      const updateData: Record<string, unknown> = { updatedAt: new Date() }
+      if (updates.categoryId !== undefined) updateData.categoryId = updates.categoryId
+      if (updates.availability !== undefined) updateData.availability = updates.availability
+      if (updates.isFeatured !== undefined) updateData.isFeatured = updates.isFeatured
+      if (updates.isPublished !== undefined) updateData.isPublished = updates.isPublished
+
+      const updated = await db
+        .update(products)
+        .set(updateData)
+        .where(inArray(products.id, ids))
+        .returning()
+
+      for (const item of updated) {
+        await audit.productUpdated(ctx, item.id, {}, updateData)
+      }
+
+      return { count: updated.length, items: updated }
+    }),
+
+  // Admin: Bulk delete products
+  bulkDeleteProducts: adminProcedure
+    .input(z.object({
+      ids: z.array(z.string().uuid()).min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const { ids } = input
+      // Delete images first
+      await db.delete(productImages).where(inArray(productImages.productId, ids))
+      const deleted = await db
+        .delete(products)
+        .where(inArray(products.id, ids))
+        .returning({ id: products.id, name: products.name })
+
+      for (const item of deleted) {
+        await audit.productDeleted(ctx, item.id, { name: item.name })
+      }
+
+      return { count: deleted.length }
+    }),
+
+  // Admin: Clear all demo / existing products from catalogue
+  clearAllProducts: adminProcedure
+    .mutation(async ({ ctx }) => {
+      // 1. Delete all images
+      await db.delete(productImages)
+      // 2. Clear enquiry items to prevent FK constraints
+      await db.delete(enquiryItems)
+      // 3. Delete all products
+      const deleted = await db
+        .delete(products)
+        .returning({ id: products.id, name: products.name })
+
+      for (const item of deleted) {
+        await audit.productDeleted(ctx, item.id, { name: item.name })
+      }
+
+      return { count: deleted.length }
     }),
 })

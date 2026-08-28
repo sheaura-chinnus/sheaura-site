@@ -30,10 +30,10 @@ async function canAccessEnquiry(ctx: { user: { id: string; role: string } }, enq
 }
 
 const createEnquirySchema = z.object({
-  name: z.string().min(1).max(255),
-  email: z.string().email().max(255),
+  name: z.string().min(1).max(255).default('Rental Guest'),
+  email: z.string().email().max(255).optional().or(z.literal('')).default('guest@sheaura.com'),
   phone: z.string().max(50).optional(),
-  preferredContact: z.enum(['email', 'phone', 'whatsapp']).optional(),
+  preferredContact: z.enum(['email', 'phone', 'whatsapp']).default('whatsapp'),
   eventDate: z.date().optional(),
   returnDate: z.date().optional(),
   deliveryPickup: z.enum(['delivery', 'pickup']).optional(),
@@ -41,7 +41,7 @@ const createEnquirySchema = z.object({
   items: z.array(z.object({
     productId: z.string().uuid(),
     quantity: z.number().int().min(1).default(1),
-    mode: z.enum(['sale', 'rental']),
+    mode: z.enum(['sale', 'rental']).default('rental'),
   })).min(1),
 })
 
@@ -106,8 +106,9 @@ export const enquiriesRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not for sale` })
         }
 
-        if (item.mode === 'rental' && !['rental', 'both'].includes(product.mode)) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not for rental` })
+        // In Sheaura rental-only catalogue, all catalog pieces can be enquired about for rental
+        if (item.mode === 'rental' && product.mode !== 'rental' && product.mode !== 'both' && product.mode !== 'sale') {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not available for rental enquiry` })
         }
       }
 
@@ -365,11 +366,14 @@ export const enquiriesRouter = router({
           mode: enquiryItems.mode,
           unitPrice: enquiryItems.unitPrice,
           productId2: products.id,
+          productItemCode: products.itemCode,
           productName: products.name,
           productSlug: products.slug,
           productMode: products.mode,
           productSalePrice: products.salePrice,
           productRentalPrice: products.rentalPrice,
+          productStockQuantity: products.stockQuantity,
+          productAvailability: products.availability,
           imageUrl: productImages.url,
           imageAltText: productImages.altText,
         })
@@ -390,11 +394,14 @@ export const enquiriesRouter = router({
         unitPrice: item.unitPrice,
         product: {
           id: item.productId2,
+          itemCode: item.productItemCode,
           name: item.productName,
           slug: item.productSlug,
           mode: item.productMode,
           salePrice: item.productSalePrice,
           rentalPrice: item.productRentalPrice,
+          stockQuantity: item.productStockQuantity ?? 0,
+          availability: item.productAvailability ?? 'available',
           images: item.imageUrl ? [{
             url: item.imageUrl,
             altText: item.imageAltText,
@@ -408,7 +415,7 @@ export const enquiriesRouter = router({
       }
     }),
 
-  // Admin/Shop Order Receiver: Update enquiry status
+  // Admin/Shop Order Receiver: Update enquiry status (auto syncs product availability when sent to rental)
   updateEnquiryStatus: shopOrderReceiverProcedure
     .input(updateEnquiryStatusSchema)
     .mutation(async ({ input, ctx }) => {
@@ -434,10 +441,93 @@ export const enquiriesRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Enquiry not found' })
       }
 
+      // Auto-update availability for rental items
+      const isSendingToRental = status === 'reserved' || status === 'fulfilled'
+      const isReleasingRental = (oldStatus === 'reserved' || oldStatus === 'fulfilled') && (status === 'cancelled' || status === 'rejected')
+
+      if (isSendingToRental || isReleasingRental) {
+        const enqItems = await db
+          .select({ productId: enquiryItems.productId })
+          .from(enquiryItems)
+          .where(eq(enquiryItems.enquiryId, id))
+
+        const targetProductIds = enqItems.map(i => i.productId).filter(Boolean) as string[]
+
+        if (targetProductIds.length > 0) {
+          const newAvailability = isSendingToRental ? 'out_of_stock' : 'available'
+          await db
+            .update(products)
+            .set({ availability: newAvailability, updatedAt: new Date() })
+            .where(inArray(products.id, targetProductIds))
+
+          for (const pid of targetProductIds) {
+            await audit.productUpdated(ctx, pid, {}, { availability: newAvailability, reason: `Enquiry ${id} status set to ${status}` })
+          }
+        }
+      }
+
       // Audit log
       await audit.enquiryStatusUpdated(ctx, id, oldStatus, status, adminNotes)
 
       return enquiry
+    }),
+
+  // Admin/Shop Order Receiver: Explicitly mark all items in an enquiry Out of Stock
+  markItemsOutOfStock: shopOrderReceiverProcedure
+    .input(z.object({ enquiryId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const hasAccess = await canAccessEnquiry(ctx, input.enquiryId)
+      if (!hasAccess) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized to manage this enquiry' })
+      }
+
+      const enqItems = await db
+        .select({ productId: enquiryItems.productId })
+        .from(enquiryItems)
+        .where(eq(enquiryItems.enquiryId, input.enquiryId))
+
+      const targetProductIds = enqItems.map(i => i.productId).filter(Boolean) as string[]
+      if (targetProductIds.length > 0) {
+        await db
+          .update(products)
+          .set({ availability: 'out_of_stock', updatedAt: new Date() })
+          .where(inArray(products.id, targetProductIds))
+
+        for (const pid of targetProductIds) {
+          await audit.productUpdated(ctx, pid, {}, { availability: 'out_of_stock', reason: `Manual admin override from enquiry ${input.enquiryId}` })
+        }
+      }
+
+      return { count: targetProductIds.length }
+    }),
+
+  // Admin/Shop Order Receiver: Explicitly mark all items in an enquiry Available (Returned)
+  markItemsAvailable: shopOrderReceiverProcedure
+    .input(z.object({ enquiryId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const hasAccess = await canAccessEnquiry(ctx, input.enquiryId)
+      if (!hasAccess) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized to manage this enquiry' })
+      }
+
+      const enqItems = await db
+        .select({ productId: enquiryItems.productId })
+        .from(enquiryItems)
+        .where(eq(enquiryItems.enquiryId, input.enquiryId))
+
+      const targetProductIds = enqItems.map(i => i.productId).filter(Boolean) as string[]
+      if (targetProductIds.length > 0) {
+        await db
+          .update(products)
+          .set({ availability: 'available', updatedAt: new Date() })
+          .where(inArray(products.id, targetProductIds))
+
+        for (const pid of targetProductIds) {
+          await audit.productUpdated(ctx, pid, {}, { availability: 'available', reason: `Manual admin override from enquiry ${input.enquiryId}` })
+        }
+      }
+
+      return { count: targetProductIds.length }
     }),
 
   // Admin: Assign enquiry to shop order receiver
@@ -491,5 +581,64 @@ export const enquiriesRouter = router({
         activeEnquiries: activeEnquiries[0].count,
         lowStockProducts: lowStockProducts[0].count,
       }
+    }),
+
+  // Admin: Delete an enquiry
+  deleteEnquiry: adminProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      await db.delete(enquiryItems).where(eq(enquiryItems.enquiryId, input.id))
+      const [deleted] = await db.delete(enquiries).where(eq(enquiries.id, input.id)).returning()
+
+      if (!deleted) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Enquiry not found' })
+      }
+
+      await audit.enquiryDeleted(ctx, input.id, deleted.name)
+      return { success: true, id: input.id }
+    }),
+
+  // Admin: Bulk delete enquiries
+  bulkDeleteEnquiries: adminProcedure
+    .input(z.object({ ids: z.array(z.string().uuid()) }))
+    .mutation(async ({ input, ctx }) => {
+      if (!input.ids.length) return { success: true, count: 0 }
+
+      await db.delete(enquiryItems).where(inArray(enquiryItems.enquiryId, input.ids))
+      const deleted = await db.delete(enquiries).where(inArray(enquiries.id, input.ids)).returning()
+
+      for (const item of deleted) {
+        await audit.enquiryDeleted(ctx, item.id, item.name)
+      }
+
+      return { success: true, count: deleted.length }
+    }),
+
+  // Admin: Clear fake or automated test enquiries
+  clearTestEnquiries: adminProcedure
+    .mutation(async ({ ctx }) => {
+      const testEnquiries = await db
+        .select({ id: enquiries.id, name: enquiries.name })
+        .from(enquiries)
+        .where(
+          or(
+            ilike(enquiries.email, '%example.com%'),
+            ilike(enquiries.name, '%Valid Customer%'),
+            ilike(enquiries.name, '%Priya Guest%'),
+            ilike(enquiries.name, '%Test User%')
+          )
+        )
+
+      const ids = testEnquiries.map(e => e.id)
+      if (!ids.length) return { success: true, count: 0 }
+
+      await db.delete(enquiryItems).where(inArray(enquiryItems.enquiryId, ids))
+      const deleted = await db.delete(enquiries).where(inArray(enquiries.id, ids)).returning()
+
+      for (const item of deleted) {
+        await audit.enquiryDeleted(ctx, item.id, item.name)
+      }
+
+      return { success: true, count: deleted.length }
     }),
 })

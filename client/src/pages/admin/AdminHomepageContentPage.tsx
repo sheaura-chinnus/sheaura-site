@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Save, Loader2, RefreshCw, Eye, Layout, Type, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Save, Loader2, RefreshCw, Eye, Layout, Type, Sparkles, StarOff, ArrowRight } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
 import { toast } from 'react-hot-toast'
 
 export function AdminHomepageContentPage() {
@@ -24,6 +26,50 @@ export function AdminHomepageContentPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Query currently featured products on the homepage and categories
+  const { data: featuredProducts, refetch: refetchFeatured } = trpc.products.getFeatured.useQuery({ limit: 50 })
+  const { data: categoriesList } = trpc.categories.getList.useQuery()
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('')
+
+  // 1-Click remove single item from featured
+  const toggleFeaturedMutation = trpc.products.toggleFeaturedStatus.useMutation({
+    onSuccess: (product) => {
+      toast.success(`Removed "${product.name}" from homepage featured products`)
+      refetchFeatured()
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to remove from featured')
+    },
+  })
+
+  // Bulk remove featured mutation
+  const removeFeaturedMutation = trpc.products.removeFeaturedFromCategory.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Removed ${res.count} product(s) from homepage featured products`)
+      refetchFeatured()
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Failed to remove featured products')
+    },
+  })
+
+  const handleRemoveSingleFeatured = (productId: string) => {
+    toggleFeaturedMutation.mutate({ id: productId, isFeatured: false })
+  }
+
+  const handleRemoveAllFeatured = () => {
+    const catName = selectedCategoryFilter
+      ? categoriesList?.find(c => c.id === selectedCategoryFilter)?.name || 'this category'
+      : 'all categories'
+    if (confirm(`Are you sure you want to remove all featured products in ${catName} from the main page?`)) {
+      removeFeaturedMutation.mutate({ categoryId: selectedCategoryFilter || undefined })
+    }
+  }
+
+  const displayedFeatured = selectedCategoryFilter
+    ? (featuredProducts || []).filter(p => p.category?.id === selectedCategoryFilter)
+    : (featuredProducts || [])
 
   // Populate form data once settings load
   useEffect(() => {
@@ -304,7 +350,133 @@ export function AdminHomepageContentPage() {
         </CardContent>
       </Card>
 
-      {/* 3. Section Titles & Descriptions */}
+      {/* 3. Featured Products on Main Page Manager */}
+      <Card className="card-sheaura">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span>Featured Products on Main Page</span>
+              </CardTitle>
+              <CardDescription>
+                View and remove products currently showcased in the featured collection on the main page.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link to="/admin/products?featured=true">
+                <Button variant="outline" size="sm" className="text-xs gap-1.5 h-9">
+                  <span>Manage in Products</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Category Filter & Bulk Remove */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-muted/30 rounded-xl border border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Filter by Category:</span>
+              <select
+                value={selectedCategoryFilter}
+                onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                className="text-xs h-8 px-2.5 rounded-lg border border-border bg-background text-foreground"
+              >
+                <option value="">All Categories ({featuredProducts?.length || 0})</option>
+                {(categoriesList || []).map((cat) => {
+                  const countInCat = (featuredProducts || []).filter(p => p.category?.id === cat.id).length
+                  return (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} ({countInCat})
+                    </option>
+                  )
+                })}
+              </select>
+            </div>
+
+            {displayedFeatured.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRemoveAllFeatured}
+                disabled={removeFeaturedMutation.isPending}
+                className="h-8 text-xs text-destructive hover:bg-destructive/10 border-destructive/30 self-start sm:self-auto gap-1"
+              >
+                <StarOff className="h-3.5 w-3.5" />
+                <span>Remove All {selectedCategoryFilter ? 'in Category' : ''} from Main Page</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Grid of Featured Products */}
+          {displayedFeatured.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {displayedFeatured.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-xl border border-border bg-card flex items-center justify-between gap-3 shadow-xs hover:border-border/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-12 h-12 rounded-lg bg-muted/60 overflow-hidden shrink-0 border border-border/60">
+                      {item.primaryImage?.url ? (
+                        <img src={item.primaryImage.url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground">
+                          Sheaura
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <Badge variant="outline" className="font-mono text-[10px] font-bold px-1.5 py-0">
+                        {item.itemCode || 'SH-ORNAMENT'}
+                      </Badge>
+                      <p className="text-xs font-medium text-foreground truncate mt-0.5" title={item.name}>
+                        {item.name}
+                      </p>
+                      <span className="text-[11px] text-muted-foreground block truncate">
+                        {item.category?.name || 'Uncategorized'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Instant Remove Button */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0 gap-1"
+                    onClick={() => handleRemoveSingleFeatured(item.id)}
+                    disabled={toggleFeaturedMutation.isPending}
+                    title="Remove this product from main page featured items"
+                  >
+                    <StarOff className="h-3.5 w-3.5" />
+                    <span className="hidden xs:inline">Remove</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border border-dashed border-border rounded-xl">
+              <StarOff className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">
+                {selectedCategoryFilter
+                  ? 'No featured products in this category on the main page.'
+                  : 'No products are currently featured on the main page.'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                You can feature products anytime from the Catalogue Ornaments page.
+              </p>
+              <Link to="/admin/products" className="inline-block mt-3">
+                <Button variant="outline" size="sm" className="text-xs">
+                  Go to Catalogue Products
+                </Button>
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 4. Section Titles & Descriptions */}
       <Card className="card-sheaura">
         <CardHeader>
           <CardTitle className="font-display text-lg flex items-center gap-2">

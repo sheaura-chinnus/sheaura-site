@@ -37,13 +37,14 @@ export const categories = pgTable('categories', {
 
 export const products = pgTable('products', {
   id: uuid('id').primaryKey().defaultRandom(),
+  itemCode: varchar('item_code', { length: 50 }).unique(),
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'restrict' }),
   description: text('description'),
   shortDescription: varchar('short_description', { length: 500 }),
   tags: text('tags').array().notNull().default([]),
-  mode: productModeEnum('mode').notNull().default('sale'),
+  mode: productModeEnum('mode').notNull().default('rental'),
   salePrice: decimal('sale_price', { precision: 10, scale: 2 }),
   rentalPrice: decimal('rental_price', { precision: 10, scale: 2 }),
   rentalDurationDays: integer('rental_duration_days'),
@@ -57,6 +58,7 @@ export const products = pgTable('products', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   slugIdx: uniqueIndex('products_slug_idx').on(table.slug),
+  itemCodeIdx: uniqueIndex('products_item_code_idx').on(table.itemCode),
   categoryIdx: index('products_category_idx').on(table.categoryId),
   publishedIdx: index('products_published_idx').on(table.isPublished),
   featuredIdx: index('products_featured_idx').on(table.isFeatured),

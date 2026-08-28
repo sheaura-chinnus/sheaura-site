@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { ScrollToTop } from '@/components/layout/ScrollToTop'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // Public pages
@@ -52,6 +53,7 @@ function AdminRoute() {
 export function App() {
   return (
     <ErrorBoundary>
+      <ScrollToTop />
       <Routes>
         {/* Public routes */}
         <Route element={<PublicLayout />}>

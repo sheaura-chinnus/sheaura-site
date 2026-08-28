@@ -16,16 +16,16 @@ export function HomePage() {
   const heroEyebrow = settings?.heroEyebrow || 'New Occasion Collection'
   const heroHeading = settings?.heroHeading || settings?.heroTitle || 'Timeless Elegance with Curated Imitation Jewellery & Rental Ornaments'
   const heroSupportingText = settings?.heroSupportingText || settings?.heroSubtitle || 'Discover handcrafted fashion jewellery, premium cosmetics, and grand ornaments curated for weddings, parties, and celebrations — available for purchase or rental.'
-  const heroPrimaryLabel = settings?.heroPrimaryCtaLabel || 'Shop Collection'
-  const heroPrimaryLink = settings?.heroPrimaryCtaLink || '/shop'
-  const heroSecondaryLabel = settings?.heroSecondaryCtaLabel || 'Rental Ornaments'
-  const heroSecondaryLink = settings?.heroSecondaryCtaLink || '/rental-ornaments'
+  const heroPrimaryLabel = settings?.heroPrimaryCtaLabel || 'Browse Rental Ornaments'
+  const heroPrimaryLink = settings?.heroPrimaryCtaLink || '/rental-ornaments'
+  const heroSecondaryLabel = settings?.heroSecondaryCtaLabel || 'How Rental Works'
+  const heroSecondaryLink = settings?.heroSecondaryCtaLink || '#rental-process'
 
   // Dynamic section titles and descriptions
   const rentalTitle = settings?.sectionRentalOrnamentsTitle || 'How Rental Works'
   const rentalDesc = settings?.sectionRentalOrnamentsDesc || 'Enjoy grand occasion ornaments for your celebrations with transparent security deposit terms'
-  const featuredTitle = settings?.sectionSaleProductsTitle || 'Featured Collection'
-  const featuredDesc = settings?.sectionSaleProductsDesc || 'Handcrafted imitation jewellery and occasion accessories from our latest arrivals'
+  const featuredTitle = settings?.sectionSaleProductsTitle || 'Featured Rental Ornaments'
+  const featuredDesc = settings?.sectionSaleProductsDesc || 'Handcrafted imitation jewellery and occasion rental ornaments from our curated catalogue'
 
   // Section visibility parsing with safe allowlist fallback
   let visibility: Record<string, boolean> = {
@@ -59,21 +59,21 @@ export function HomePage() {
                 <Sparkles className="h-3 w-3" />
                 <span>{heroEyebrow}</span>
               </Badge>
-              <h1 id="hero-title" className="font-display text-4xl sm:text-5xl lg:text-6xl font-medium tracking-tight text-foreground mb-6 text-balance">
+              <h1 id="hero-title" className="font-display text-3xl sm:text-4xl lg:text-6xl font-medium tracking-tight text-foreground mb-4 sm:mb-6 text-balance">
                 {heroHeading}
               </h1>
-              <p className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto text-balance">
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto text-balance">
                 {heroSupportingText}
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to={heroPrimaryLink}>
-                  <Button size="xl" className="group">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-sm sm:max-w-none mx-auto">
+                <Link to={heroPrimaryLink} className="w-full sm:w-auto">
+                  <Button size="xl" className="w-full sm:w-auto group">
                     {heroPrimaryLabel}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link to={heroSecondaryLink}>
-                  <Button size="xl" variant="outline" className="group">
+                <Link to={heroSecondaryLink} className="w-full sm:w-auto">
+                  <Button size="xl" variant="outline" className="w-full sm:w-auto group">
                     {heroSecondaryLabel}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -95,19 +95,19 @@ export function HomePage() {
         <section className="section-spacing bg-muted/30" aria-labelledby="trust-title">
           <div className="container-sheaura">
             <h2 id="trust-title" className="sr-only">Our Promise</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
               {[
                 { icon: Shield, title: 'Quality Craftsmanship', description: 'Every imitation piece verified for finish and durability' },
                 { icon: Sparkles, title: 'Occasion Styling', description: 'Curated bridal, festive, and party styling accents' },
                 { icon: Truck, title: 'Secure Insured Delivery', description: 'Careful packaging and pan-India tracked shipping' },
                 { icon: Headphones, title: 'Dedicated Support', description: 'Enquiry assistance and rental coordination team' },
               ].map((item, index) => (
-                <div key={index} className="text-center p-6">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 text-primary mb-4">
-                    <item.icon className="h-7 w-7" aria-hidden="true" />
+                <div key={index} className="text-center p-3 sm:p-6 bg-card/60 sm:bg-transparent rounded-xl sm:rounded-none border sm:border-0 border-border/60">
+                  <div className="inline-flex items-center justify-center w-11 h-11 sm:w-14 sm:h-14 rounded-xl bg-primary/10 text-primary mb-3 sm:mb-4">
+                    <item.icon className="h-5 w-5 sm:h-7 sm:w-7" aria-hidden="true" />
                   </div>
-                  <h3 className="font-medium text-foreground mb-2">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <h3 className="font-medium text-xs sm:text-base text-foreground mb-1 sm:mb-2">{item.title}</h3>
+                  <p className="text-[11px] sm:text-sm text-muted-foreground">{item.description}</p>
                 </div>
               ))}
             </div>
@@ -147,7 +147,7 @@ export function HomePage() {
                 </h2>
                 <p className="text-muted-foreground">{featuredDesc}</p>
               </div>
-              <Link to="/shop?featured=true" className="btn-outline self-start">
+              <Link to="/rental-ornaments?featured=true" className="btn-outline self-start">
                 View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </div>
@@ -169,7 +169,7 @@ export function HomePage() {
 
       {/* 5. Rental Process Section */}
       {visibility.rentalProcess !== false && (
-        <section className="section-spacing bg-muted/30" aria-labelledby="rental-title">
+        <section id="rental-process" className="section-spacing bg-muted/30 scroll-mt-20" aria-labelledby="rental-title">
           <div className="container-sheaura">
             <div className="text-center mb-12">
               <h2 id="rental-title" className="font-display text-3xl sm:text-4xl font-medium text-foreground mb-4">
@@ -181,10 +181,10 @@ export function HomePage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {[
-                { step: '01', title: 'Browse Ornaments', description: 'Choose bridal and festive pieces from our rental catalogue' },
-                { step: '02', title: 'Submit Enquiry', description: 'Select event and return dates with your enquiry basket' },
-                { step: '03', title: 'Confirm & Reserve', description: 'Our team verifies dates, pricing, and refundable security deposit' },
-                { step: '04', title: 'Wear & Return', description: 'Enjoy your special celebration and return hassle-free' },
+                { step: '01', title: 'Browse Ornaments', description: 'Explore bridal, temple, and celebration pieces with clear item codes' },
+                { step: '02', title: 'Enquire on WhatsApp', description: 'Click WhatsApp Enquiry or assemble multiple pieces in your Enquiry List' },
+                { step: '03', title: 'Confirm Availability', description: 'Our team verifies dates, fitting guidance, and refundable security deposit' },
+                { step: '04', title: 'Wear & Return', description: 'Celebrate with confidence and return your ornaments hassle-free' },
               ].map((item, index) => (
                 <div key={index} className="text-center p-6 relative">
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-lg">
@@ -207,21 +207,21 @@ export function HomePage() {
           <div className="container-sheaura">
             <div className="rounded-2xl bg-gradient-to-r from-primary/90 to-primary p-8 md:p-16 text-center text-primary-foreground">
               <h2 id="cta-title" className="font-display text-3xl sm:text-4xl font-medium mb-4">
-                Ready to Find Your Perfect Pieces?
+                Planning an Upcoming Celebration?
               </h2>
               <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                Explore our full catalogue of fashion jewellery, cosmetics, and rental ornaments for your upcoming occasion.
+                Browse our complete collection of rental ornaments and connect with our styling team on WhatsApp for availability and bookings.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link to="/shop">
+                <Link to="/rental-ornaments">
                   <Button size="lg" variant="secondary" className="group">
-                    Explore Catalogue
+                    Browse Rental Ornaments
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link to="/rental-ornaments">
+                <Link to="/enquiry">
                   <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
-                    Browse Rental Ornaments
+                    View Enquiry List
                   </Button>
                 </Link>
               </div>

@@ -21,6 +21,7 @@ import { WarrantyPolicyPage } from '@/pages/WarrantyPolicyPage'
 import { AccountPolicyPage } from '@/pages/AccountPolicyPage'
 import { AccountPage } from '@/pages/AccountPage'
 import { LoginPage } from '@/pages/LoginPage'
+import { StaffPortalPage } from '@/pages/StaffPortalPage'
 
 // Admin pages
 import { AdminLayout } from '@/components/layout/AdminLayout'
@@ -61,8 +62,13 @@ function AdminRoute() {
     )
   }
 
-  // If not authenticated or not an authorized staff role (admin or delivery receiver), return 404 Not Found
-  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'shop_order_receiver')) {
+  // If not authenticated, redirect to dedicated staff portal
+  if (!isAuthenticated) {
+    return <Navigate to="/staff-portal" replace />
+  }
+
+  // If authenticated but not staff role, show 404 Not Found
+  if (user?.role !== 'admin' && user?.role !== 'shop_order_receiver') {
     return <NotFoundPage />
   }
 
@@ -96,6 +102,11 @@ export function App() {
           <Route path="/my-orders" element={<Navigate to="/account" replace />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
+
+        {/* Dedicated Staff & Administrator Authentication Portal */}
+        <Route path="/staff-portal" element={<StaffPortalPage />} />
+        <Route path="/staff" element={<Navigate to="/staff-portal" replace />} />
+        <Route path="/admin/login" element={<Navigate to="/staff-portal" replace />} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<AdminRoute />}>

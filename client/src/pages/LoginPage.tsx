@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link, Navigate } from 'react-router-dom'
 import {
   ShieldCheck,
-  KeyRound,
   Lock,
   ArrowLeft,
   Eye,
@@ -24,7 +23,6 @@ import {
   useCustomerLogin,
   useCustomerRegister,
   useGoogleLogin,
-  useStaffLogin,
   useLogout,
   useSendOtp,
   useVerifyOtp
@@ -43,7 +41,6 @@ export function LoginPage() {
   const customerLogin = useCustomerLogin()
   const customerRegister = useCustomerRegister()
   const googleLogin = useGoogleLogin()
-  const staffLogin = useStaffLogin()
   const sendOtpMutation = useSendOtp()
   const verifyOtpMutation = useVerifyOtp()
   const logout = useLogout()
@@ -51,7 +48,7 @@ export function LoginPage() {
   // Welcome Incentive Modal
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false)
 
-  // Staff Portal mode state
+  // Redirect staff query parameters directly to dedicated Staff Portal
   const allowedStaffKeys = ['admin', 'enquiry', 'delivery', 'sheaura', 'staff', 'owner']
   const paramAccessKey = (
     searchParams.get('access') ||
@@ -61,9 +58,9 @@ export function LoginPage() {
     ''
   ).toLowerCase().trim()
 
-  const [isStaffMode, setIsStaffMode] = useState(
-    allowedStaffKeys.includes(paramAccessKey) || searchParams.get('portal') === 'staff'
-  )
+  if (allowedStaffKeys.includes(paramAccessKey) || searchParams.get('portal') === 'staff') {
+    return <Navigate to="/staff-portal" replace />
+  }
 
   // Customer Primary Tab: 'otp' | 'email'
   const [loginMethod, setLoginMethod] = useState<'otp' | 'email'>('otp')
@@ -86,10 +83,6 @@ export function LoginPage() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Staff form state
-  const [staffRole, setStaffRole] = useState<'admin' | 'shop_order_receiver'>('admin')
-  const [staffPassword, setStaffPassword] = useState('')
 
   // Countdown timer for OTP
   React.useEffect(() => {
@@ -242,32 +235,6 @@ export function LoginPage() {
     }
   }
 
-  // Handle Staff/Admin Login
-  const handleStaffLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!staffPassword.trim()) {
-      toast.error('Please enter the secret password')
-      return
-    }
-    setIsSubmitting(true)
-    try {
-      await staffLogin.mutateAsync({
-        password: staffPassword.trim(),
-        role: staffRole,
-      })
-      toast.success((staffRole === 'admin' ? 'Administrator' : 'Delivery Team') + ' authenticated!')
-      if (staffRole === 'shop_order_receiver') {
-        navigate('/admin/enquiries')
-      } else {
-        navigate(redirect.startsWith('/admin') ? redirect : '/admin')
-      }
-    } catch (err: any) {
-      toast.error(err?.message || 'Invalid password. Access denied.')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -312,75 +279,6 @@ export function LoginPage() {
               Sign Out
             </Button>
           </div>
-        </Card>
-      </div>
-    )
-  }
-
-  // Staff Authorization Portal Mode
-  if (isStaffMode) {
-    return (
-      <div className="container-sheaura py-12 lg:py-20 max-w-md mx-auto space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setIsStaffMode(false)}
-            className="inline-flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-            <span>Switch to Customer Login</span>
-          </button>
-        </div>
-        <Card className="card-sheaura shadow-lg border border-border overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-amber-600 via-primary to-amber-700" />
-          <CardHeader className="text-center pb-4 pt-8">
-            <Badge variant="secondary" className="w-fit mx-auto mb-3 gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20">
-              <Lock className="h-3 w-3" />
-              <span>Staff Authorization Portal</span>
-            </Badge>
-            <CardTitle className="text-2xl font-display font-medium">Sheaura Staff Portal</CardTitle>
-            <CardDescription className="text-muted-foreground text-xs mt-1.5">
-              Secure authentication for Store Administrators and Delivery staff.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 space-y-5">
-            <Tabs value={staffRole} onValueChange={(val) => setStaffRole(val as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1 rounded-xl">
-                <TabsTrigger value="admin" className="gap-1.5 text-xs py-2">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>Administrator</span>
-                </TabsTrigger>
-                <TabsTrigger value="shop_order_receiver" className="gap-1.5 text-xs py-2">
-                  <Truck className="h-3.5 w-3.5" />
-                  <span>Delivery Team</span>
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <form onSubmit={handleStaffLoginSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="staff-pwd" className="text-xs font-semibold">
-                  {staffRole === 'admin' ? 'Admin Password *' : 'Delivery Password *'}
-                </Label>
-                <Input
-                  id="staff-pwd"
-                  type="password"
-                  value={staffPassword}
-                  onChange={(e) => setStaffPassword(e.target.value)}
-                  placeholder="Enter secret staff password..."
-                  className="h-10 text-xs"
-                  autoFocus
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !staffPassword.trim()}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs h-10 shadow-sm cursor-pointer"
-              >
-                <KeyRound className="h-4 w-4 mr-2" />
-                <span>{isSubmitting ? 'Authenticating...' : 'Unlock Staff Dashboard'}</span>
-              </Button>
-            </form>
-          </CardContent>
         </Card>
       </div>
     )
@@ -729,16 +627,15 @@ export function LoginPage() {
             </details>
           </div>
 
-          {/* Staff Access Switcher */}
+          {/* Dedicated Staff Portal Link */}
           <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={() => setIsStaffMode(true)}
+            <Link
+              to="/staff-portal"
               className="text-[11px] text-muted-foreground hover:text-amber-700 dark:hover:text-amber-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Lock className="h-3 w-3" />
-              <span>Store Administrator or Staff Access</span>
-            </button>
+              <span>Store Administrator & Staff Portal</span>
+            </Link>
           </div>
         </CardContent>
       </Card>

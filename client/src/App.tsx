@@ -36,6 +36,8 @@ import { AdminNavigationFooterPage } from '@/pages/admin/AdminNavigationFooterPa
 import { AdminPoliciesPage } from '@/pages/admin/AdminPoliciesPage'
 import { AdminAuditLogsPage } from '@/pages/admin/AdminAuditLogsPage'
 
+import { useAuth } from '@/hooks/useAuth'
+
 function PublicLayout(): React.ReactElement {
   return (
     <div className="flex flex-col min-h-screen">
@@ -47,6 +49,21 @@ function PublicLayout(): React.ReactElement {
 }
 
 function AdminRoute() {
+  const { user, isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 rounded-full border-4 border-amber-600 border-t-transparent" />
+      </div>
+    )
+  }
+
+  // If not authenticated or not an authorized staff role (admin or delivery receiver), return 404 Not Found
+  if (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'shop_order_receiver')) {
+    return <NotFoundPage />
+  }
+
   return <AdminLayout />
 }
 

@@ -157,6 +157,60 @@ export const authRouter = router({
       }
     }),
 
+  // Staff & Delivery Enquiry Login
+  staffLogin: publicProcedure
+    .input(z.object({
+      password: z.string().min(1, 'Password is required'),
+      role: z.enum(['admin', 'shop_order_receiver']).default('admin'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const configuredPassword = process.env.ADMIN_PASSWORD || 'sheaura@admin2026'
+
+      const inputHash = crypto.createHash('sha256').update(input.password).digest()
+      const expectedHash = crypto.createHash('sha256').update(configuredPassword).digest()
+
+      const isMatch = crypto.timingSafeEqual(inputHash, expectedHash)
+
+      if (!isMatch) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid staff password. Access denied.',
+        })
+      }
+
+      const email = input.role === 'admin' ? 'sheaura360@gmail.com' : 'delivery@sheaura.com'
+      const name = input.role === 'admin' ? 'Sheaura Admin' : 'Delivery & Enquiry Team'
+
+      let userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
+      let targetUser = userList[0]
+
+      if (!targetUser) {
+        const created = await db.insert(users).values({
+          id: uuidv4(),
+          email,
+          name,
+          role: input.role,
+        }).returning()
+        targetUser = created[0]
+      } else if (targetUser.role !== input.role) {
+        const updated = await db.update(users).set({ role: input.role }).where(eq(users.id, targetUser.id)).returning()
+        targetUser = updated[0]
+      }
+
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+      }
+
+      return {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        role: targetUser.role,
+        image: targetUser.avatarUrl,
+      }
+    }),
+
   // Admin: Get all users
   adminGetUsers: adminProcedure
     .input(z.object({

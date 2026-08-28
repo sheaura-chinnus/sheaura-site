@@ -51,3 +51,13 @@ export function useAdminLogin() {
     },
   })
 }
+
+export function useStaffLogin() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.staffLogin.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries()
+    },
+  })
+}

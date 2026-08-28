@@ -52,7 +52,7 @@ export function AdminLayout() {
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const { user, isAuthenticated } = useAuth()
+  const { user } = useAuth()
   const logout = useLogout()
 
   const handleLogout = async () => {
@@ -176,68 +176,38 @@ export function AdminLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            {!isAdmin && (
-              <Button
-                size="sm"
-                onClick={() => navigate('/login')}
-                className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5 text-xs sm:text-sm font-medium"
-              >
-                <Shield className="h-4 w-4" />
-                <span>Admin Login</span>
-              </Button>
-            )}
-
             <Link to="/" className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition-colors">
               View Store
             </Link>
 
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
-                      <AvatarFallback>
-                        {user?.name?.charAt(0).toUpperCase() || 'A'}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-2 py-1">
-                    <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Admin User'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="gap-2 text-xs">
-                <Shield className="h-3.5 w-3.5" />
-                <span>Admin Login</span>
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
+                    <AvatarFallback>
+                      {user?.name?.charAt(0).toUpperCase() || 'A'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium text-foreground truncate">{user?.name || 'Staff User'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  <p className="text-[10px] text-amber-600 font-semibold uppercase mt-0.5">
+                    {isAdmin ? 'Store Administrator' : 'Delivery & Order Team'}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
-
-        {/* Guest Warning Banner */}
-        {!isAdmin && !isReceiver && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-800 dark:text-amber-300">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <ShieldAlert className="h-5 w-5 flex-shrink-0 text-amber-600" />
-              <span>Please sign in with your admin password to manage products, enquiries, and settings.</span>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button size="sm" onClick={() => navigate('/login')} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
-                Sign In
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* Page Content with Permission Barrier */}
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">

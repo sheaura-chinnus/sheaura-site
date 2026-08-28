@@ -127,10 +127,10 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
 
   describe('3. Rate Limiting (Max 5 Attempts / 15-Min Window)', () => {
     it('should enforce rate limiting on auth endpoints with 429 status', async () => {
-      // Send requests to /auth/google until rate limited
+      // Send requests to auth endpoint until rate limited
       let hitRateLimit = false
       for (let i = 0; i < 10; i++) {
-        const res = await makeRequest('/auth/google')
+        const res = await makeRequest('/trpc/auth.demoLogin')
         if (res.statusCode === 429) {
           hitRateLimit = true
           expect(res.body).toContain('Too many authentication attempts')

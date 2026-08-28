@@ -147,7 +147,7 @@ const apiRateLimiter = rateLimit({
 })
 
 // Apply stricter rate limiting to auth endpoints
-app.use('/auth/google', authRateLimiter)
+app.use('/trpc/auth.demoLogin', authRateLimiter)
 app.use('/auth/logout', authRateLimiter)
 
 // Apply general rate limiting to tRPC
@@ -197,11 +197,6 @@ app.use((req, res, next) => {
 function validateCsrfToken(req: express.Request, res: express.Response, next: express.NextFunction) {
   // Skip CSRF for safe read methods
   if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
-    return next()
-  }
-
-  // Skip for OAuth callback (external redirect/POST from Google)
-  if (req.path.startsWith('/auth/google/callback')) {
     return next()
   }
 
@@ -344,18 +339,6 @@ app.post('/api/admin/media/upload-logo', async (req, res) => {
     return res.status(400).json({ error: err.message || 'Failed to upload logo' })
   }
 })
-
-// Google OAuth routes
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-)
-
-app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login?error=oauth_failed' }),
-  (_req, res) => {
-    res.redirect(`${CLIENT_URL}/`)
-  }
-)
 
 // Logout
 app.post('/auth/logout', (req, res, next) => {

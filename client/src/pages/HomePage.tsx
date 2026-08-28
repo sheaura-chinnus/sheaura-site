@@ -205,22 +205,22 @@ export function HomePage() {
       {visibility.cta !== false && (
         <section className="section-spacing" aria-labelledby="cta-title">
           <div className="container-sheaura">
-            <div className="rounded-2xl bg-gradient-to-r from-primary/90 to-primary p-8 md:p-16 text-center text-primary-foreground">
-              <h2 id="cta-title" className="font-display text-3xl sm:text-4xl font-medium mb-4">
+            <div className="rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-8 md:p-14 text-center text-white shadow-xl">
+              <h2 id="cta-title" className="font-display text-3xl sm:text-4xl font-semibold mb-4 text-white">
                 Planning an Upcoming Celebration?
               </h2>
-              <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+              <p className="text-white/90 mb-8 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
                 Browse our complete collection of rental ornaments and connect with our styling team on WhatsApp for availability and bookings.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/rental-ornaments">
-                  <Button size="lg" variant="secondary" className="group">
+                  <Button size="lg" className="bg-white text-stone-900 font-semibold hover:bg-stone-100 shadow-md group h-12 px-6">
                     Browse Rental Ornaments
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
                 <Link to="/enquiry">
-                  <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10">
+                  <Button size="lg" className="bg-stone-900 text-white font-semibold hover:bg-stone-800 border-2 border-white/50 shadow-md h-12 px-6">
                     View Enquiry List
                   </Button>
                 </Link>

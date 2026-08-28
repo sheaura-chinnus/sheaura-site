@@ -13,91 +13,98 @@ export function useAuth() {
 }
 
 export function useLogin() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.registerUser.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useUpdateProfile() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.updateProfile.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useLogout() {
   const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.logoutUser.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      // 1. Immediately reset the getMe user cache to null for instantaneous UI update
+      utils.auth.getMe.setData(undefined, null as any)
+      // 2. Invalidate all auth and user queries
+      await utils.auth.invalidate()
+      // 3. Clear all cached React Query data
+      queryClient.clear()
+      await queryClient.resetQueries()
     },
   })
 }
 
 export function useAdminLogin() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.adminLogin.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries()
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useStaffLogin() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.staffLogin.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries()
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useCustomerRegister() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.customerRegister.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useCustomerLogin() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.customerLogin.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useGoogleLogin() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.googleLogin.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useUpdateCustomerProfile() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.updateCustomerProfile.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
@@ -107,23 +114,21 @@ export function useSendOtp() {
 }
 
 export function useVerifyOtp() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.verifyOtp.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }
 
 export function useGuestAutoConvert() {
-  const queryClient = useQueryClient()
+  const utils = trpc.useUtils()
 
   return trpc.auth.guestAutoConvert.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
-      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+    onSuccess: async () => {
+      await utils.auth.invalidate()
     },
   })
 }

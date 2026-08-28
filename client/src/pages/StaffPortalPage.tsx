@@ -106,10 +106,18 @@ export function StaffPortalPage() {
             )}
             <Button
               variant="outline"
-              onClick={() => logout.mutate()}
+              disabled={logout.isPending}
+              onClick={async () => {
+                try {
+                  await logout.mutateAsync()
+                  toast.success('Signed out from Staff Portal')
+                } catch {
+                  toast.error('Sign out failed')
+                }
+              }}
               className="w-full h-11 text-xs border-white/20 text-white hover:bg-white/10 cursor-pointer"
             >
-              Sign Out from Staff Portal
+              {logout.isPending ? 'Signing Out...' : 'Sign Out from Staff Portal'}
             </Button>
           </div>
         </Card>

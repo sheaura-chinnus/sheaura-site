@@ -275,8 +275,20 @@ export function LoginPage() {
                 Go to My Account & Orders
               </Button>
             )}
-            <Button variant="outline" className="w-full" onClick={() => logout.mutate()}>
-              Sign Out
+            <Button
+              variant="outline"
+              disabled={logout.isPending}
+              onClick={async () => {
+                try {
+                  await logout.mutateAsync()
+                  toast.success('Signed out successfully')
+                } catch {
+                  toast.error('Sign out failed')
+                }
+              }}
+              className="w-full cursor-pointer"
+            >
+              {logout.isPending ? 'Signing Out...' : 'Sign Out'}
             </Button>
           </div>
         </Card>

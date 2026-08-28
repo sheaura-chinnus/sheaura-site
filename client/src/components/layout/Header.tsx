@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, User } from 'lucide-react'
+import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, User, LogOut } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useEnquiryList } from '@/hooks/useEnquiryBasket'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useLogout } from '@/hooks/useAuth'
+import { toast } from 'react-hot-toast'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -27,6 +28,7 @@ export function Header() {
   const { itemCount } = useEnquiryList()
   const { data: settings } = useSiteSettings()
   const { user, isAuthenticated } = useAuth()
+  const logout = useLogout()
 
   const brandName = settings?.brandName || 'Sheaura'
   const logoUrl = settings?.siteLogoMediaId
@@ -302,8 +304,9 @@ export function Header() {
 
                 {/* Customer Account & Orders Card */}
                 {isAuthenticated ? (
-                  <Link
-                    to="/account"
+                  <>
+                    <Link
+                      to="/account"
                     className="flex items-center justify-between p-4 rounded-2xl bg-amber-500/15 border border-amber-600/30 hover:bg-amber-500/20 active:bg-amber-500/25 transition-colors min-h-[54px]"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -323,6 +326,27 @@ export function Header() {
                     </div>
                     <ArrowRight className="h-4 w-4 text-amber-700 dark:text-amber-300" />
                   </Link>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsMenuOpen(false)
+                      try {
+                        await logout.mutateAsync()
+                        toast.success('Signed out successfully')
+                        navigate('/')
+                      } catch {
+                        toast.error('Sign out failed')
+                      }
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer border border-destructive/20"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign Out of Account</span>
+                    </div>
+                    <ArrowRight className="h-3.5 w-3.5 opacity-60" />
+                  </button>
+                </>
                 ) : (
                   <Link
                     to="/login"

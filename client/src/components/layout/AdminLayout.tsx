@@ -56,8 +56,12 @@ export function AdminLayout() {
   const logout = useLogout()
 
   const handleLogout = async () => {
-    await logout.mutateAsync()
-    navigate('/')
+    try {
+      await logout.mutateAsync()
+      navigate('/staff-portal')
+    } catch {
+      navigate('/staff-portal')
+    }
   }
 
   const isAdmin = user?.role === 'admin'

@@ -737,10 +737,21 @@ export const authRouter = router({
       return updated[0]
     }),
 
-  // Logout - handled client-side by clearing session cookie
-  logoutUser: publicProcedure.mutation(({ ctx }) => {
+  // Logout - handled server-side by destroying session
+  logoutUser: publicProcedure.mutation(async ({ ctx }) => {
     if (ctx.req.session) {
-      ctx.req.session.destroy(() => {})
+      await new Promise<void>((resolve) => {
+        if (typeof (ctx.req.session as any).destroy === 'function') {
+          ctx.req.session.destroy(() => resolve())
+        } else {
+          ;(ctx.req.session as any).userId = null
+          ;(ctx.req.session as any).passport = null
+          resolve()
+        }
+      })
+    }
+    if (typeof (ctx.req as any).logout === 'function') {
+      (ctx.req as any).logout(() => {})
     }
     return { success: true }
   }),

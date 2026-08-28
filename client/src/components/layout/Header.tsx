@@ -9,11 +9,11 @@ import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 const navigation = [
   { name: 'Home', href: '/' },
-  { name: 'Rental Ornaments', href: '/rental-ornaments' },
-  { name: 'How Rental Works', href: '/#rental-process' },
+  { name: 'Fashion Jewellery', href: '/shop' },
+  { name: 'How to Order', href: '/#how-to-order' },
   { name: 'About Sheaura', href: '/about' },
   { name: 'Contact & WhatsApp', href: '/contact' },
-  { name: 'Rental Policies', href: '/rental-policy' },
+  { name: 'Policies', href: '/shipping-policy' },
 ]
 
 export function Header() {
@@ -31,6 +31,7 @@ export function Header() {
     : settings?.siteLogoUrl || null
   const logoAltText = settings?.siteLogoAltText || `${brandName} Logo`
   const announcementEnabled = settings?.announcementEnabled === 'true' && !!settings?.announcementText
+  const whatsappNum = settings?.whatsappNumber?.replace(/[^0-9]/g, '') || '919995098294'
 
   // Lock body scroll when mobile menu is open to ensure smooth scrolling inside menu
   useEffect(() => {
@@ -61,10 +62,10 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-xs transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-amber-900/10 shadow-xs transition-all duration-300">
       {/* Optional Announcement Banner */}
       {announcementEnabled && (
-        <aside aria-label="Announcement" className="bg-primary text-primary-foreground py-1.5 px-4 text-xs sm:text-sm text-center font-medium flex items-center justify-center gap-2">
+        <aside aria-label="Announcement" className="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-800 text-white py-1.5 px-4 text-xs sm:text-sm text-center font-medium flex items-center justify-center gap-2">
           <span>{settings.announcementText}</span>
           {settings.announcementCtaLabel && settings.announcementCtaLink && (
             <Link
@@ -97,7 +98,7 @@ export function Header() {
             <span
               id="header-brand-name-fallback"
               style={{ display: logoUrl ? 'none' : 'inline-block' }}
-              className="font-display text-xl sm:text-2xl font-bold tracking-tight text-primary uppercase"
+              className="font-display text-xl sm:text-2xl font-bold tracking-tight text-amber-900 dark:text-amber-300 uppercase"
             >
               {brandName}
             </span>
@@ -110,9 +111,9 @@ export function Header() {
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary',
+                  'text-sm font-medium transition-colors hover:text-amber-700 dark:hover:text-amber-400',
                   isActive(item.href)
-                    ? 'text-primary font-semibold'
+                    ? 'text-amber-800 dark:text-amber-300 font-semibold border-b-2 border-amber-600 pb-0.5'
                     : 'text-muted-foreground'
                 )}
               >
@@ -121,26 +122,26 @@ export function Header() {
             ))}
           </div>
 
-          {/* Right Action Icons */}
+          {/* Right Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Search Button */}
+            {/* Search Trigger */}
             <button
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label="Search rental catalogue"
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-amber-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Search jewellery catalogue"
             >
               <Search className="h-5 w-5" />
             </button>
 
-            {/* Rental Enquiry List Button */}
+            {/* Jewellery Order / Enquiry List Button */}
             <Link
               to="/enquiry"
-              className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-              aria-label={`Rental Enquiry List, ${itemCount} items`}
+              className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-amber-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label={`Jewellery Order List, ${itemCount} items`}
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className="h-5 w-5 text-amber-900 dark:text-amber-300" />
               {itemCount > 0 && (
-                <span className="absolute top-1 right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] sm:text-xs font-bold shadow-sm">
+                <span className="absolute top-1 right-1 flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-amber-700 text-white text-[10px] sm:text-xs font-bold shadow-sm">
                   {itemCount}
                 </span>
               )}
@@ -185,13 +186,13 @@ export function Header() {
               <div className="relative">
                 <Input
                   type="search"
-                  placeholder="Search rental ornaments or codes..."
+                  placeholder="Search jewellery by name or item code..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
                       setIsMenuOpen(false)
-                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
+                      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
                     }
                   }}
                   className="w-full pl-10 pr-12 h-11 text-sm bg-muted/40 rounded-xl"
@@ -201,9 +202,9 @@ export function Header() {
                   <button
                     onClick={() => {
                       setIsMenuOpen(false)
-                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
+                      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
                     }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-md bg-primary text-primary-foreground text-xs font-medium"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-md bg-amber-700 text-white text-xs font-medium"
                   >
                     Go
                   </button>
@@ -219,7 +220,7 @@ export function Header() {
                     className={cn(
                       'flex items-center justify-between px-4 py-3 text-base font-medium rounded-xl transition-colors min-h-[48px]',
                       isActive(item.href)
-                        ? 'bg-primary/10 text-primary font-semibold'
+                        ? 'bg-amber-500/15 text-amber-900 dark:text-amber-300 font-semibold'
                         : 'text-foreground hover:bg-accent active:bg-accent/80'
                     )}
                     onClick={() => setIsMenuOpen(false)}
@@ -232,23 +233,23 @@ export function Header() {
 
               <Separator />
 
-              {/* Rental Enquiry List Mobile Card */}
+              {/* Order List Mobile Card */}
               <Link
                 to="/enquiry"
-                className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 active:bg-emerald-500/20 transition-colors min-h-[54px]"
+                className="flex items-center justify-between p-4 rounded-xl bg-amber-500/10 border border-amber-600/25 hover:bg-amber-500/15 active:bg-amber-500/20 transition-colors min-h-[54px]"
                 onClick={() => setIsMenuOpen(false)}
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
+                  <div className="p-2 rounded-lg bg-amber-700 text-white shrink-0">
                     <ShoppingBag className="h-5 w-5" />
                   </div>
                   <div>
-                    <span className="font-display font-medium text-foreground block text-sm">Rental Enquiry List</span>
-                    <span className="text-xs text-muted-foreground">View selected item codes</span>
+                    <span className="font-display font-medium text-foreground block text-sm">Order & Enquiry List</span>
+                    <span className="text-xs text-muted-foreground">View selected jewellery codes</span>
                   </div>
                 </div>
                 {itemCount > 0 ? (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold shadow-sm">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-700 text-white text-xs font-bold shadow-sm">
                     {itemCount}
                   </span>
                 ) : (
@@ -257,33 +258,31 @@ export function Header() {
               </Link>
 
               {/* WhatsApp Direct Connect in Menu */}
-              {settings?.whatsappNumber && (
-                <a
-                  href={`https://wa.me/${settings.whatsappNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent('Hello Sheaura, I am browsing your rental ornaments catalogue and have an enquiry.')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 rounded-xl bg-muted/40 border border-border hover:bg-muted/70 transition-colors min-h-[54px]"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
-                      <MessageCircle className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <span className="font-display font-medium text-foreground block text-sm">Direct WhatsApp Enquiry</span>
-                      <span className="text-xs text-muted-foreground">{settings.whatsappNumber}</span>
-                    </div>
+              <a
+                href={`https://wa.me/${whatsappNum}?text=${encodeURIComponent('Hello Sheaura, I am browsing your fashion jewellery collection and would like to place an order.')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 transition-colors min-h-[54px]"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
+                    <MessageCircle className="h-5 w-5" />
                   </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                </a>
-              )}
+                  <div>
+                    <span className="font-display font-medium text-foreground block text-sm">Direct WhatsApp Concierge</span>
+                    <span className="text-xs text-muted-foreground">+91 9995098294</span>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-emerald-700" />
+              </a>
             </div>
 
             {/* Bottom Drawer Footer */}
             <div className="p-6 border-t border-border/80 bg-muted/20 text-center space-y-1 mt-auto">
-              <p className="text-xs font-medium text-foreground">Sheaura Rental Ornaments</p>
+              <p className="text-xs font-semibold text-amber-900 dark:text-amber-300">Sheaura Fashion Jewellery</p>
               <p className="text-[11px] text-muted-foreground">
-                Exquisite Imitation & Occasion Jewellery on Rent
+                Handcrafted Imitation, Antique & Occasion Jewellery
               </p>
             </div>
           </div>
@@ -296,23 +295,23 @@ export function Header() {
             onClick={() => setIsSearchOpen(false)}
           >
             <div
-              className="w-full max-w-md bg-background rounded-xl shadow-xl overflow-hidden animate-slide-down border border-border"
+              className="w-full max-w-md bg-background rounded-2xl shadow-2xl overflow-hidden animate-slide-down border border-amber-900/20"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 flex items-center gap-2 border-b border-border">
-                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+              <div className="p-4 flex items-center gap-3 border-b border-border">
+                <Search className="h-5 w-5 text-amber-700 shrink-0" />
                 <Input
                   autoFocus
-                  placeholder="Search rental ornaments by name or code..."
+                  placeholder="Search jewellery by name or item code (e.g. SH-001)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && searchQuery.trim()) {
                       setIsSearchOpen(false)
-                      navigate(`/rental-ornaments?search=${encodeURIComponent(searchQuery.trim())}`)
+                      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`)
                     }
                   }}
-                  className="border-0 focus-visible:ring-0 text-sm sm:text-base h-10 px-0 shadow-none"
+                  className="border-0 focus-visible:ring-0 text-sm sm:text-base h-10 px-0 shadow-none bg-transparent"
                 />
                 <button
                   onClick={() => setIsSearchOpen(false)}
@@ -322,7 +321,7 @@ export function Header() {
                 </button>
               </div>
               <div className="p-4 bg-muted/20 text-xs text-muted-foreground">
-                <p>Press Enter to view results, or search by code like &quot;SH-001&quot; or category name.</p>
+                <p>Press Enter to view results, or search by code like &quot;SH-001&quot;, &quot;choker&quot;, or &quot;temple&quot;.</p>
               </div>
             </div>
           </div>

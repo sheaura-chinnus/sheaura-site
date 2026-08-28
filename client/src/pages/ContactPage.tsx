@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Mail, Phone, Clock, Send, Loader2, MapPin } from 'lucide-react'
+import { Mail, Phone, Clock, Send, Loader2, MapPin, MessageCircle } from 'lucide-react'
 import { useContactInfo } from '@/hooks/useContactInfo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,14 +9,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'react-hot-toast'
 
 const contactReasons = [
+  { value: 'order', label: 'Order / Buying Enquiry' },
+  { value: 'product', label: 'Product Details & Sizing' },
+  { value: 'bridal', label: 'Bridal Set Consultation' },
+  { value: 'custom', label: 'Custom Design / Matching' },
   { value: 'general', label: 'General Enquiry' },
-  { value: 'product', label: 'Product Information' },
-  { value: 'order', label: 'Order Enquiry' },
-  { value: 'rental', label: 'Rental Enquiry' },
-  { value: 'custom', label: 'Custom Design' },
-  { value: 'wholesale', label: 'Wholesale / Partnership' },
-  { value: 'career', label: 'Career Opportunities' },
-  { value: 'other', label: 'Other' },
+  { value: 'wholesale', label: 'Bulk / Festive Orders' },
 ]
 
 export function ContactPage() {
@@ -26,11 +24,38 @@ export function ContactPage() {
     fullName: '',
     email: '',
     phone: '',
-    reason: 'general',
+    reason: 'order',
     subject: '',
     message: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const contactInfo = [
+    {
+      icon: MessageCircle,
+      title: 'WhatsApp Concierge',
+      details: ['+91 9995098294', 'Direct styling assistance & orders'],
+      description: 'Instant response on WhatsApp',
+    },
+    {
+      icon: Phone,
+      title: 'Call Us',
+      details: [contact.phone, 'Mon–Sat, 10 AM – 8 PM IST'],
+      description: 'For urgent inquiries',
+    },
+    {
+      icon: Mail,
+      title: 'Email Us',
+      details: [contact.email],
+      description: 'We reply within 24 hours',
+    },
+    {
+      icon: MapPin,
+      title: 'Studio Location',
+      details: [contact.address || 'Kadampanadu, Pathanamthitta, Kerala'],
+      description: 'By appointment only',
+    },
+  ]
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -38,23 +63,11 @@ export function ContactPage() {
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required'
     }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
-    }
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required'
-    } else if (!/^[\d\s\-+()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number'
-    }
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required'
     }
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required'
-    } else if (formData.message.trim().length < 20) {
-      newErrors.message = 'Message must be at least 20 characters'
+      newErrors.message = 'Please provide a short message or product inquiry'
     }
 
     setErrors(newErrors)
@@ -69,69 +82,41 @@ export function ContactPage() {
     setIsSubmitting(true)
 
     try {
-      // In a real app, this would call a contact form API endpoint
-      // For now, we'll simulate submission
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const msg = `Hello Sheaura, I have a message from your website contact form:\nName: ${formData.fullName}\nPhone: ${formData.phone}\nReason: ${formData.reason}\nMessage: ${formData.message}`
+      const url = `https://wa.me/919995098294?text=${encodeURIComponent(msg)}`
+      
+      toast.success('Opening WhatsApp to send your enquiry!')
+      window.open(url, '_blank', 'noopener,noreferrer')
 
-      toast.success('Thank you for reaching out! We\'ll get back to you within 24 hours.')
       setFormData({
         fullName: '',
         email: '',
         phone: '',
-        reason: 'general',
+        reason: 'order',
         subject: '',
         message: '',
       })
     } catch {
-      toast.error('Failed to send message. Please try again or email us directly.')
+      toast.error('Could not connect. Please message us directly on WhatsApp at +91 9995098294.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const contactInfo = [
-    {
-      icon: Mail,
-      title: 'Email Us',
-      details: [
-        contact.email,
-      ],
-      description: 'We respond within 24 hours',
-    },
-    {
-      icon: Phone,
-      title: 'Call Us',
-      details: [
-        contact.phone,
-        'Mon–Sat, 10 AM – 7 PM IST',
-      ],
-      description: 'For urgent enquiries',
-    },
-    {
-      icon: MapPin,
-      title: 'Visit Us',
-      details: [
-        contact.address,
-      ],
-      description: 'By appointment only',
-    },
-  ]
-
   return (
     <div className="animate-fade-in">
       {/* Hero Section */}
-      <section className="py-16 lg:py-24 bg-muted/30" aria-labelledby="contact-hero">
+      <section className="py-14 lg:py-20 bg-amber-50/40 dark:bg-muted/20 border-b border-amber-900/10" aria-labelledby="contact-hero">
         <div className="container-sheaura">
           <div className="max-w-3xl mx-auto text-center">
-            <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-semibold uppercase tracking-wider mb-4">
               Get in Touch
             </span>
-            <h1 id="contact-hero" className="font-display text-4xl sm:text-5xl lg:text-6xl font-medium text-foreground mb-6">
-              We'd Love to Hear from You
+            <h1 id="contact-hero" className="font-display text-4xl sm:text-5xl font-bold text-amber-900 dark:text-amber-300 mb-4">
+              We'd Love to Assist You
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Have a question about our collections? Need help with a rental?
-              Want to discuss a custom design? Our team is here to help.
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+              Have a question about our handcrafted fashion jewellery? Looking for bridal styling advice or custom pieces? Our team is available on WhatsApp and call.
             </p>
           </div>
         </div>
@@ -309,23 +294,23 @@ export function ContactPage() {
                       <p className="text-xs text-muted-foreground mt-1">Minimum 20 characters</p>
                     </div>
 
-                    <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+                    <Button type="submit" size="lg" className="w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-white shadow-md rounded-xl" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Sending...
+                          Connecting...
                         </>
                       ) : (
                         <>
                           <Send className="h-4 w-4 mr-2" />
-                          Send Message
+                          Send Enquiry on WhatsApp
                         </>
                       )}
                     </Button>
 
                     <p className="text-xs text-muted-foreground text-center">
                       By submitting, you agree to our{' '}
-                      <a href="/privacy" className="underline hover:text-primary">Privacy Policy</a>
+                      <a href="/privacy" className="underline hover:text-amber-800">Privacy Policy</a>
                     </p>
                   </form>
                 </CardContent>
@@ -336,54 +321,50 @@ export function ContactPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="section-spacing bg-muted/30" aria-labelledby="faq-title">
+      <section className="section-spacing bg-amber-50/30 dark:bg-muted/20 border-t border-amber-900/10" aria-labelledby="faq-title">
         <div className="container-sheaura">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 id="faq-title" className="font-display text-3xl sm:text-4xl font-medium text-foreground mb-4">
+            <h2 id="faq-title" className="font-display text-3xl sm:text-4xl font-bold text-amber-950 dark:text-amber-200 mb-3">
               Frequently Asked Questions
             </h2>
-            <p className="text-muted-foreground text-lg">
-              Quick answers to common questions
+            <p className="text-muted-foreground text-base">
+              Quick answers about ordering, jewellery care, and delivery
             </p>
           </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
             {[
               {
-                q: 'How does the rental process work?',
-                a: 'Select rental items, add to your enquiry basket, and submit. Our team will confirm availability, pricing, and arrange delivery. You pay the rental fee + refundable deposit. After your event, we arrange pickup and refund the deposit upon safe return.',
+                q: 'How do I place an order for jewellery?',
+                a: 'Browse our collection, select your favorite piece, and click "Order on WhatsApp" or add multiple pieces to your Order List. Our team connects with you on WhatsApp (+91 9995098294) to confirm stock, custom sizing, payment details, and dispatch.',
               },
               {
-                q: 'Can I try jewellery before purchasing?',
-                a: 'Yes! You can rent pieces to try them before deciding to purchase. If you fall in love with a rented item, the rental fee can often be applied towards the purchase price.',
+                q: 'What type of jewellery does Sheaura offer?',
+                a: 'Sheaura specializes in premium handcrafted fashion, antique, temple, and imitation jewellery crafted with high-grade copper/brass alloys and micro gold polish for weddings, festive functions, and special celebrations.',
               },
               {
-                q: 'What is your return policy?',
-                a: 'Purchased items can be returned within 14 days in original condition with certificates. Rental items must be returned by the agreed date. Custom designs are non-returnable.',
+                q: 'How is jewellery safely delivered?',
+                a: 'All orders are carefully packed in protective, velvet-lined gift boxes and bubble cushioning. We ship across India via trusted express couriers with end-to-end tracking.',
               },
               {
-                q: 'Do you offer international shipping?',
-                a: 'Currently we ship across India. International shipping is available on request — please contact us for a custom quote.',
+                q: 'How should I care for my Sheaura fashion jewellery?',
+                a: 'Store each piece in its airtight pouch away from direct moisture, perfumes, and hairsprays. Wipe gently with a dry microfibre cloth after wearing to maintain the lustrous polish.',
               },
               {
-                q: 'Are your products authentic?',
-                a: 'Absolutely. Every piece comes with a certificate of authenticity. We source directly from certified manufacturers and artisans.',
-              },
-              {
-                q: 'Can I customize a piece?',
-                a: 'Yes, we offer custom design services. Contact our team with your vision, and our designers will create a unique piece for you.',
+                q: 'Can I request matching accessories or custom sets?',
+                a: 'Yes! If you have a specific bridal saree or lehenga, send us a photo on WhatsApp. Our styling team will suggest perfectly matching chokers, jhumkas, maang tikkas, and bangles.',
               },
             ].map((faq, index) => (
-              <details key={index} className="group bg-card border border-border rounded-xl p-6">
-                <summary className="flex items-center justify-between cursor-pointer list-none font-medium text-foreground">
+              <details key={index} className="group bg-card border border-amber-900/15 rounded-2xl p-6 shadow-xs hover:border-amber-600/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer list-none font-display font-medium text-foreground text-base sm:text-lg">
                   {faq.q}
-                  <span className="text-primary group-open:rotate-180 transition-transform">
+                  <span className="text-amber-700 group-open:rotate-180 transition-transform">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </span>
                 </summary>
-                <p className="text-muted-foreground mt-4 leading-relaxed">{faq.a}</p>
+                <p className="text-muted-foreground mt-4 leading-relaxed text-sm sm:text-base">{faq.a}</p>
               </details>
             ))}
           </div>
@@ -393,17 +374,23 @@ export function ContactPage() {
       {/* CTA */}
       <section className="section-spacing">
         <div className="container-sheaura text-center">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="font-display text-3xl sm:text-4xl font-medium text-foreground mb-4">
-              Prefer a Personal Consultation?
+          <div className="max-w-2xl mx-auto p-8 rounded-3xl border border-amber-900/15 bg-card shadow-sm">
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-amber-950 dark:text-amber-200 mb-3">
+              Need Personal Styling Assistance?
             </h2>
-            <p className="text-muted-foreground text-lg mb-8">
-              Book a private appointment at our Mumbai boutique or a virtual consultation.
-              Our experts will guide you through our collections.
+            <p className="text-muted-foreground text-base mb-6">
+              Connect directly with our jewellery consultants on WhatsApp for bridal curation, video previews, and expedited orders.
             </p>
-            <Button size="lg" variant="outline" onClick={() => window.open('mailto:appointments@sheaura.com')}>
-              <Mail className="h-4 w-4 mr-2" />
-              Book an Appointment
+            <Button
+              size="lg"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-medium shadow-md rounded-xl"
+              onClick={() => {
+                const url = `https://wa.me/919995098294?text=${encodeURIComponent('Hello Sheaura, I would like personal styling assistance for an upcoming occasion.')}`
+                window.open(url, '_blank', 'noopener,noreferrer')
+              }}
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span>Chat with Stylist on WhatsApp</span>
             </Button>
           </div>
         </div>

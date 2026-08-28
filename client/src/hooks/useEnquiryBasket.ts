@@ -8,6 +8,8 @@ export interface EnquiryListItem {
   productSlug: string
   productImage?: string
   category?: string
+  price?: string | number | null
+  salePrice?: string | null
 }
 
 interface EnquiryListState {

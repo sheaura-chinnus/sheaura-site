@@ -101,21 +101,12 @@ export const enquiriesRouter = router({
         if (product.availability !== 'available' && product.availability !== 'low_stock') {
           throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not available` })
         }
-
-        if (item.mode === 'sale' && !['sale', 'both'].includes(product.mode)) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not for sale` })
-        }
-
-        // In Sheaura rental-only catalogue, all catalog pieces can be enquired about for rental
-        if (item.mode === 'rental' && product.mode !== 'rental' && product.mode !== 'both' && product.mode !== 'sale') {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: `Product ${product.id} is not available for rental enquiry` })
-        }
       }
 
       // Calculate prices for items
       const itemsWithPrices = input.items.map(item => {
         const product = productData.find(p => p.id === item.productId)!
-        const unitPrice = item.mode === 'sale' ? product.salePrice : product.rentalPrice
+        const unitPrice = (item.mode === 'sale' ? product.salePrice : product.rentalPrice) || product.salePrice || product.rentalPrice || '0'
         return {
           ...item,
           unitPrice,

@@ -5,22 +5,23 @@ import { useContactInfo } from '@/hooks/useContactInfo'
 
 const footerLinks = {
   catalogue: [
-    { name: 'Rental Ornaments', href: '/rental-ornaments' },
-    { name: 'Bridal Ornaments', href: '/rental-ornaments?category=bridal' },
-    { name: 'Occasion Accessories', href: '/rental-ornaments?category=occasion' },
-    { name: 'Enquiry List', href: '/enquiry' },
+    { name: 'Fashion Jewellery', href: '/shop' },
+    { name: 'Bridal Jewellery Sets', href: '/shop?category=bridal-ornament-sets' },
+    { name: 'Necklaces & Chokers', href: '/shop?category=necklaces-chokers' },
+    { name: 'Earrings & Jhumkas', href: '/shop?category=earrings-jhumkas' },
+    { name: 'Order / Enquiry List', href: '/enquiry' },
   ],
   company: [
     { name: 'About Sheaura', href: '/about' },
-    { name: 'How Rental Works', href: '/about#how-it-works' },
-    { name: 'Care Guidelines', href: '/about#care-guide' },
-    { name: 'Contact Us', href: '/contact' },
+    { name: 'How to Order', href: '/#how-to-order' },
+    { name: 'Jewellery Care Guide', href: '/about#care-guide' },
+    { name: 'Contact & WhatsApp', href: '/contact' },
   ],
   policies: [
-    { name: 'Rental Policy', href: '/rental-policy' },
+    { name: 'Shipping Policy', href: '/shipping-policy' },
     { name: 'Terms of Service', href: '/terms' },
     { name: 'Privacy Policy', href: '/privacy' },
-    { name: 'Refund & Deposit Policy', href: '/refund-policy' },
+    { name: 'Return & Refund Policy', href: '/refund-policy' },
   ],
 }
 
@@ -31,19 +32,19 @@ export function Footer() {
   const instagram = settings?.instagramUrl || settings?.instagram || ''
 
   return (
-    <footer className="bg-muted/50 border-t border-border" role="contentinfo">
+    <footer className="bg-muted/50 border-t border-amber-900/10" role="contentinfo">
       <div className="container-sheaura section-spacing">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-2 lg:col-span-2">
-            <Link to="/" className="font-display text-2xl font-medium text-foreground mb-3 block">
+            <Link to="/" className="font-display text-2xl font-bold text-amber-900 dark:text-amber-300 mb-3 block">
               {settings?.brandName || 'Sheaura'}
             </Link>
             <p className="text-xs sm:text-sm text-muted-foreground mb-4 max-w-sm leading-relaxed">
-              {settings?.footerText || 'Curated imitation, fashion, and occasion ornament rental catalogue. Browse exclusive pieces and enquire directly on WhatsApp with your chosen item codes.'}
+              {settings?.footerText || 'Curated handcrafted fashion, imitation, and occasion jewellery. Browse exclusive designs and order directly on WhatsApp with your chosen item codes.'}
             </p>
             <p className="text-[11px] text-muted-foreground/80 mb-5 italic">
-              * Sheaura offers high quality imitation, fashion, and costume ornaments for occasion rental. We do not sell or rent real gold, fine diamonds, or precious gemstones.
+              * Sheaura offers premium imitation, fashion, and costume jewellery for weddings, celebrations, and festive occasions. We do not sell or trade real gold, diamonds, or precious gemstones.
             </p>
             <div className="flex space-x-4">
               {instagram && instagram !== '[INSTAGRAM URL]' && (
@@ -135,7 +136,7 @@ export function Footer() {
         <div className="mt-10 pt-6 border-t border-border/80">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-xs text-muted-foreground">
             <p>
-              {settings?.copyrightText || `© ${new Date().getFullYear()} ${settings?.brandName || 'Sheaura'}. Rental Ornaments Catalogue. All rights reserved.`}
+              {settings?.copyrightText || `© ${new Date().getFullYear()} ${settings?.brandName || 'Sheaura'}. Handcrafted Fashion Jewellery. All rights reserved.`}
             </p>
             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
               {footerLinks.policies.map((pol) => (

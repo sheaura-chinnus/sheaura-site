@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { MessageCircle, Plus, Check, Copy, Sparkles, Shield, ArrowLeft } from 'lucide-react'
+import { MessageCircle, Plus, Check, Copy, Shield, ArrowLeft, Gem } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { useEnquiryList } from '@/hooks/useEnquiryBasket'
@@ -50,9 +50,9 @@ export function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="container-sheaura py-24 text-center">
-        <h1 className="font-display text-3xl font-medium text-foreground mb-4">Rental Ornament Not Found</h1>
-        <p className="text-muted-foreground mb-8">The rental ornament you are looking for may have been retired or is currently unpublished.</p>
-        <Button onClick={() => navigate('/rental-ornaments')}>Browse Rental Catalogue</Button>
+        <h1 className="font-display text-3xl font-bold text-amber-950 dark:text-amber-200 mb-4">Jewellery Piece Not Found</h1>
+        <p className="text-muted-foreground mb-8">The jewellery piece you are looking for may have been archived or is temporarily unpublished.</p>
+        <Button onClick={() => navigate('/shop')} className="bg-amber-700 hover:bg-amber-800 text-white rounded-xl">Browse Jewellery Catalogue</Button>
       </div>
     )
   }
@@ -64,8 +64,9 @@ export function ProductDetailPage() {
 
   const itemCode = product.itemCode || `SH-${product.slug.substring(0, 6).toUpperCase()}`
   const inList = isInList(product.id)
+  const displayPrice = product.salePrice || product.rentalPrice
 
-  const [enquiryConfirmed, setEnquiryConfirmed] = useState(false)
+  const [orderConfirmed, setOrderConfirmed] = useState(false)
   const [listConfirmed, setListConfirmed] = useState(false)
 
   const handleCopyCode = () => {
@@ -73,17 +74,17 @@ export function ProductDetailPage() {
     toast.success(`Copied item code: ${itemCode}`)
   }
 
-  const handleWhatsAppEnquiry = () => {
+  const handleWhatsAppOrder = () => {
     const url = buildWhatsAppUrl({
-      items: [{ itemCode, name: product.name }],
+      items: [{ itemCode, name: product.name, price: displayPrice }],
       whatsappNumber: settings?.whatsappNumber,
       brandName: settings?.brandName || 'Sheaura',
     })
     window.open(url, '_blank', 'noopener,noreferrer')
-    setEnquiryConfirmed(true)
-    toast.success(`Opening WhatsApp to enquire about "${product.name}"`)
+    setOrderConfirmed(true)
+    toast.success(`Opening WhatsApp to order "${product.name}"`)
     setTimeout(() => {
-      setEnquiryConfirmed(false)
+      setOrderConfirmed(false)
     }, 3500)
   }
 
@@ -91,7 +92,7 @@ export function ProductDetailPage() {
     if (inList) {
       removeItem(product.id)
       setListConfirmed(false)
-      toast.success(`Removed "${product.name}" from Enquiry List`)
+      toast.success(`Removed "${product.name}" from Order List`)
     } else {
       addItem({
         productId: product.id,
@@ -100,9 +101,11 @@ export function ProductDetailPage() {
         productSlug: product.slug,
         productImage: images[0]?.url,
         category: product.category?.name || '',
+        price: displayPrice,
+        salePrice: product.salePrice,
       })
       setListConfirmed(true)
-      toast.success(`Added "${product.name}" to Enquiry List`)
+      toast.success(`Added "${product.name}" to Order List`)
       setTimeout(() => {
         setListConfirmed(false)
       }, 3500)
@@ -111,12 +114,12 @@ export function ProductDetailPage() {
 
   const availabilityLabel = () => {
     if (product.availability === 'out_of_stock' || product.availability === 'discontinued') {
-      return { text: 'Unavailable', variant: 'destructive' as const }
+      return { text: 'Sold Out', variant: 'destructive' as const }
     }
     if (product.availability === 'low_stock') {
-      return { text: 'Limited Booking Slots', variant: 'warning' as const }
+      return { text: 'Limited Quantity Left', variant: 'warning' as const }
     }
-    return { text: 'Available for Rental Enquiry', variant: 'secondary' as const }
+    return { text: 'In Stock — Ready to Dispatch', variant: 'secondary' as const }
   }
 
   const avail = availabilityLabel()
@@ -127,13 +130,13 @@ export function ProductDetailPage() {
       <div className="container-sheaura py-6">
         <nav aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2 text-xs sm:text-sm text-muted-foreground">
-            <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
+            <li><Link to="/" className="hover:text-amber-800 transition-colors">Home</Link></li>
             <li><span aria-hidden="true">/</span></li>
-            <li><Link to="/rental-ornaments" className="hover:text-primary transition-colors">Rental Ornaments</Link></li>
+            <li><Link to="/shop" className="hover:text-amber-800 transition-colors">Fashion Jewellery</Link></li>
             <li><span aria-hidden="true">/</span></li>
             {product.category && (
               <>
-                <li><Link to={`/rental-ornaments?category=${product.category.slug}`} className="hover:text-primary transition-colors">{product.category.name}</Link></li>
+                <li><Link to={`/shop?category=${product.category.slug}`} className="hover:text-amber-800 transition-colors">{product.category.name}</Link></li>
                 <li><span aria-hidden="true">/</span></li>
               </>
             )}
@@ -147,7 +150,7 @@ export function ProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Gallery */}
           <div className="space-y-4">
-            <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-muted/40 border border-border/80 shadow-sm">
+            <div className="relative aspect-[3/4] rounded-3xl overflow-hidden bg-amber-50/40 dark:bg-muted/30 border border-amber-900/15 shadow-md">
               {images[mainImage]?.url ? (
                 <img
                   src={images[mainImage].url}
@@ -156,15 +159,15 @@ export function ProductDetailPage() {
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
-                  <Sparkles className="h-12 w-12 mb-3 opacity-40" />
-                  <span className="font-serif text-lg">Sheaura Rental Ornaments</span>
-                  <span className="text-xs text-muted-foreground mt-1">Image preview to be updated by Sheaura</span>
+                  <Gem className="h-12 w-12 mb-3 text-amber-700/50" />
+                  <span className="font-display font-semibold text-lg text-amber-950 dark:text-amber-200">Sheaura Fashion Jewellery</span>
+                  <span className="text-xs text-muted-foreground mt-1">Handcrafted jewellery piece</span>
                 </div>
               )}
 
               {/* Item Code Badge on Image */}
               <div className="absolute top-4 left-4">
-                <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-background/95 backdrop-blur-sm border border-border shadow-sm">
+                <Badge variant="secondary" className="font-mono text-sm px-3 py-1 bg-background/95 backdrop-blur-sm border border-amber-600/25 text-amber-900 dark:text-amber-300 shadow-sm">
                   {itemCode}
                 </Badge>
               </div>
@@ -177,8 +180,8 @@ export function ProductDetailPage() {
                   <button
                     key={img.id || idx}
                     onClick={() => setMainImage(idx)}
-                    className={`relative w-20 h-24 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
-                      mainImage === idx ? 'border-primary shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'
+                    className={`relative w-20 h-24 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${
+                      mainImage === idx ? 'border-amber-600 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'
                     }`}
                   >
                     <img src={img.url} alt={img.altText || `View ${idx + 1}`} className="w-full h-full object-cover" />
@@ -193,8 +196,8 @@ export function ProductDetailPage() {
             <div>
               {/* Category & Status */}
               <div className="flex items-center justify-between gap-3 mb-3">
-                <span className="text-xs font-semibold tracking-wider text-primary uppercase">
-                  {product.category?.name || 'Rental Ornament'}
+                <span className="text-xs font-semibold tracking-wider text-amber-700 dark:text-amber-400 uppercase">
+                  {product.category?.name || 'Fashion Jewellery'}
                 </span>
                 <Badge variant={avail.variant} className="text-xs px-2.5 py-0.5">
                   {avail.text}
@@ -202,17 +205,36 @@ export function ProductDetailPage() {
               </div>
 
               {/* Product Title */}
-              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-medium text-foreground mb-4">
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-950 dark:text-amber-200 mb-3">
                 {product.name}
               </h1>
 
-              {/* Item Code Card */}
-              <div className="p-4 rounded-xl border border-border bg-card/70 mb-6 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-muted-foreground uppercase font-medium tracking-wider block">Item Reference Code</span>
-                  <span className="font-mono text-xl font-bold text-foreground">{itemCode}</span>
+              {/* Pricing Section */}
+              {displayPrice && (
+                <div className="flex items-baseline gap-3 mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-600/20">
+                  <span className="text-2xl sm:text-3xl font-bold text-amber-950 dark:text-amber-200 font-mono">
+                    ₹{Number(displayPrice).toLocaleString('en-IN')}
+                  </span>
+                  {(product as any).compareAtPrice && Number((product as any).compareAtPrice) > Number(displayPrice) && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground line-through font-mono">
+                        MRP ₹{Number((product as any).compareAtPrice).toLocaleString('en-IN')}
+                      </span>
+                      <Badge className="bg-emerald-600 text-white text-[10px] px-1.5 py-0.2">
+                        Special Price
+                      </Badge>
+                    </div>
+                  )}
                 </div>
-                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleCopyCode}>
+              )}
+
+              {/* Item Code Card */}
+              <div className="p-4 rounded-2xl border border-amber-900/15 bg-card/80 mb-6 flex items-center justify-between shadow-xs">
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider block">Item Reference Code</span>
+                  <span className="font-mono text-xl font-bold text-amber-900 dark:text-amber-300">{itemCode}</span>
+                </div>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs rounded-xl border-amber-700/20" onClick={handleCopyCode}>
                   <Copy className="h-3.5 w-3.5" />
                   <span>Copy Code</span>
                 </Button>
@@ -225,16 +247,16 @@ export function ProductDetailPage() {
                 </p>
               )}
 
-              {/* WhatsApp Enquiry Callout Card */}
-              <div className="p-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 mb-8">
+              {/* WhatsApp Order Callout Card */}
+              <div className="p-6 rounded-3xl border border-amber-900/15 bg-card shadow-md mb-8">
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 rounded-lg bg-emerald-600 text-white shrink-0">
+                  <div className="p-2 rounded-xl bg-emerald-600 text-white shrink-0">
                     <MessageCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="font-display font-medium text-foreground text-lg">Direct WhatsApp Enquiry</h2>
+                    <h2 className="font-display font-bold text-amber-950 dark:text-amber-200 text-lg">Direct WhatsApp Ordering</h2>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                      Contact Sheaura directly to check date availability, security deposit, and pickup/fitting terms.
+                      Connect directly with Sheaura styling concierge to verify sizing, request live video previews, and confirm dispatch.
                     </p>
                   </div>
                 </div>
@@ -242,19 +264,19 @@ export function ProductDetailPage() {
                 <div className="space-y-3">
                   <Button
                     size="lg"
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-2 h-12 text-base shadow-md transition-all"
-                    onClick={handleWhatsAppEnquiry}
-                    aria-label={`Enquire about ${product.name} on WhatsApp`}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2 h-12 text-base shadow-md transition-all rounded-xl"
+                    onClick={handleWhatsAppOrder}
+                    aria-label={`Order ${product.name} on WhatsApp`}
                   >
-                    {enquiryConfirmed ? (
+                    {orderConfirmed ? (
                       <>
                         <Check className="h-5 w-5 text-white animate-in zoom-in-75 duration-200" />
-                        <span>Enquiry Sent for {product.name}!</span>
+                        <span>Connecting to WhatsApp...</span>
                       </>
                     ) : (
                       <>
                         <MessageCircle className="h-5 w-5" />
-                        <span>Enquire on WhatsApp</span>
+                        <span>Order on WhatsApp (₹{Number(displayPrice || 0).toLocaleString('en-IN')})</span>
                       </>
                     )}
                   </Button>
@@ -262,57 +284,57 @@ export function ProductDetailPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     <Button
                       variant={listConfirmed ? 'secondary' : inList ? 'secondary' : 'outline'}
-                      className="w-full gap-1.5 h-11 text-xs sm:text-sm font-medium transition-all"
+                      className="w-full gap-1.5 h-11 text-xs sm:text-sm font-medium transition-all rounded-xl border-amber-700/20"
                       onClick={handleToggleList}
-                      aria-label={inList ? `Remove ${product.name} from list` : `Add ${product.name} to enquiry list`}
+                      aria-label={inList ? `Remove ${product.name} from list` : `Add ${product.name} to order list`}
                     >
                       {listConfirmed ? (
                         <>
                           <Check className="h-4 w-4 text-emerald-600 animate-in zoom-in-75 duration-200" />
-                          <span>Added to Enquiry List!</span>
+                          <span>Added to Order List!</span>
                         </>
                       ) : inList ? (
                         <>
-                          <Plus className="h-4 w-4 rotate-45 text-muted-foreground" />
+                          <Check className="h-4 w-4 text-amber-700" />
                           <span>In List (Click to Remove)</span>
                         </>
                       ) : (
                         <>
                           <Plus className="h-4 w-4" />
-                          <span>Add to Multi-Item List</span>
+                          <span>Add to Order List</span>
                         </>
                       )}
                     </Button>
 
                     <Button
                       variant="outline"
-                      className="w-full gap-1.5 h-11 text-xs sm:text-sm"
+                      className="w-full gap-1.5 h-11 text-xs sm:text-sm rounded-xl border-amber-700/20"
                       onClick={() => navigate('/enquiry')}
                     >
-                      <span>View Enquiry List</span>
+                      <span>View Order List</span>
                     </Button>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground/80 text-center mt-3">
-                  * Availability, deposit, and rental terms are confirmed by Sheaura on WhatsApp. This message is an enquiry, not an automated booking.
+                  * All orders dispatched in protective velvet gift boxes with tracking. Pan-India shipping.
                 </p>
               </div>
 
               {/* Full Description / Details */}
               {product.description && (
                 <div className="prose prose-sm max-w-none mb-8 text-foreground/90 leading-relaxed">
-                  <h3 className="font-display text-lg font-medium text-foreground mb-2">About This Piece</h3>
+                  <h3 className="font-display text-lg font-bold text-amber-950 dark:text-amber-200 mb-2">About This Piece</h3>
                   <p>{product.description}</p>
                 </div>
               )}
 
               {/* Care Instructions / Notes */}
               {product.careInstructions && (
-                <div className="p-4 rounded-xl bg-muted/30 border border-border mb-8 text-xs text-muted-foreground space-y-1">
-                  <div className="font-semibold text-foreground flex items-center gap-1.5 mb-1">
-                    <Shield className="h-3.5 w-3.5 text-primary" />
-                    <span>Care & Handling Guidelines</span>
+                <div className="p-4 rounded-2xl bg-amber-50/40 dark:bg-muted/20 border border-amber-900/10 mb-8 text-xs text-muted-foreground space-y-1">
+                  <div className="font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5 mb-1">
+                    <Shield className="h-3.5 w-3.5 text-amber-700" />
+                    <span>Jewellery Care & Handling</span>
                   </div>
                   <p>{product.careInstructions}</p>
                 </div>
@@ -320,13 +342,13 @@ export function ProductDetailPage() {
             </div>
 
             {/* Back link */}
-            <div className="pt-6 border-t border-border">
+            <div className="pt-6 border-t border-amber-900/10">
               <Link
-                to="/rental-ornaments"
-                className="inline-flex items-center text-sm font-medium text-primary hover:underline gap-1"
+                to="/shop"
+                className="inline-flex items-center text-sm font-medium text-amber-800 dark:text-amber-400 hover:underline gap-1"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Return to Rental Ornaments Catalogue</span>
+                <span>Return to Fashion Jewellery Catalogue</span>
               </Link>
             </div>
           </div>
@@ -334,9 +356,9 @@ export function ProductDetailPage() {
 
         {/* Related Ornaments */}
         {related && related.length > 0 && (
-          <div className="mt-16 sm:mt-20 pt-10 sm:pt-12 border-t border-border">
-            <h2 className="font-display text-xl sm:text-2xl font-medium text-foreground mb-6 sm:mb-8 text-center sm:text-left">
-              Related Rental Ornaments
+          <div className="mt-16 sm:mt-20 pt-10 sm:pt-12 border-t border-amber-900/10">
+            <h2 className="font-display text-xl sm:text-2xl font-bold text-amber-950 dark:text-amber-200 mb-6 sm:mb-8 text-center sm:text-left">
+              You May Also Adore
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {related.map((item: any) => (
@@ -348,27 +370,27 @@ export function ProductDetailPage() {
       </div>
 
       {/* Mobile Sticky Action Bar */}
-      <aside aria-label="Quick Enquiry" className="lg:hidden fixed bottom-0 inset-x-0 bg-background/95 backdrop-blur-md border-t border-border p-3 z-40 shadow-2xl flex items-center gap-2">
+      <aside aria-label="Quick Order Action" className="lg:hidden fixed bottom-0 inset-x-0 bg-background/95 backdrop-blur-md border-t border-amber-900/10 p-3 z-40 shadow-2xl flex items-center gap-2">
         <div className="min-w-0 flex-1">
-          <Badge variant="outline" className="font-mono text-[10px] font-bold block truncate max-w-[120px] px-1.5 py-0">
+          <Badge variant="outline" className="font-mono text-[10px] font-bold block truncate max-w-[120px] px-1.5 py-0 border-amber-600/30 text-amber-900">
             {itemCode}
           </Badge>
-          <span className="text-xs font-medium text-foreground truncate block mt-0.5">
-            {product.name}
+          <span className="text-xs font-semibold text-foreground truncate block mt-0.5">
+            {product.name} {displayPrice ? `— ₹${Number(displayPrice).toLocaleString('en-IN')}` : ''}
           </span>
         </div>
 
         <Button
           size="sm"
           variant={listConfirmed ? 'secondary' : inList ? 'secondary' : 'outline'}
-          className="h-10 px-3 text-xs gap-1 font-medium shrink-0"
+          className="h-10 px-3 text-xs gap-1 font-medium shrink-0 rounded-xl"
           onClick={handleToggleList}
-          aria-label={inList ? `Remove ${product.name} from list` : `Add ${product.name} to enquiry list`}
+          aria-label={inList ? `Remove ${product.name} from list` : `Add ${product.name} to order list`}
         >
           {listConfirmed ? (
             <Check className="h-4 w-4 text-emerald-600 animate-in zoom-in-75 duration-200" />
           ) : inList ? (
-            <Plus className="h-4 w-4 rotate-45 text-muted-foreground" />
+            <Check className="h-4 w-4 text-amber-700" />
           ) : (
             <Plus className="h-4 w-4" />
           )}
@@ -377,14 +399,14 @@ export function ProductDetailPage() {
 
         <Button
           size="sm"
-          className="h-10 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-md shrink-0"
-          onClick={handleWhatsAppEnquiry}
-          aria-label={`Enquire about ${product.name} on WhatsApp`}
+          className="h-10 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-md shrink-0 rounded-xl"
+          onClick={handleWhatsAppOrder}
+          aria-label={`Order ${product.name} on WhatsApp`}
         >
-          {enquiryConfirmed ? (
+          {orderConfirmed ? (
             <>
               <Check className="h-4 w-4 text-white animate-in zoom-in-75 duration-200" />
-              <span>Enquired!</span>
+              <span>Connecting...</span>
             </>
           ) : (
             <>

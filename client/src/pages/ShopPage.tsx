@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
-import { Filter, X, ChevronDown, Sparkles } from 'lucide-react'
+import { Filter, X, ChevronDown, Gem } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,13 +10,15 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 
 const SORT_OPTIONS = [
-  { value: 'featured', label: 'Featured Pieces' },
-  { value: 'newest', label: 'Newest Additions' },
+  { value: 'featured', label: 'Featured Collection' },
+  { value: 'newest', label: 'Newest Arrivals' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
 ]
 
 const AVAILABILITY_OPTIONS = [
-  { value: 'available', label: 'Available for Rent' },
-  { value: 'low_stock', label: 'Limited Booking Slots' },
+  { value: 'available', label: 'In Stock' },
+  { value: 'low_stock', label: 'Limited Quantity' },
 ]
 
 export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = {}) {
@@ -40,7 +42,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
 
   const { data, isLoading, error } = trpc.products.getList.useQuery({
     category: category || undefined,
-    mode: 'rental',
+    mode: undefined, // Show all jewellery collections
     availability: availability as 'available' | 'low_stock' | 'out_of_stock' | 'discontinued' | undefined,
     featured: featured || undefined,
     search: search || undefined,
@@ -72,18 +74,21 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
   return (
     <div className="animate-fade-in">
       {/* Page Header */}
-      <section className="py-12 lg:py-16 bg-muted/30 border-b border-border/60" aria-labelledby="shop-title">
+      <section className="py-12 lg:py-16 bg-amber-50/40 dark:bg-muted/20 border-b border-amber-900/10" aria-labelledby="shop-title">
         <div className="container-sheaura">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 id="shop-title" className="font-display text-3xl sm:text-4xl lg:text-5xl font-medium text-foreground mb-4">
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-widest block mb-2">
+              Exquisite Handcrafted Jewellery
+            </span>
+            <h1 id="shop-title" className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-950 dark:text-amber-200 mb-4">
               {category
-                ? `${CATEGORIES.find(c => c.value === category)?.label || 'Category'} — Rental Ornaments`
-                : 'Rental Ornaments Catalogue'}
+                ? `${CATEGORIES.find(c => c.value === category)?.label || 'Category'} Collection`
+                : 'Fashion & Imitation Jewellery Catalogue'}
             </h1>
             <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
               {search
-                ? `Showing rental ornaments matching "${search}"`
-                : 'Browse our curated collection of bridal, temple, and celebration imitation ornaments. Note your preferred item codes to enquire directly on WhatsApp.'
+                ? `Showing jewellery pieces matching "${search}"`
+                : 'Browse our curated collection of antique chokers, temple bridal sets, and celebration jewellery. Click to order on WhatsApp with your chosen item codes.'
               }
             </p>
           </div>
@@ -98,27 +103,27 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
             <aside className="lg:w-64 flex-shrink-0" aria-label="Catalogue filters">
               {/* Mobile Filter Toggle */}
               <button
-                className="lg:hidden w-full justify-between mb-4 flex items-center px-4 h-12 rounded-xl border border-border bg-card shadow-sm active:bg-accent transition-colors"
+                className="lg:hidden w-full justify-between mb-4 flex items-center px-4 h-12 rounded-2xl border border-amber-900/15 bg-card shadow-sm active:bg-amber-50 transition-colors"
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 aria-expanded={isFilterOpen}
               >
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <Filter className="h-4 w-4 text-primary" />
-                  <span>Filter Ornaments {hasActiveFilters ? '(Active)' : ''}</span>
+                <span className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-300">
+                  <Filter className="h-4 w-4 text-amber-700" />
+                  <span>Filter Jewellery {hasActiveFilters ? '(Active)' : ''}</span>
                 </span>
                 <ChevronDown className={cn('h-4 w-4 transition-transform text-muted-foreground', isFilterOpen && 'rotate-180')} />
               </button>
 
-              <div className={cn('space-y-6', !isFilterOpen ? 'hidden lg:block' : 'block p-4 bg-card rounded-2xl border border-border shadow-sm mb-6 lg:mb-0 lg:p-0 lg:bg-transparent lg:border-0 lg:shadow-none')}>
+              <div className={cn('space-y-6', !isFilterOpen ? 'hidden lg:block' : 'block p-5 bg-card rounded-2xl border border-amber-900/15 shadow-sm mb-6 lg:mb-0 lg:p-0 lg:bg-transparent lg:border-0 lg:shadow-none')}>
                 {/* Search by Name or Item Code */}
                 <div>
-                  <label htmlFor="search" className="block text-sm font-medium mb-2">Search</label>
+                  <label htmlFor="search" className="block text-xs font-semibold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-2">Search</label>
                   <Input
                     id="search"
-                    placeholder="Search name or item code..."
+                    placeholder="Search name or item code (e.g. SH-001)..."
                     value={search}
                     onChange={(e) => updateFilters({ search: e.target.value || undefined })}
-                    className="w-full text-sm"
+                    className="w-full text-sm rounded-xl"
                   />
                 </div>
 
@@ -126,9 +131,9 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
 
                 {/* Category Filter */}
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium mb-2">Category</label>
+                  <label htmlFor="category" className="block text-xs font-semibold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-2">Category</label>
                   <Select value={category} onValueChange={(v) => updateFilters({ category: v || undefined })}>
-                    <SelectTrigger id="category" className="w-full text-sm">
+                    <SelectTrigger id="category" className="w-full text-sm rounded-xl">
                       <SelectValue placeholder="All Categories" />
                     </SelectTrigger>
                     <SelectContent>
@@ -142,9 +147,9 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
 
                 {/* Availability Filter */}
                 <div>
-                  <label htmlFor="availability" className="block text-sm font-medium mb-2">Availability</label>
+                  <label htmlFor="availability" className="block text-xs font-semibold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-2">Availability</label>
                   <Select value={availability} onValueChange={(v) => updateFilters({ availability: v || undefined })}>
-                    <SelectTrigger id="availability" className="w-full text-sm">
+                    <SelectTrigger id="availability" className="w-full text-sm rounded-xl">
                       <SelectValue placeholder="All Availability" />
                     </SelectTrigger>
                     <SelectContent>
@@ -158,7 +163,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
 
                 {/* Clear Filters Button */}
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full text-xs text-amber-800 hover:text-amber-900 hover:bg-amber-500/10 rounded-xl">
                     <X className="h-3.5 w-3.5 mr-1" />
                     Reset Filters
                   </Button>
@@ -167,25 +172,25 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
             </aside>
 
             {/* Product Grid Area */}
-            <main className="flex-1" aria-label="Rental ornament catalogue">
+            <main className="flex-1" aria-label="Jewellery catalogue">
               {/* Controls bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-border">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-amber-900/10">
                 <p className="text-sm text-muted-foreground">
                   {isLoading ? (
                     'Loading catalogue...'
                   ) : (
                     <span>
-                      Showing <strong className="text-foreground">{data?.items.length || 0}</strong> of{' '}
-                      <strong className="text-foreground">{data?.total || 0}</strong> rental ornaments
+                      Showing <strong className="text-amber-900 dark:text-amber-300">{data?.items.length || 0}</strong> of{' '}
+                      <strong className="text-amber-900 dark:text-amber-300">{data?.total || 0}</strong> jewellery pieces
                     </span>
                   )}
                 </p>
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center space-x-2">
-                  <label htmlFor="sort" className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</label>
+                  <label htmlFor="sort" className="text-xs font-medium text-muted-foreground whitespace-nowrap">Sort by:</label>
                   <Select value={sortBy} onValueChange={(v) => updateFilters({ sortBy: v })}>
-                    <SelectTrigger id="sort" className="w-[180px] h-9 text-xs">
+                    <SelectTrigger id="sort" className="w-[190px] h-9 text-xs rounded-xl border-amber-900/15">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -203,7 +208,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
               {isLoading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="animate-pulse space-y-3">
+                    <div key={i} className="animate-pulse space-y-3 p-4 rounded-2xl border border-amber-900/10">
                       <div className="aspect-[4/5] bg-muted/60 rounded-xl" />
                       <div className="h-4 bg-muted/60 rounded w-1/3" />
                       <div className="h-5 bg-muted/60 rounded w-3/4" />
@@ -212,17 +217,17 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
                 </div>
               ) : error ? (
                 <div className="text-center py-16">
-                  <p className="text-destructive mb-4">Failed to load rental catalogue.</p>
-                  <Button onClick={() => window.location.reload()}>Retry</Button>
+                  <p className="text-destructive mb-4">Failed to load jewellery catalogue.</p>
+                  <Button onClick={() => window.location.reload()} className="rounded-xl">Retry</Button>
                 </div>
               ) : data?.items.length === 0 ? (
-                <div className="text-center py-16 bg-muted/20 rounded-2xl border border-dashed border-border p-8">
-                  <Sparkles className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
-                  <h3 className="font-display text-lg font-medium mb-1">No Rental Ornaments Found</h3>
+                <div className="text-center py-16 bg-amber-50/20 rounded-3xl border border-dashed border-amber-900/20 p-8">
+                  <Gem className="h-10 w-10 mx-auto text-amber-700/50 mb-3" />
+                  <h3 className="font-display text-lg font-bold text-amber-950 dark:text-amber-200 mb-1">No Jewellery Pieces Found</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    Try adjusting your search query or filters to discover available pieces.
+                    Try adjusting your search query or reset filters to discover our designs.
                   </p>
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-xl border-amber-700/30">
                     Clear Filters
                   </Button>
                 </div>
@@ -242,6 +247,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
                     size="sm"
                     disabled={page <= 1}
                     onClick={() => updateFilters({ page: String(page - 1) })}
+                    className="rounded-xl"
                   >
                     Previous
                   </Button>
@@ -253,6 +259,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
                     size="sm"
                     disabled={page >= data.totalPages}
                     onClick={() => updateFilters({ page: String(page + 1) })}
+                    className="rounded-xl"
                   >
                     Next
                   </Button>

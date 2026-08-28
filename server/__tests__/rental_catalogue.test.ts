@@ -120,17 +120,17 @@ describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () =
       expect(message).toContain('Occasion Bangles')
       expect(message).toContain('EBG-108')
       expect(message).toContain('Kundan Earrings')
-      expect(message).toContain('Preferred date: 2026-12-15')
+      expect(message).toContain('2026-12-15')
     })
 
-    it('should explicitly state that the message is an enquiry and not a confirmed booking', () => {
+    it('should explicitly request availability and dispatch details from Sheaura concierge', () => {
       const message = generateWhatsAppMessage({
         items: [{ itemCode: 'SH-TEST', name: 'Festive Set' }],
         brandName: 'Sheaura',
       })
 
       expect(message).toContain(
-        'Please confirm availability and rental terms. I understand this message is only an enquiry and not a confirmed booking.'
+        'Please confirm product availability, custom sizing, and dispatch timelines. Thank you!'
       )
     })
   })

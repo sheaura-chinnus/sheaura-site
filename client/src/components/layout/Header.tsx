@@ -1,21 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingBag, Search, LogOut, Settings, ArrowRight, MessageCircle } from 'lucide-react'
+import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { useEnquiryList } from '@/hooks/useEnquiryBasket'
-import { useAuth, useLogout } from '@/hooks/useAuth'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 const navigation = [
@@ -34,9 +23,7 @@ export function Header() {
   const location = useLocation()
   const navigate = useNavigate()
   const { itemCount } = useEnquiryList()
-  const { user, isLoading, isAuthenticated } = useAuth()
   const { data: settings } = useSiteSettings()
-  const logout = useLogout()
 
   const brandName = settings?.brandName || 'Sheaura'
   const logoUrl = settings?.siteLogoMediaId
@@ -71,11 +58,6 @@ export function Header() {
       return location.pathname === path
     }
     return location.pathname.startsWith(href)
-  }
-
-  const handleLogout = async () => {
-    await logout.mutateAsync()
-    navigate('/')
   }
 
   return (
@@ -163,46 +145,6 @@ export function Header() {
                 </span>
               )}
             </Link>
-
-            {/* Admin Controls (Only when authenticated as admin) */}
-            {!isLoading && isAuthenticated && user?.role === 'admin' && (
-              <div className="hidden sm:flex items-center gap-2">
-                <Link to="/admin">
-                  <Button size="sm" variant="default" className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium shadow-sm text-xs h-8">
-                    <Settings className="h-3.5 w-3.5" />
-                    <span>Admin</span>
-                  </Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 p-1 rounded-lg hover:bg-accent transition-colors min-h-[44px] min-w-[44px]" aria-label="Admin menu">
-                      <Avatar className="h-7 w-7">
-                        <AvatarImage src={user.image || undefined} alt={user.name || 'Admin'} />
-                        <AvatarFallback className="text-xs bg-amber-100 text-amber-800">A</AvatarFallback>
-                      </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-48" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal text-xs">
-                      <p className="font-medium truncate">{user.name || 'Admin'}</p>
-                      <p className="text-muted-foreground truncate">{user.email}</p>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin" className="text-xs cursor-pointer">
-                        <Settings className="h-3.5 w-3.5 mr-2" />
-                        Admin Dashboard
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive text-xs cursor-pointer">
-                      <LogOut className="h-3.5 w-3.5 mr-2" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
 
             {/* Three-Bar / Mobile Menu Toggle Button */}
             <button
@@ -334,33 +276,6 @@ export function Header() {
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </a>
-              )}
-
-              {/* Admin Section (when authenticated) */}
-              {isAuthenticated && user?.role === 'admin' && (
-                <div className="pt-2 space-y-2 border-t border-border">
-                  <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider block px-1">
-                    Sheaura Admin
-                  </span>
-                  <Link
-                    to="/admin"
-                    className="flex items-center justify-between px-4 py-3 text-sm font-medium rounded-xl text-amber-700 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 min-h-[48px]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>Admin Dashboard</span>
-                    </span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium rounded-xl text-destructive hover:bg-destructive/10 text-left min-h-[48px]"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Log Out ({user.email})</span>
-                  </button>
-                </div>
               )}
             </div>
 

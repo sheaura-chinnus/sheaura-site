@@ -1,9 +1,21 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Trash2, MessageCircle, Copy, ArrowLeft, Check, ShoppingBag, ShieldCheck } from 'lucide-react'
+import {
+  Trash2,
+  MessageCircle,
+  Copy,
+  ArrowLeft,
+  ShoppingBag,
+  ShieldCheck,
+  Truck,
+  Sparkles,
+  Lock,
+  CheckCircle2
+} from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { useEnquiryList } from '@/hooks/useEnquiryBasket'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,61 +23,125 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { buildWhatsAppUrl, generateWhatsAppMessage } from '@/lib/whatsapp'
-import { Toaster, toast } from 'react-hot-toast'
+import { formatCurrency } from '@/lib/utils'
+import { toast } from 'react-hot-toast'
 
 export function EnquiryPage() {
   const { data: settings } = useSiteSettings()
+  const { user, isAuthenticated } = useAuth()
   const { items, removeItem, clearList, itemCount } = useEnquiryList()
 
-  const [customerName, setCustomerName] = useState('')
-  const [preferredDate, setPreferredDate] = useState('')
+  // Checkout Mode: 'whatsapp' | 'online'
+  const [checkoutMode, setCheckoutMode] = useState<'whatsapp' | 'online'>('online')
+
+  // Form Fields
+  const [customerName, setCustomerName] = useState(user?.name || '')
+  const [customerPhone, setCustomerPhone] = useState((user as any)?.phone || '')
+  const [customerEmail, setCustomerEmail] = useState(user?.email || '')
+  const [shippingAddress, setShippingAddress] = useState((user as any)?.deliveryAddress || '')
+  const [city, setCity] = useState((user as any)?.city || '')
+  const [state, setState] = useState((user as any)?.state || '')
+  const [pincode, setPincode] = useState((user as any)?.pincode || '')
   const [note, setNote] = useState('')
-  const [orderSent, setOrderSent] = useState(false)
 
-  const createEnquiryMutation = trpc.enquiries.createEnquiry.useMutation({
-    onError: (err) => {
-      // Non-blocking background log
-      console.warn('Background order log notification:', err.message)
-    },
-  })
+  // Payment Method: 'prepaid_upi' | 'cards' | 'cod' | 'stripe'
+  const [paymentMethod, setPaymentMethod] = useState<'prepaid_upi' | 'cards' | 'cod' | 'stripe'>('prepaid_upi')
 
-  // Calculate total price if prices are present
-  const totalPrice = items.reduce((acc, item) => {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmedOrderId, setConfirmedOrderId] = useState<string | null>(null)
+
+  // Sync user details when auth loads
+  useEffect(() => {
+    if (user) {
+      if (!customerName) setCustomerName(user.name || '')
+      if (!customerEmail) setCustomerEmail(user.email || '')
+      if (!customerPhone && (user as any).phone) setCustomerPhone((user as any).phone)
+      if (!shippingAddress && (user as any).deliveryAddress) setShippingAddress((user as any).deliveryAddress)
+      if (!city && (user as any).city) setCity((user as any).city)
+      if (!state && (user as any).state) setState((user as any).state)
+      if (!pincode && (user as any).pincode) setPincode((user as any).pincode)
+    }
+  }, [user])
+
+  const createEnquiryMutation = trpc.enquiries.createEnquiry.useMutation()
+
+  // Calculations
+  const subtotal = items.reduce((acc, item) => {
     const val = Number(item.price || item.salePrice || 0)
     return acc + (isNaN(val) ? 0 : val)
   }, 0)
 
-  const handleCopyMessage = () => {
-    const message = generateWhatsAppMessage({
-      items: items.map(i => ({ itemCode: i.itemCode, name: i.productName, price: i.price || i.salePrice })),
-      customerName,
-      preferredDate,
-      note,
-      brandName: settings?.brandName || 'Sheaura',
-    })
-    navigator.clipboard.writeText(message)
-    toast.success('Order enquiry copied to clipboard!')
+  // 5% instant discount for prepaid UPI / cards
+  const isPrepaid = paymentMethod === 'prepaid_upi' || paymentMethod === 'cards' || paymentMethod === 'stripe'
+  const prepaidDiscount = isPrepaid && subtotal > 0 ? Math.round(subtotal * 0.05) : 0
+  const codFee = paymentMethod === 'cod' ? 50 : 0
+  const grandTotal = Math.max(0, subtotal - prepaidDiscount + codFee)
+
+  // Handle Online Delivery Checkout Submit
+  const handleOnlineCheckout = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (items.length === 0) {
+      toast.error('Your order list is empty')
+      return
+    }
+    if (!customerName.trim() || !customerPhone.trim() || !shippingAddress.trim() || !pincode.trim()) {
+      toast.error('Please fill in your complete delivery address and phone number')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const res = await createEnquiryMutation.mutateAsync({
+        name: customerName.trim(),
+        email: customerEmail.trim() || (user?.email ?? 'customer@sheaura.com'),
+        phone: customerPhone.trim(),
+        preferredContact: paymentMethod === 'cod' ? 'whatsapp' : 'phone',
+        shippingAddress: shippingAddress.trim(),
+        city: city.trim() || undefined,
+        state: state.trim() || undefined,
+        pincode: pincode.trim(),
+        paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'cod' ? 'cash_on_delivery' : 'pending',
+        prepaidDiscount: prepaidDiscount,
+        deliveryPickup: 'delivery',
+        message: note.trim() || undefined,
+        items: items.map(i => ({
+          productId: i.productId,
+          quantity: 1,
+          mode: 'sale',
+        })),
+      })
+
+      setConfirmedOrderId(res.enquiryId)
+      clearList()
+      toast.success('Order placed successfully! Check your account for tracking.')
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to place order. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
+  // Handle WhatsApp Concierge Submit
   const handleOpenWhatsApp = () => {
     const url = buildWhatsAppUrl({
       items: items.map(i => ({ itemCode: i.itemCode, name: i.productName, price: i.price || i.salePrice })),
-      customerName,
-      preferredDate,
+      customerName: customerName || (user?.name ?? 'Valued Customer'),
       note,
       whatsappNumber: settings?.whatsappNumber,
       brandName: settings?.brandName || 'Sheaura',
     })
 
-    // Log internal record asynchronously without blocking the user
     if (items.length > 0) {
       try {
         createEnquiryMutation.mutate({
-          name: customerName.trim() || 'Valued Customer',
-          email: 'guest@sheaura.com',
+          name: customerName.trim() || (user?.name ?? 'WhatsApp Shopper'),
+          email: customerEmail.trim() || (user?.email ?? 'guest@sheaura.com'),
+          phone: customerPhone.trim() || undefined,
           preferredContact: 'whatsapp',
-          eventDate: preferredDate ? new Date(preferredDate) : undefined,
+          paymentMethod: 'whatsapp',
           message: note.trim() || undefined,
           items: items.map(i => ({
             productId: i.productId,
@@ -74,53 +150,111 @@ export function EnquiryPage() {
           })),
         })
       } catch {
-        // Safe catch
+        // Silent catch
       }
     }
 
-    // Open WhatsApp
     window.open(url, '_blank', 'noopener,noreferrer')
-    setOrderSent(true)
-    toast.success('Opening WhatsApp to place your order enquiry!')
-    setTimeout(() => {
-      setOrderSent(false)
-    }, 3500)
+    toast.success('Opening WhatsApp Concierge!')
   }
 
+  const handleCopyMessage = () => {
+    const message = generateWhatsAppMessage({
+      items: items.map(i => ({ itemCode: i.itemCode, name: i.productName, price: i.price || i.salePrice })),
+      customerName: customerName || (user?.name ?? 'Valued Customer'),
+      note,
+      brandName: settings?.brandName || 'Sheaura',
+    })
+    navigator.clipboard.writeText(message)
+    toast.success('Order details copied to clipboard!')
+  }
+
+  // Order Confirmed State
+  if (confirmedOrderId) {
+    return (
+      <div className="container-sheaura py-16 lg:py-24 max-w-xl mx-auto text-center space-y-6 animate-fade-in">
+        <Card className="card-sheaura p-8 sm:p-10 border border-emerald-500/30 bg-card shadow-xl space-y-6">
+          <div className="w-16 h-16 bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto text-emerald-600 shadow-xs">
+            <CheckCircle2 className="h-9 w-9" />
+          </div>
+          <div className="space-y-2">
+            <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20">
+              Order Confirmed
+            </Badge>
+            <h1 className="text-2xl sm:text-3xl font-display font-semibold text-foreground">
+              Thank You For Your Order!
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+              Your order <strong className="text-foreground">#{confirmedOrderId.slice(0, 8).toUpperCase()}</strong> has been safely recorded and will be prepared for express delivery.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-muted/40 border border-border text-left text-xs space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Delivery Recipient:</span>
+              <span className="font-medium text-foreground">{customerName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Contact Phone:</span>
+              <span className="font-medium text-foreground">{customerPhone}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Payment Mode:</span>
+              <span className="font-medium text-foreground uppercase">{paymentMethod.replace('_', ' ')}</span>
+            </div>
+            <div className="flex justify-between pt-1 border-t border-border/80">
+              <span className="font-semibold text-foreground">Total Payable:</span>
+              <span className="font-bold text-foreground font-display text-sm">{formatCurrency(grandTotal)}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <Button
+              asChild
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs sm:text-sm h-11 shadow-sm"
+            >
+              <Link to="/account">View Order in My Account</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full text-xs h-10 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 gap-2"
+            >
+              <a
+                href={"https://wa.me/919995098294?text=" + encodeURIComponent("Hello Sheaura, I have placed Order #" + confirmedOrderId.slice(0, 8).toUpperCase() + " for ₹" + grandTotal + ". Please confirm dispatch.")}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle className="h-4 w-4" />
+                <span>Confirm Instantly on WhatsApp</span>
+              </a>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // Empty Cart State
   if (items.length === 0) {
     return (
       <div className="animate-fade-in min-h-[65vh] flex items-center justify-center">
         <div className="container-sheaura text-center py-16">
-          <div className="max-w-md mx-auto p-8 rounded-3xl border border-amber-900/15 bg-card shadow-sm">
-            <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-800 dark:text-amber-300">
+          <div className="max-w-md mx-auto p-8 rounded-3xl border border-amber-900/15 bg-card shadow-sm space-y-5">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-800 dark:text-amber-300">
               <ShoppingBag className="h-8 w-8" />
             </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground mb-3">
-              Your Order List is Empty
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base mb-8 leading-relaxed">
-              Explore our handcrafted fashion jewellery collection, note your favourite item codes, and add them to your list for direct WhatsApp checkout.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/shop">
-                <Button size="lg" className="w-full sm:w-auto gap-2 bg-amber-700 hover:bg-amber-800 text-white shadow-md">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Browse Jewellery</span>
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto gap-2 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50"
-                onClick={() => {
-                  const url = `https://wa.me/919995098294?text=${encodeURIComponent('Hello Sheaura, I would like to enquire about your fashion jewellery collections.')}`
-                  window.open(url, '_blank', 'noopener,noreferrer')
-                }}
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>Chat on WhatsApp</span>
-              </Button>
+            <div className="space-y-1.5">
+              <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                Your Order Bag is Empty
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Explore our handcrafted 1-gram gold plated jewellery sets and add your favourite pieces.
+              </p>
             </div>
+            <Button asChild size="lg" className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs sm:text-sm shadow-md">
+              <Link to="/shop">Explore Jewellery Catalogue</Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -128,239 +262,455 @@ export function EnquiryPage() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
-
-      {/* Page Header */}
-      <section className="py-10 lg:py-14 bg-amber-50/40 dark:bg-muted/20 border-b border-amber-900/10" aria-labelledby="enquiry-title">
-        <div className="container-sheaura">
-          <div className="max-w-3xl mx-auto text-center">
-            <span className="inline-block px-3 py-1 rounded-full bg-amber-500/10 text-amber-900 dark:text-amber-300 text-xs font-semibold uppercase tracking-wider mb-3">
-              Direct WhatsApp Checkout
-            </span>
-            <h1 id="enquiry-title" className="font-display text-3xl sm:text-4xl font-bold text-amber-900 dark:text-amber-300 mb-3">
-              Order & Enquiry List
-            </h1>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Review your chosen handcrafted jewellery pieces. Click to send your complete order selection directly to Sheaura on WhatsApp.
-            </p>
-          </div>
+    <div className="container-sheaura py-8 sm:py-12 lg:py-16 space-y-8 animate-fade-in">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
+        <div>
+          <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-600/30 mb-2">
+            Secure Jewellery Checkout
+          </Badge>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-foreground">
+            Order & Enquiry Checkout
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+            Choose between instant WhatsApp concierge booking or direct online delivery checkout.
+          </p>
         </div>
-      </section>
 
-      {/* Main Content */}
-      <section className="section-spacing pb-28 lg:pb-16">
-        <div className="container-sheaura">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            {/* Items List (2 cols) */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-amber-900/10">
-                <span className="text-sm font-semibold text-foreground">
-                  Selected Jewellery Pieces ({itemCount})
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearList}
-                  className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
-                >
-                  Clear All
-                </Button>
+        <Button variant="ghost" size="sm" asChild className="text-xs text-muted-foreground hover:text-foreground w-fit">
+          <Link to="/shop">
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+            <span>Continue Shopping</span>
+          </Link>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Order Bag Items (5 cols) */}
+        <div className="lg:col-span-5 space-y-6">
+          <Card className="card-sheaura border border-border shadow-sm">
+            <CardHeader className="p-5 pb-3 flex flex-row items-center justify-between border-b border-border">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-base font-display">Selected Pieces ({itemCount})</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearList}
+                className="text-[11px] text-destructive hover:bg-destructive/10 h-7 px-2"
+              >
+                Clear All
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-5 space-y-4">
+              <div className="divide-y divide-border max-h-[420px] overflow-y-auto pr-1">
+                {items.map((item) => (
+                  <div key={item.productId} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      {item.productImage ? (
+                        <img
+                          src={item.productImage}
+                          alt={item.productName}
+                          className="w-14 h-14 rounded-xl object-cover border border-border shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-amber-500/10 flex items-center justify-center text-xs text-amber-700 shrink-0">
+                          Jewel
+                        </div>
+                      )}
+                      <div className="space-y-0.5 min-w-0">
+                        <h4 className="text-xs sm:text-sm font-medium text-foreground line-clamp-1">
+                          {item.productName}
+                        </h4>
+                        <span className="text-[11px] text-muted-foreground block">
+                          Code: {item.itemCode || 'SH-N/A'}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground font-display block">
+                          {formatCurrency(Number(item.price || item.salePrice || 0))}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => removeItem(item.productId)}
+                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded-lg hover:bg-muted shrink-0"
+                      aria-label="Remove item"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
               </div>
 
-              <div className="space-y-3">
-                {items.map((item) => {
-                  const itemPrice = item.price || item.salePrice
-                  return (
-                    <article
-                      key={item.productId}
-                      className="p-3.5 sm:p-4 rounded-2xl border border-amber-900/15 bg-card flex items-center justify-between gap-3 sm:gap-4 shadow-sm hover:border-amber-600/30 transition-all"
-                    >
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                        <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden bg-amber-50/40 shrink-0 border border-amber-900/10">
-                          {item.productImage ? (
-                            <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[10px] text-amber-800/60 p-1 text-center font-serif">
-                              Sheaura
-                            </div>
-                          )}
-                        </div>
+              <Separator />
 
-                        <div className="min-w-0">
-                          <Badge variant="secondary" className="font-mono text-[10px] sm:text-xs font-semibold mb-1 bg-amber-500/10 text-amber-900 dark:text-amber-300 border-amber-600/20">
-                            {item.itemCode}
-                          </Badge>
-                          <Link to={`/product/${item.productSlug}`}>
-                            <h3 className="font-display font-medium text-sm sm:text-base text-foreground truncate hover:text-amber-700 transition-colors">
-                              {item.productName}
-                            </h3>
-                          </Link>
-                          {itemPrice && (
-                            <p className="text-sm font-bold text-amber-900 dark:text-amber-300 font-mono mt-0.5">
-                              ₹{Number(itemPrice).toLocaleString('en-IN')}
-                            </p>
-                          )}
-                          {item.category && (
-                            <span className="text-[11px] sm:text-xs text-muted-foreground block truncate">{item.category}</span>
-                          )}
+              {/* Price Summary Breakdown */}
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span className="text-foreground font-medium">{formatCurrency(subtotal)}</span>
+                </div>
+                {prepaidDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      <span>Prepaid Instant Discount (5%)</span>
+                    </span>
+                    <span>-{formatCurrency(prepaidDiscount)}</span>
+                  </div>
+                )}
+                {codFee > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>COD Convenience Handling</span>
+                    <span className="text-foreground font-medium">+{formatCurrency(codFee)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Domestic Insured Shipping</span>
+                  <span className="text-emerald-600 font-medium uppercase text-[11px]">FREE</span>
+                </div>
+                <div className="flex justify-between text-sm sm:text-base font-bold text-foreground pt-2 border-t border-border font-display">
+                  <span>Total Amount</span>
+                  <span>{formatCurrency(grandTotal)}</span>
+                </div>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="p-3 bg-amber-500/5 rounded-xl border border-amber-600/20 text-[11px] text-amber-900 dark:text-amber-300 space-y-1">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
+                  <span>Sheaura Quality Guarantee</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  6–12 month micro-gold plating guarantee • 24–72h replacement policy with unboxing video • 100% skin-safe brass core.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Dual Checkout Tabs (7 cols) */}
+        <div className="lg:col-span-7 space-y-6">
+          <Tabs value={checkoutMode} onValueChange={(v: string) => setCheckoutMode(v as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1.5 rounded-2xl mb-6">
+              <TabsTrigger value="online" className="gap-2 text-xs sm:text-sm py-2.5">
+                <Truck className="h-4 w-4" />
+                <span>Online Delivery & Payment</span>
+              </TabsTrigger>
+              <TabsTrigger value="whatsapp" className="gap-2 text-xs sm:text-sm py-2.5">
+                <MessageCircle className="h-4 w-4" />
+                <span>Buy via WhatsApp</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Tab 1: Full Online Delivery Checkout */}
+            <TabsContent value="online" className="space-y-6">
+              <Card className="card-sheaura border border-border shadow-sm">
+                <CardHeader className="p-6 pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg font-display">1. Shipping & Contact Details</CardTitle>
+                    {isAuthenticated ? (
+                      <Badge variant="outline" className="text-[10px] text-emerald-700 bg-emerald-500/10 border-emerald-500/20">
+                        Logged in as {user?.email}
+                      </Badge>
+                    ) : (
+                      <Link to="/login" className="text-xs text-amber-700 dark:text-amber-400 hover:underline">
+                        Sign In for autofill
+                      </Link>
+                    )}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-6 pt-0">
+                  <form onSubmit={handleOnlineCheckout} className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="chk-name" className="text-xs font-semibold">Recipient Full Name *</Label>
+                          <Input
+                            id="chk-name"
+                            placeholder="e.g. Ananya Sharma"
+                            value={customerName}
+                            onChange={(e) => setCustomerName(e.target.value)}
+                            required
+                            className="h-10 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="chk-phone" className="text-xs font-semibold">Phone / WhatsApp Number *</Label>
+                          <Input
+                            id="chk-phone"
+                            placeholder="+91 9995098294"
+                            value={customerPhone}
+                            onChange={(e) => setCustomerPhone(e.target.value)}
+                            required
+                            className="h-10 text-xs"
+                          />
                         </div>
                       </div>
 
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive shrink-0 h-10 w-10 min-h-[40px] min-w-[40px]"
-                        onClick={() => removeItem(item.productId)}
-                        aria-label={`Remove ${item.productName}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </article>
-                  )
-                })}
-              </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="chk-address" className="text-xs font-semibold">Delivery Street Address *</Label>
+                        <Input
+                          id="chk-address"
+                          placeholder="Flat/House No, Building, Street, Area..."
+                          value={shippingAddress}
+                          onChange={(e) => setShippingAddress(e.target.value)}
+                          required
+                          className="h-10 text-xs"
+                        />
+                      </div>
 
-              <div className="pt-4 flex items-center justify-between">
-                <Link
-                  to="/shop"
-                  className="inline-flex items-center text-sm font-medium text-amber-800 dark:text-amber-400 hover:underline gap-1.5"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Add more jewellery pieces</span>
-                </Link>
-              </div>
-            </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="chk-city" className="text-xs font-semibold">City / District</Label>
+                          <Input
+                            id="chk-city"
+                            placeholder="Kochi"
+                            value={city}
+                            onChange={(e) => setCity(e.target.value)}
+                            className="h-10 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="chk-state" className="text-xs font-semibold">State</Label>
+                          <Input
+                            id="chk-state"
+                            placeholder="Kerala"
+                            value={state}
+                            onChange={(e) => setState(e.target.value)}
+                            className="h-10 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="chk-pincode" className="text-xs font-semibold">PIN Code *</Label>
+                          <Input
+                            id="chk-pincode"
+                            placeholder="682001"
+                            value={pincode}
+                            onChange={(e) => setPincode(e.target.value)}
+                            required
+                            className="h-10 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
 
-            {/* WhatsApp Preparation Sidebar (1 col) */}
-            <div className="lg:col-span-1">
-              <Card className="card-sheaura shadow-lg border border-amber-900/15 rounded-2xl overflow-hidden">
-                <CardHeader className="bg-amber-50/50 dark:bg-muted/30 pb-4 border-b border-amber-900/10">
-                  <div className="flex items-center gap-2 text-emerald-600 font-semibold text-xs tracking-wider uppercase mb-1">
-                    <MessageCircle className="h-4 w-4" />
-                    <span>WhatsApp Order Builder</span>
+                    <Separator />
+
+                    {/* Payment Method Selector */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-display font-semibold text-foreground">2. Select Payment Method</h3>
+                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-semibold">
+                          5% Instant Discount on Prepaid
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Option 1: Prepaid UPI */}
+                        <div
+                          onClick={() => setPaymentMethod('prepaid_upi')}
+                          className={"p-4 rounded-2xl border cursor-pointer transition-all " + (paymentMethod === 'prepaid_upi' ? 'border-amber-600 bg-amber-500/10 shadow-xs ring-1 ring-amber-600' : 'border-border hover:border-amber-600/40 bg-card')}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              checked={paymentMethod === 'prepaid_upi'}
+                              onChange={() => setPaymentMethod('prepaid_upi')}
+                              className="mt-1 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div className="space-y-1">
+                              <span className="text-xs font-bold block text-foreground">
+                                UPI Instant (GPay / PhonePe / Paytm)
+                              </span>
+                              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-[10px]">
+                                Save 5% Instantly
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 2: Cards / NetBanking */}
+                        <div
+                          onClick={() => setPaymentMethod('cards')}
+                          className={"p-4 rounded-2xl border cursor-pointer transition-all " + (paymentMethod === 'cards' ? 'border-amber-600 bg-amber-500/10 shadow-xs ring-1 ring-amber-600' : 'border-border hover:border-amber-600/40 bg-card')}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              checked={paymentMethod === 'cards'}
+                              onChange={() => setPaymentMethod('cards')}
+                              className="mt-1 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div className="space-y-1">
+                              <span className="text-xs font-bold block text-foreground">
+                                Credit / Debit Card & NetBanking
+                              </span>
+                              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 text-[10px]">
+                                Save 5% Instantly
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 3: Cash on Delivery */}
+                        <div
+                          onClick={() => setPaymentMethod('cod')}
+                          className={"p-4 rounded-2xl border cursor-pointer transition-all " + (paymentMethod === 'cod' ? 'border-amber-600 bg-amber-500/10 shadow-xs ring-1 ring-amber-600' : 'border-border hover:border-amber-600/40 bg-card')}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              checked={paymentMethod === 'cod'}
+                              onChange={() => setPaymentMethod('cod')}
+                              className="mt-1 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div className="space-y-1">
+                              <span className="text-xs font-bold block text-foreground">
+                                Cash on Delivery (COD)
+                              </span>
+                              <p className="text-[10px] text-muted-foreground">+₹50 fee • WhatsApp OTP verification</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Option 4: International Stripe */}
+                        <div
+                          onClick={() => setPaymentMethod('stripe')}
+                          className={"p-4 rounded-2xl border cursor-pointer transition-all " + (paymentMethod === 'stripe' ? 'border-amber-600 bg-amber-500/10 shadow-xs ring-1 ring-amber-600' : 'border-border hover:border-amber-600/40 bg-card')}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              checked={paymentMethod === 'stripe'}
+                              onChange={() => setPaymentMethod('stripe')}
+                              className="mt-1 text-amber-600 focus:ring-amber-500"
+                            />
+                            <div className="space-y-1">
+                              <span className="text-xs font-bold block text-foreground">
+                                International Cards (USD/AED/GBP)
+                              </span>
+                              <p className="text-[10px] text-muted-foreground">DHL/EMS 5–9 days</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="chk-note" className="text-xs font-semibold">Special Instructions or Bridal Event Date (Optional)</Label>
+                      <Textarea
+                        id="chk-note"
+                        placeholder="e.g. Ring size 14, or need delivery before 15th for wedding ceremony..."
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className="text-xs min-h-[60px]"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm h-12 shadow-md gap-2"
+                    >
+                      <Lock className="h-4 w-4" />
+                      <span>{isSubmitting ? 'Processing Order...' : 'Place Order • ' + formatCurrency(grandTotal)}</span>
+                    </Button>
+
+                    <p className="text-[11px] text-center text-muted-foreground">
+                      By placing this order, you agree to Sheaura's{' '}
+                      <Link to="/refund-policy" className="text-amber-700 underline">Return Policy (24–72h unboxing video)</Link> and{' '}
+                      <Link to="/warranty-policy" className="text-amber-700 underline">Plating Warranty</Link>.
+                    </p>
+                  </form>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Tab 2: WhatsApp Concierge Checkout */}
+            <TabsContent value="whatsapp" className="space-y-6">
+              <Card className="card-sheaura border border-border shadow-sm">
+                <CardHeader className="p-6 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-700">
+                      <MessageCircle className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-display">Personal Bridal Stylist on WhatsApp</CardTitle>
+                      <CardDescription className="text-xs mt-0.5">
+                        Direct connection to Sheaura Concierge at +91 9995098294.
+                      </CardDescription>
+                    </div>
                   </div>
-                  <CardTitle className="font-display text-xl text-amber-950 dark:text-amber-200">Order Summary</CardTitle>
-                  <CardDescription className="text-xs">
-                    Connect directly with our styling concierge on WhatsApp.
-                  </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-4 pt-4">
-                  {totalPrice > 0 && (
-                    <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-600/20 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-amber-900 dark:text-amber-300">Estimated Total:</span>
-                      <span className="text-lg font-bold text-amber-900 dark:text-amber-300 font-mono">
-                        ₹{totalPrice.toLocaleString('en-IN')}
-                      </span>
+                <CardContent className="p-6 pt-0 space-y-5">
+                  <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-2 text-xs text-muted-foreground leading-relaxed">
+                    <p className="font-semibold text-foreground">Why order via WhatsApp?</p>
+                    <ul className="list-disc list-inside space-y-1 text-[11px]">
+                      <li>Request high-resolution videos or real-light photographs of jewellery pieces.</li>
+                      <li>Consult our stylist for matching sets (Harams, Chokers, Maang Tikkas).</li>
+                      <li>Customized UPI payment links & instant tracking updates.</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="wa-name" className="text-xs font-semibold">Your Name (Optional)</Label>
+                      <Input
+                        id="wa-name"
+                        placeholder="e.g. Priya Nair"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        className="h-10 text-xs"
+                      />
                     </div>
-                  )}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="custName" className="text-xs font-medium">Your Name (Optional)</Label>
-                    <Input
-                      id="custName"
-                      placeholder="e.g., Ananya Nair"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      className="h-10 text-sm rounded-xl"
-                    />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="wa-note" className="text-xs font-semibold">Custom Inquiries or Questions</Label>
+                      <Textarea
+                        id="wa-note"
+                        placeholder="e.g. Can you share a video of the choker set in natural sunlight?"
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        className="text-xs min-h-[70px]"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="prefDate" className="text-xs font-medium">Required By / Event Date (Optional)</Label>
-                    <Input
-                      id="prefDate"
-                      type="date"
-                      value={preferredDate}
-                      onChange={(e) => setPreferredDate(e.target.value)}
-                      className="h-10 text-sm rounded-xl"
-                    />
-                  </div>
+                  <div className="space-y-3 pt-2">
+                    <Button
+                      type="button"
+                      onClick={handleOpenWhatsApp}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm h-12 shadow-md gap-2"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      <span>Send Order to WhatsApp Concierge</span>
+                    </Button>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="userNote" className="text-xs font-medium">Special Request / Sizing / Notes (Optional)</Label>
-                    <Textarea
-                      id="userNote"
-                      placeholder="e.g., Need matching bangles or delivery to Pathanamthitta"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      rows={3}
-                      className="text-sm resize-none rounded-xl"
-                    />
-                  </div>
-
-                  <Separator />
-
-                  <Button
-                    size="lg"
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-2 h-12 text-sm shadow-md transition-all rounded-xl"
-                    onClick={handleOpenWhatsApp}
-                  >
-                    {orderSent ? (
-                      <>
-                        <Check className="h-5 w-5 text-white animate-in zoom-in-75 duration-200" />
-                        <span>Order Enquiry Sent!</span>
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="h-5 w-5" />
-                        <span>Send Order on WhatsApp</span>
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs h-9 gap-1.5 rounded-xl border-amber-900/15 hover:border-amber-600/30"
-                    onClick={handleCopyMessage}
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy Order Details</span>
-                  </Button>
-
-                  <div className="p-3 bg-muted/40 rounded-xl text-[11px] text-muted-foreground leading-relaxed flex items-start gap-2">
-                    <ShieldCheck className="h-4 w-4 text-amber-700 shrink-0 mt-0.5" />
-                    <p>
-                      <strong>How it works:</strong> Clicking opens WhatsApp directly with all your selected jewellery codes. Our team confirms availability and dispatches promptly.
-                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleCopyMessage}
+                      className="w-full text-xs h-10 gap-2"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      <span>Copy Order Details</span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
-      </section>
-
-      {/* Mobile Sticky WhatsApp Action Bar */}
-      <aside aria-label="Quick WhatsApp Handover" className="lg:hidden fixed bottom-0 inset-x-0 bg-background/95 backdrop-blur-md border-t border-amber-900/10 p-3 z-40 shadow-2xl flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <span className="text-xs font-bold text-amber-900 dark:text-amber-300 block truncate">
-            {itemCount} {itemCount === 1 ? 'item' : 'items'} ({totalPrice > 0 ? `₹${totalPrice.toLocaleString('en-IN')}` : 'Ready'})
-          </span>
-          <span className="text-[10px] text-muted-foreground block truncate">
-            Includes all selected codes
-          </span>
-        </div>
-
-        <Button
-          size="sm"
-          className="h-11 px-4 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-md shrink-0 transition-all rounded-xl"
-          onClick={handleOpenWhatsApp}
-        >
-          {orderSent ? (
-            <>
-              <Check className="h-4 w-4 text-white animate-in zoom-in-75 duration-200" />
-              <span>Sent!</span>
-            </>
-          ) : (
-            <>
-              <MessageCircle className="h-4 w-4" />
-              <span>WhatsApp ({itemCount})</span>
-            </>
-          )}
-        </Button>
-      </aside>
+      </div>
     </div>
   )
 }

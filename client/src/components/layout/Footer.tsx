@@ -14,6 +14,7 @@ const footerLinks = {
   company: [
     { name: 'About Sheaura', href: '/about' },
     { name: 'How to Order', href: '/#how-to-order' },
+    { name: 'Customer Account', href: '/account' },
     { name: 'Jewellery Care Guide', href: '/about#care-guide' },
     { name: 'Contact & WhatsApp', href: '/contact' },
   ],
@@ -21,6 +22,7 @@ const footerLinks = {
     { name: 'Shipping & Delivery', href: '/shipping-policy' },
     { name: 'Plating Warranty & Care', href: '/warranty-policy' },
     { name: 'Return & Exchange', href: '/refund-policy' },
+    { name: 'Account & Security', href: '/account-policy' },
     { name: 'Payment & COD Policy', href: '/payment-policy' },
     { name: 'Terms of Service', href: '/terms' },
     { name: 'Privacy Policy', href: '/privacy' },

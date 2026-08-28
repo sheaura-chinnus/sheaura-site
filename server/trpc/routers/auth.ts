@@ -21,19 +21,250 @@ const updateUserRoleSchema = z.object({
   role: z.enum(['user', 'shop_order_receiver', 'admin']),
 })
 
+// Helper function to hash passwords securely with salt
+function hashPassword(password: string, salt: string): string {
+  return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex')
+}
+
 export const authRouter = router({
   // Get current user session
   getMe: publicProcedure.query(async ({ ctx }: { ctx: TRPCContext }) => {
     if (!ctx.user) return null
-    // Return user with properties matching client expectations
+    // Fetch full user record to include customer address and phone fields
+    const userList = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1)
+    const userRecord = userList[0] || ctx.user
+
     return {
-      id: ctx.user.id,
-      email: ctx.user.email,
-      name: ctx.user.name,
-      image: ctx.user.avatarUrl,
-      role: ctx.user.role,
+      id: userRecord.id,
+      email: userRecord.email,
+      name: userRecord.name,
+      phone: (userRecord as any).phone || null,
+      image: userRecord.avatarUrl,
+      role: userRecord.role,
+      deliveryAddress: (userRecord as any).deliveryAddress || null,
+      city: (userRecord as any).city || null,
+      state: (userRecord as any).state || null,
+      pincode: (userRecord as any).pincode || null,
     }
   }),
+
+  // Customer Registration (Email, Password, Name, Phone)
+  customerRegister: publicProcedure
+    .input(z.object({
+      email: z.string().email('Please enter a valid email address').toLowerCase().trim(),
+      name: z.string().min(1, 'Name is required').max(255).trim(),
+      phone: z.string().max(50).optional(),
+      password: z.string().min(6, 'Password must be at least 6 characters'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1)
+
+      if (existing.length > 0 && existing[0].passwordHash) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'An account with this email already exists. Please sign in.',
+        })
+      }
+
+      const salt = crypto.randomBytes(16).toString('hex')
+      const hash = hashPassword(input.password, salt)
+      const storedHash = `${salt}:${hash}`
+
+      let targetUser = existing[0]
+
+      if (targetUser) {
+        const [updated] = await db
+          .update(users)
+          .set({
+            name: input.name,
+            phone: input.phone,
+            passwordHash: storedHash,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, targetUser.id))
+          .returning()
+        targetUser = updated
+      } else {
+        const [created] = await db
+          .insert(users)
+          .values({
+            id: uuidv4(),
+            email: input.email,
+            name: input.name,
+            phone: input.phone,
+            passwordHash: storedHash,
+            role: 'user',
+          })
+          .returning()
+        targetUser = created
+      }
+
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+      }
+
+      return {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        phone: targetUser.phone,
+        role: targetUser.role,
+        image: targetUser.avatarUrl,
+        deliveryAddress: targetUser.deliveryAddress,
+        city: targetUser.city,
+        state: targetUser.state,
+        pincode: targetUser.pincode,
+      }
+    }),
+
+  // Customer Login (Email & Password)
+  customerLogin: publicProcedure
+    .input(z.object({
+      email: z.string().email('Please enter a valid email address').toLowerCase().trim(),
+      password: z.string().min(1, 'Password is required'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userList = await db.select().from(users).where(eq(users.email, input.email)).limit(1)
+      const targetUser = userList[0]
+
+      if (!targetUser || !targetUser.passwordHash) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid email or password. Please check your credentials or create an account.',
+        })
+      }
+
+      const [salt, expectedHash] = targetUser.passwordHash.split(':')
+      if (!salt || !expectedHash) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid login method. Please sign in using Google or reset your password.',
+        })
+      }
+
+      const inputHash = hashPassword(input.password, salt)
+      if (inputHash !== expectedHash) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid email or password. Access denied.',
+        })
+      }
+
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+      }
+
+      return {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        phone: targetUser.phone,
+        role: targetUser.role,
+        image: targetUser.avatarUrl,
+        deliveryAddress: targetUser.deliveryAddress,
+        city: targetUser.city,
+        state: targetUser.state,
+        pincode: targetUser.pincode,
+      }
+    }),
+
+  // Google OAuth / One-Tap Authentication
+  googleLogin: publicProcedure
+    .input(z.object({
+      email: z.string().email().toLowerCase().trim(),
+      name: z.string().optional(),
+      avatarUrl: z.string().url().optional(),
+      googleId: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1)
+      let targetUser = existing[0]
+
+      if (targetUser) {
+        const [updated] = await db
+          .update(users)
+          .set({
+            name: targetUser.name || input.name,
+            avatarUrl: input.avatarUrl || targetUser.avatarUrl,
+            googleId: input.googleId || targetUser.googleId,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, targetUser.id))
+          .returning()
+        targetUser = updated
+      } else {
+        const [created] = await db
+          .insert(users)
+          .values({
+            id: uuidv4(),
+            email: input.email,
+            name: input.name || 'Shopper',
+            avatarUrl: input.avatarUrl,
+            googleId: input.googleId,
+            role: 'user',
+          })
+          .returning()
+        targetUser = created
+      }
+
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+      }
+
+      return {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        phone: targetUser.phone,
+        role: targetUser.role,
+        image: targetUser.avatarUrl,
+        deliveryAddress: targetUser.deliveryAddress,
+        city: targetUser.city,
+        state: targetUser.state,
+        pincode: targetUser.pincode,
+      }
+    }),
+
+  // Customer Profile & Delivery Address Update
+  updateCustomerProfile: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255).optional(),
+      phone: z.string().max(50).optional(),
+      deliveryAddress: z.string().max(500).optional(),
+      city: z.string().max(100).optional(),
+      state: z.string().max(100).optional(),
+      pincode: z.string().max(20).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [updated] = await db
+        .update(users)
+        .set({
+          ...input,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, ctx.user!.id))
+        .returning()
+
+      if (!updated) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' })
+      }
+
+      return {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        phone: updated.phone,
+        role: updated.role,
+        image: updated.avatarUrl,
+        deliveryAddress: updated.deliveryAddress,
+        city: updated.city,
+        state: updated.state,
+        pincode: updated.pincode,
+      }
+    }),
 
   // Register user (for OAuth callback)
   registerUser: publicProcedure

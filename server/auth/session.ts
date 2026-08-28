@@ -1,9 +1,9 @@
 import passport from 'passport'
 import { db } from '../db/index.js'
-import { users, type User } from '../db/schema.js'
+import { users } from '../db/schema.js'
 import { eq } from 'drizzle-orm'
 
-passport.serializeUser((user: User, done) => {
+passport.serializeUser((user: any, done) => {
   done(null, user.id)
 })
 

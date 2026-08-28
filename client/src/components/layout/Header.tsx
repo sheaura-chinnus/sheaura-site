@@ -1,11 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, Sparkles, MapPin, Phone } from 'lucide-react'
+import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, User } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { useEnquiryList } from '@/hooks/useEnquiryBasket'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
+import { useAuth } from '@/hooks/useAuth'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -24,6 +26,7 @@ export function Header() {
   const navigate = useNavigate()
   const { itemCount } = useEnquiryList()
   const { data: settings } = useSiteSettings()
+  const { user, isAuthenticated } = useAuth()
 
   const brandName = settings?.brandName || 'Sheaura'
   const logoUrl = settings?.siteLogoMediaId
@@ -143,6 +146,30 @@ export function Header() {
             >
               <Search className="h-5 w-5" />
             </button>
+
+            {/* Customer Account Profile Button */}
+            {isAuthenticated ? (
+              <Link
+                to="/account"
+                className="p-2 rounded-xl text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="My Account and Orders"
+              >
+                <Avatar className="h-7 w-7 border border-amber-600/30">
+                  <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
+                  <AvatarFallback className="text-[11px] bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold">
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="p-2 rounded-xl text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Sign In to Customer Account"
+              >
+                <User className="h-5 w-5 text-amber-900 dark:text-amber-300" />
+              </Link>
+            )}
 
             {/* Jewellery Order / Enquiry List Button */}
             <Link
@@ -272,6 +299,48 @@ export function Header() {
                 </div>
 
                 <Separator className="bg-amber-900/10" />
+
+                {/* Customer Account & Orders Card */}
+                {isAuthenticated ? (
+                  <Link
+                    to="/account"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-amber-500/15 border border-amber-600/30 hover:bg-amber-500/20 active:bg-amber-500/25 transition-colors min-h-[54px]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9 border border-amber-600/30 shrink-0">
+                        <AvatarImage src={user?.image || undefined} alt={user?.name || 'User'} />
+                        <AvatarFallback className="text-xs bg-amber-600 text-white font-bold">
+                          {user?.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <span className="font-display font-semibold text-amber-950 dark:text-amber-200 block text-sm">
+                          {user?.name || 'My Account'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Manage orders & delivery addresses</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border hover:bg-muted active:bg-muted/80 transition-colors min-h-[54px]"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-amber-500/15 text-amber-700 shrink-0">
+                        <User className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <span className="font-display font-semibold text-foreground block text-sm">Sign In / Register</span>
+                        <span className="text-xs text-muted-foreground">Access orders & live delivery tracking</span>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                )}
 
                 {/* Order List Card */}
                 <Link

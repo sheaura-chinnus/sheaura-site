@@ -18,6 +18,8 @@ import { ShippingPolicyPage } from '@/pages/ShippingPolicyPage'
 import { PaymentPolicyPage } from '@/pages/PaymentPolicyPage'
 import { RefundPolicyPage } from '@/pages/RefundPolicyPage'
 import { WarrantyPolicyPage } from '@/pages/WarrantyPolicyPage'
+import { AccountPolicyPage } from '@/pages/AccountPolicyPage'
+import { AccountPage } from '@/pages/AccountPage'
 import { LoginPage } from '@/pages/LoginPage'
 
 // Admin pages
@@ -89,6 +91,9 @@ export function App() {
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route path="/warranty-policy" element={<WarrantyPolicyPage />} />
           <Route path="/care-guide" element={<WarrantyPolicyPage />} />
+          <Route path="/account-policy" element={<AccountPolicyPage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/my-orders" element={<Navigate to="/account" replace />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
 

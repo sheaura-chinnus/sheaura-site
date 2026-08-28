@@ -61,3 +61,43 @@ export function useStaffLogin() {
     },
   })
 }
+
+export function useCustomerRegister() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.customerRegister.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useCustomerLogin() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.customerLogin.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useGoogleLogin() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.googleLogin.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useUpdateCustomerProfile() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.updateCustomerProfile.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}

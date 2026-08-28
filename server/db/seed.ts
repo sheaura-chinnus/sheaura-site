@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { db, closePool } from './index.js'
 import { categories, products, productImages } from './schema.js'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 const INITIAL_CATEGORIES = [
   {
@@ -136,8 +136,33 @@ const SAMPLE_PRODUCTS = [
 ]
 
 async function main() {
-  console.log('🌱 Checking and seeding Sheaura luxury jewellery catalogue...')
+  console.log('🔄 Checking database tables and columns...')
+  // Safely apply column updates
+  try {
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS delivery_address TEXT;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);
+    `)
+    await db.execute(sql`
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS shipping_address TEXT;
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50);
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS payment_status VARCHAR(50) DEFAULT 'pending';
+      ALTER TABLE enquiries ADD COLUMN IF NOT EXISTS prepaid_discount DECIMAL(10, 2) DEFAULT '0.00';
+    `)
+    console.log('✅ Columns verified and updated.')
+  } catch (colErr) {
+    console.warn('⚠️ Column check note:', colErr)
+  }
 
+  // Seed default categories
   const categoryMap = new Map<string, string>()
 
   for (const cat of INITIAL_CATEGORIES) {

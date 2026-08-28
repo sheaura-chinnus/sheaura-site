@@ -30,18 +30,25 @@ async function canAccessEnquiry(ctx: { user: { id: string; role: string } }, enq
 }
 
 const createEnquirySchema = z.object({
-  name: z.string().min(1).max(255).default('Rental Guest'),
+  name: z.string().min(1).max(255).default('Guest Shopper'),
   email: z.string().email().max(255).optional().or(z.literal('')).default('guest@sheaura.com'),
   phone: z.string().max(50).optional(),
   preferredContact: z.enum(['email', 'phone', 'whatsapp']).default('whatsapp'),
   eventDate: z.date().optional(),
   returnDate: z.date().optional(),
   deliveryPickup: z.enum(['delivery', 'pickup']).optional(),
+  shippingAddress: z.string().max(500).optional(),
+  city: z.string().max(100).optional(),
+  state: z.string().max(100).optional(),
+  pincode: z.string().max(20).optional(),
+  paymentMethod: z.string().max(50).optional().default('whatsapp'),
+  paymentStatus: z.string().max(50).optional().default('pending'),
+  prepaidDiscount: z.number().optional().default(0),
   message: z.string().max(2000).optional(),
   items: z.array(z.object({
     productId: z.string().uuid(),
     quantity: z.number().int().min(1).default(1),
-    mode: z.enum(['sale', 'rental']).default('rental'),
+    mode: z.enum(['sale', 'rental']).default('sale'),
   })).min(1),
 })
 
@@ -67,10 +74,76 @@ const assignEnquirySchema = z.object({
 })
 
 export const enquiriesRouter = router({
-  // Public: Create enquiry
+  // Customer: Get My Orders & Order Tracking
+  getMyOrders: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = ctx.user!
+
+      const userEnquiries = await db
+        .select()
+        .from(enquiries)
+        .where(
+          or(
+            eq(enquiries.userId, user.id),
+            eq(enquiries.email, user.email)
+          )
+        )
+        .orderBy(desc(enquiries.createdAt))
+
+      if (userEnquiries.length === 0) {
+        return []
+      }
+
+      const enquiryIds = userEnquiries.map(e => e.id)
+
+      const items = await db
+        .select({
+          id: enquiryItems.id,
+          enquiryId: enquiryItems.enquiryId,
+          productId: enquiryItems.productId,
+          productName: products.name,
+          productSlug: products.slug,
+          itemCode: products.itemCode,
+          quantity: enquiryItems.quantity,
+          unitPrice: enquiryItems.unitPrice,
+          mode: enquiryItems.mode,
+        })
+        .from(enquiryItems)
+        .innerJoin(products, eq(enquiryItems.productId, products.id))
+        .where(inArray(enquiryItems.enquiryId, enquiryIds))
+
+      const itemProductIds = Array.from(new Set(items.map(i => i.productId)))
+      const images = itemProductIds.length > 0 ? await db
+        .select({
+          productId: productImages.productId,
+          url: productImages.url,
+          altText: productImages.altText,
+        })
+        .from(productImages)
+        .where(
+          and(
+            inArray(productImages.productId, itemProductIds),
+            eq(productImages.isPrimary, true)
+          )
+        ) : []
+
+      const imageMap = new Map(images.map(img => [img.productId, img.url]))
+
+      return userEnquiries.map(enq => ({
+        ...enq,
+        items: items
+          .filter(i => i.enquiryId === enq.id)
+          .map(i => ({
+            ...i,
+            imageUrl: imageMap.get(i.productId) || null,
+          })),
+      }))
+    }),
+
+  // Public & Customer: Create order / enquiry
   createEnquiry: publicProcedure
     .input(createEnquirySchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       // Validate all products exist and are published/available
       const productIds = input.items.map(i => i.productId)
       const productData = await db
@@ -113,8 +186,9 @@ export const enquiriesRouter = router({
         }
       })
 
-      // Create enquiry
+      // Create enquiry with associated userId if authenticated
       const [enquiry] = await db.insert(enquiries).values({
+        userId: ctx.user?.id || null,
         name: input.name,
         email: input.email,
         phone: input.phone,
@@ -122,6 +196,13 @@ export const enquiriesRouter = router({
         eventDate: input.eventDate,
         returnDate: input.returnDate,
         deliveryPickup: input.deliveryPickup,
+        shippingAddress: input.shippingAddress,
+        city: input.city,
+        state: input.state,
+        pincode: input.pincode,
+        paymentMethod: input.paymentMethod,
+        paymentStatus: input.paymentStatus,
+        prepaidDiscount: input.prepaidDiscount ? input.prepaidDiscount.toString() : '0.00',
         message: input.message,
         status: 'new',
       }).returning()

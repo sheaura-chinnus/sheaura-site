@@ -30,8 +30,7 @@ export function RefundPolicyPage() {
               <section aria-labelledby="introduction">
                 <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
                 <p>
-                  This Refund & Return Policy applies to all purchases made through {brandName}.
-                  For rental returns, see our <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link>.
+                  This Refund & Return Policy applies to all jewellery purchases and orders made through {brandName}.
                   This policy works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link> and
                   <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>.
                 </p>
@@ -40,10 +39,8 @@ export function RefundPolicyPage() {
               <section aria-labelledby="return-window">
                 <h2 id="return-window" className="font-display text-2xl font-medium text-foreground mb-4">2. Return Window</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Standard Returns:</strong> 14 calendar days from delivery date</li>
-                  <li><strong>Extended Holiday Window:</strong> Purchases Nov 1 - Dec 31 returnable until Jan 15</li>
-                  <li><strong>Gift Returns:</strong> 30 days from delivery (gift receipt required)</li>
-                  <li><strong>Defective/Incorrect Items:</strong> 30 days from delivery (no questions asked)</li>
+                  <li><strong>Standard Returns / Replacement:</strong> 7 calendar days from delivery date in original packaging</li>
+                  <li><strong>Transit Damage / Incorrect Items:</strong> 48 hours notification upon delivery with unboxing video proof</li>
                 </ul>
               </section>
 
@@ -54,10 +51,8 @@ export function RefundPolicyPage() {
                 </p>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground mb-4">
                   <li><strong>Unworn/Unused:</strong> No signs of wear, scratches, makeup, perfume, or alterations</li>
-                  <li><strong>Original Packaging:</strong> All boxes, pouches, certificates, tags, and accessories included</li>
-                  <li><strong>Certificates Intact:</strong> Authenticity certificates, grading reports, warranty cards unmarked</li>
-                  <li><strong>Hygiene Seals:</strong> Cosmetics must have original seals unbroken</li>
-                  <li><strong>No Resizing/Engraving:</strong> Jewellery must not be resized, engraved, or modified</li>
+                  <li><strong>Original Packaging:</strong> All velvet boxes, pouches, tags, and accessories included</li>
+                  <li><strong>No Alterations:</strong> Jewellery must not be altered, bent, or modified</li>
                 </ul>
                 <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
                   <p className="text-sm text-primary font-medium">⚠ Items failing inspection will be returned to you at your cost. No refund issued.</p>
@@ -67,16 +62,13 @@ export function RefundPolicyPage() {
               <section aria-labelledby="non-returnable">
                 <h2 id="non-returnable" className="font-display text-2xl font-medium text-foreground mb-4">4. Non-Returnable Items</h2>
                 <p className="text-muted-foreground mb-4">
-                  The following cannot be returned or exchanged (except if defective/incorrect):
+                  The following cannot be returned or exchanged (except if defective/incorrect upon delivery):
                 </p>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Custom Designs:</strong> Made-to-order, personalized, or engraved pieces</li>
-                  <li><strong>Cosmetics & Beauty:</strong> All opened/unsealed products (hygiene regulations)</li>
-                  <li><strong>Sale/Clearance:</strong> Items marked "Final Sale," "Clearance," or &gt;50% off</li>
-                  <li><strong>Gift Cards:</strong> Digital and physical gift cards, store credit</li>
-                  <li><strong>Pierced Jewellery:</strong> Earrings, nose pins, body jewellery (hygiene)</li>
-                  <li><strong>Altered Items:</strong> Resized, engraved, or modified by customer or third party</li>
-                  <li><strong>Rental Items:</strong> Governed by separate <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link></li>
+                  <li><strong>Custom Designs:</strong> Made-to-order, personalized, or custom-matched bridal sets</li>
+                  <li><strong>Sale/Clearance:</strong> Items marked "Final Sale" or promotional clearance</li>
+                  <li><strong>Pierced Jewellery:</strong> Earrings, nose pins, body jewellery once worn (hygiene safety)</li>
+                  <li><strong>Altered Items:</strong> Resized, modified, or damaged through improper care</li>
                 </ul>
               </section>
 
@@ -176,36 +168,20 @@ export function RefundPolicyPage() {
                 </ul>
               </section>
 
-              <section aria-labelledby="rental-deposits">
-                <h2 id="rental-deposits" className="font-display text-2xl font-medium text-foreground mb-4">12. Rental Security Deposits</h2>
-                <p className="text-muted-foreground mb-4">
-                  See <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link> for full details. Summary:
-                </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                  <li>Refunded within 7 business days of safe return and inspection</li>
-                  <li>Deductions for: damage, loss, late return, missing packaging, cleaning</li>
-                  <li>Disputes: Documented with timestamped photos at delivery and return</li>
-                  <li>If deductions &gt; deposit: balance invoiced (payable within 7 days)</li>
-                </ul>
-              </section>
-
               <section aria-labelledby="cancellations">
-                <h2 id="cancellations" className="font-display text-2xl font-medium text-foreground mb-4">13. Order Cancellations</h2>
+                <h2 id="cancellations" className="font-display text-2xl font-medium text-foreground mb-4">12. Order Cancellations</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Before Dispatch:</strong> Full refund (cancel anytime before "Dispatched" status)</li>
-                  <li><strong>After Dispatch:</strong> Treat as return. Refuse delivery or return per process above</li>
-                  <li><strong>Custom Orders:</strong> Cancellable within 24 hours only. After: 50% fee (materials/labor)</li>
-                  <li><strong>Rental Cancellations:</strong> Per <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link> (Section 8)</li>
+                  <li><strong>Standard Orders (Before Dispatch):</strong> 100% full refund if cancelled prior to dispatch handover</li>
+                  <li><strong>After Dispatch:</strong> Must be processed under the standard 7-day return procedure upon receipt</li>
+                  <li><strong>Custom / Bridal Sets:</strong> Cancellation accepted within 24 hours of advance payment only</li>
                 </ul>
               </section>
 
               <section aria-labelledby="dispute-resolution">
-                <h2 id="dispute-resolution" className="font-display text-2xl font-medium text-foreground mb-4">14. Dispute Resolution</h2>
+                <h2 id="dispute-resolution" className="font-display text-2xl font-medium text-foreground mb-4">13. Customer Support & Resolution</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li>Contact <a href="mailto:returns@sheaura.com" className="underline hover:text-primary">returns@sheaura.com</a> — we resolve 95% directly</li>
-                  <li>Escalate to management: <a href="mailto:management@sheaura.com" className="underline hover:text-primary">management@sheaura.com</a></li>
-                  <li>Consumer Forum: Available per Indian Consumer Protection Act, 2019</li>
-                  <li>Jurisdiction: Mumbai courts (per Terms of Service)</li>
+                  <li>Direct WhatsApp assistance at +91 9995098294 for rapid resolution within 24 hours</li>
+                  <li>Email resolution via <a href="mailto:support@sheaura.com" className="underline hover:text-primary">support@sheaura.com</a></li>
                 </ul>
               </section>
 

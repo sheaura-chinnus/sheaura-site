@@ -30,14 +30,14 @@ export function PaymentPolicyPage() {
               <section aria-labelledby="introduction">
                 <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
                 <p>
-                  This Payment Policy describes how {brandName} processes payments for purchases and rentals.
+                  This Payment Policy describes how {brandName} processes payments for jewellery purchases and custom orders.
                   It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>,
-                  <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link>, and
-                  <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>.
+                  <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>, and
+                  <Link to="/refund-policy" className="underline hover:text-primary">Refund Policy</Link>.
                 </p>
                 <p>
-                  All payments are processed through PCI-DSS compliant payment partners. We never store
-                  full card details on our servers.
+                  All payments are processed through secure, PCI-DSS compliant payment gateways and UPI rails. We never store
+                  card details or credentials on our servers.
                 </p>
               </section>
 
@@ -47,54 +47,34 @@ export function PaymentPolicyPage() {
                 <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.1 Online Payments (Instant)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
                   <li><strong>Credit/Debit Cards:</strong> Visa, Mastercard, RuPay, American Express, Diners Club</li>
-                  <li><strong>UPI:</strong> All UPI apps (PhonePe, Google Pay, Paytm, BHIM, etc.)</li>
+                  <li><strong>UPI:</strong> All UPI apps (Google Pay, PhonePe, Paytm, BHIM, etc.)</li>
                   <li><strong>Net Banking:</strong> 50+ Indian banks supported</li>
-                  <li><strong>Wallets:</strong> Paytm, Amazon Pay, PhonePe, MobiKwik, Freecharge</li>
-                  <li><strong>EMI:</strong> Available on select cards for orders &gt;₹5,000 (interest rates vary by bank)</li>
+                  <li><strong>Wallets:</strong> Paytm, Amazon Pay, PhonePe, MobiKwik</li>
+                  <li><strong>EMI:</strong> Available on select credit cards for eligible orders</li>
                 </ul>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.2 Offline Payments</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.2 Offline Payments & Bank Transfer</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Bank Transfer (NEFT/RTGS/IMPS):</strong> Account details provided on request</li>
-                  <li><strong>Cheque/Demand Draft:</strong> For corporate/wholesale orders only</li>
-                  <li><strong>Cash on Delivery:</strong> Available for eligible orders (see Shipping Policy)</li>
-                </ul>
-
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.3 International Payments</h3>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Cards:</strong> International Visa, Mastercard, Amex</li>
-                  <li><strong>Wire Transfer:</strong> SWIFT/SEPA (buyer bears all fees)</li>
-                  <li><strong>PayPal:</strong> Available on request (additional 3.5% fee)</li>
-                  <li><strong>Currency:</strong> INR preferred. USD/EUR/GBP accepted with conversion fees</li>
+                  <li><strong>Bank Transfer (NEFT/RTGS/IMPS):</strong> Account details provided by our concierge</li>
+                  <li><strong>Direct UPI Transfer:</strong> Verified Sheaura Business UPI handle</li>
                 </ul>
               </section>
 
               <section aria-labelledby="payment-flow">
                 <h2 id="payment-flow" className="font-display text-2xl font-medium text-foreground mb-4">3. Payment Flow</h2>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Purchases</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Order Confirmation</h3>
                 <ol className="list-decimal list-inside space-y-3 text-muted-foreground mb-4">
-                  <li>Submit enquiry → Our team confirms final pricing</li>
-                  <li>Receive payment link via email/WhatsApp/SMS</li>
-                  <li>Complete payment within 24 hours (link expires)</li>
-                  <li>Payment confirmed → Order processed → Dispatch scheduled</li>
+                  <li>Select jewellery items and submit enquiry on WhatsApp or website</li>
+                  <li>Our styling concierge confirms availability, pricing, and dispatch slot</li>
+                  <li>Receive secure UPI / Gateway payment link via WhatsApp</li>
+                  <li>Payment confirmed → Order processed → Velvet box dispatch scheduled</li>
                 </ol>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 Rentals</h3>
-                <ol className="list-decimal list-inside space-y-3 text-muted-foreground mb-4">
-                  <li>Submit enquiry → Team confirms availability, rental fee, deposit</li>
-                  <li>Receive payment link for: Rental Fee + Security Deposit</li>
-                  <li>Complete payment within 24 hours to secure booking</li>
-                  <li>Payment confirmed → Delivery scheduled</li>
-                  <li>Deposit refunded within 7 business days after safe return</li>
-                </ol>
-
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.3 Partial Payments</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 Custom Orders & Bridal Sets</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li>Available for orders &gt;₹50,000 (minimum 50% advance)</li>
-                  <li>Balance due before dispatch</li>
-                  <li>Rental: 100% rental fee + deposit due before dispatch</li>
-                  <li>Custom designs: 50% advance, 50% before delivery</li>
+                  <li>Custom made-to-order sets require a 50% advance upon confirmation</li>
+                  <li>Remaining balance is cleared before dispatch with live video preview verification</li>
                 </ul>
               </section>
 
@@ -175,11 +155,9 @@ export function PaymentPolicyPage() {
               <section aria-labelledby="receipts">
                 <h2 id="receipts" className="font-display text-2xl font-medium text-foreground mb-4">9. Receipts & Invoices</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Payment Receipt:</strong> Auto-emailed on successful payment</li>
-                  <li><strong>GST Invoice:</strong> Generated on dispatch. Emailed + available in account</li>
-                  <li><strong>Rental Agreement:</strong> Signed digital copy emailed before delivery</li>
-                  <li><strong>Deposit Receipt:</strong> Separate receipt for security deposit</li>
-                  <li><strong>Corporate:</strong> Custom invoice formats available on request</li>
+                  <li><strong>Payment Receipt:</strong> Digital receipt provided on successful payment</li>
+                  <li><strong>GST Invoice:</strong> Dispatched with order package and shared on WhatsApp/email</li>
+                  <li><strong>Corporate & Bulk:</strong> Custom invoice formats available on request</li>
                 </ul>
               </section>
 

@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { useContactInfo } from '@/hooks/useContactInfo'
 
 export function ShippingPolicyPage() {
-  const { data: settings } = useSiteSettings()
   const contact = useContactInfo()
   const brandName = contact.brandName
   const lastUpdated = 'August 24, 2026'
@@ -32,9 +30,7 @@ export function ShippingPolicyPage() {
               <section aria-labelledby="introduction">
                 <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
                 <p>
-                  This Shipping & Delivery Policy outlines how {brandName} handles delivery of purchased items
-                  and rental items. It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>,
-                  <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link>, and
+                  This Shipping & Delivery Policy outlines how {brandName} handles dispatch, packaging, and pan-India delivery of our handcrafted fashion jewellery. It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link> and
                   <Link to="/refund-policy" className="underline hover:text-primary">Refund Policy</Link>.
                 </p>
               </section>
@@ -42,48 +38,25 @@ export function ShippingPolicyPage() {
               <section aria-labelledby="shipping-zones">
                 <h2 id="shipping-zones" className="font-display text-2xl font-medium text-foreground mb-4">2. Shipping Zones</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>India (Primary):</strong> All states and union territories via trusted courier partners</li>
-                  <li><strong>International:</strong> Available on request. Contact us for custom quote and timeline</li>
-                  <li><strong>Restricted Areas:</strong> Some remote/conflict zones may have limited service or surcharges</li>
+                  <li><strong>India (Primary):</strong> All states and union territories via trusted express courier partners (Delhivery, BlueDart, DTDC, India Post)</li>
+                  <li><strong>International:</strong> Available on request. Contact our WhatsApp concierge for custom shipping quotes and delivery schedules</li>
                 </ul>
               </section>
 
               <section aria-labelledby="purchase-shipping">
-                <h2 id="purchase-shipping" className="font-display text-2xl font-medium text-foreground mb-4">3. Purchase Shipping (Sale Items)</h2>
+                <h2 id="purchase-shipping" className="font-display text-2xl font-medium text-foreground mb-4">3. Shipping Rates & Delivery Times</h2>
 
                 <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Standard Shipping</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Free Shipping:</strong> Orders above ₹{settings?.freeShippingThreshold || '10,000'}</li>
-                  <li><strong>Standard Fee:</strong> ₹{settings?.standardShippingCost || '299'} for orders below threshold</li>
-                  <li><strong>Timeline:</strong> 3-7 business days after order confirmation</li>
-                  <li><strong>Tracking:</strong> Provided within 24 hours of dispatch</li>
+                  <li><strong>Free Shipping:</strong> Complimentary pan-India shipping on all orders</li>
+                  <li><strong>Delivery Timeline:</strong> 3-7 business days across India depending on location</li>
+                  <li><strong>Live Tracking:</strong> Courier tracking link shared directly via WhatsApp / SMS within 24 hours of dispatch</li>
                 </ul>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 Express Shipping</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 Express Metro Dispatch</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Fee:</strong> ₹{settings?.expressShippingCost || '599'} (additional)</li>
-                  <li><strong>Timeline:</strong> 1-3 business days (metro), 2-4 business days (non-metro)</li>
-                  <li><strong>Availability:</strong> Select pin codes only. Shown at checkout.</li>
-                </ul>
-
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.3 Cash on Delivery (COD)</h3>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Availability:</strong> {settings?.codEnabled === 'true' ? 'Enabled' : 'Currently unavailable'} — shown at checkout if available</li>
-                  <li><strong>Limit:</strong> Maximum ₹50,000 per order</li>
-                  <li><strong>Additional Fee:</strong> ₹99 COD handling charge</li>
-                  <li><strong>Payment:</strong> Exact change preferred. Digital payment link also sent as backup.</li>
-                </ul>
-              </section>
-
-              <section aria-labelledby="rental-delivery">
-                <h2 id="rental-delivery" className="font-display text-2xl font-medium text-foreground mb-4">4. Rental Delivery & Pickup</h2>
-                <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Included:</strong> Delivery and pickup included in rental fee (within standard zones)</li>
-                  <li><strong>Scheduling:</strong> 1-2 days before rental start. Exact slot confirmed via call/WhatsApp</li>
-                  <li><strong>ID Verification:</strong> Government photo ID required at both delivery and pickup</li>
-                  <li><strong>Packaging:</strong> Items delivered in secure, branded packaging. Must be reused for return</li>
-                  <li><strong>Missed Delivery:</strong> Re-attempt next business day (₹500 fee). 2 failures = cancellation</li>
-                  <li><strong>Pickup:</strong> Scheduled on return date. Item must be ready by 12:00 PM</li>
+                  <li><strong>Timeline:</strong> 1-3 business days for major tier-1 metros (Bangalore, Chennai, Mumbai, Delhi, Hyderabad, Kochi)</li>
+                  <li><strong>Priority Handling:</strong> Same-day dispatch available for urgent bridal / event orders upon request</li>
                 </ul>
               </section>
 
@@ -172,23 +145,19 @@ export function ShippingPolicyPage() {
               </section>
 
               <section aria-labelledby="packaging">
-                <h2 id="packaging" className="font-display text-2xl font-medium text-foreground mb-4">10. Packaging</h2>
+                <h2 id="packaging" className="font-display text-2xl font-medium text-foreground mb-4">10. Packaging & Unboxing</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Jewellery:</strong> Individual pouch + branded box + tamper-evident seal + outer courier box</li>
-                  <li><strong>Cosmetics:</strong> Bubble wrap + branded box + outer courier box</li>
-                  <li><strong>Ornaments:</strong> Custom foam/fabric inserts + branded box + outer courier box</li>
-                  <li><strong>Rental:</strong> Same premium packaging. Must be reused for return</li>
-                  <li><strong>Gift Packaging:</strong> Complimentary gift wrap available — select at checkout</li>
-                  <li><strong>Sustainability:</strong> Recyclable materials. Minimal plastic. Reusable pouches/boxes</li>
+                  <li><strong>Protective Velvet Cases:</strong> All jewellery sets are packed in custom padded velvet boxes with moisture-absorbing silica pouches</li>
+                  <li><strong>Tamper-Proof Courier Boxes:</strong> Secure exterior carton with tamper-evident security seal</li>
+                  <li><strong>Gift Presentation:</strong> Elegant gift-ready presentation included with every order</li>
                 </ul>
               </section>
 
               <section aria-labelledby="risk">
                 <h2 id="risk" className="font-display text-2xl font-medium text-foreground mb-4">11. Risk Transfer</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Purchases:</strong> Risk transfers to you upon successful delivery (signature/OTP confirmation)</li>
-                  <li><strong>Rentals:</strong> Risk transfers at handover. Returns: risk transfers back to us at pickup</li>
-                  <li><strong>Unattended Delivery:</strong> If you authorize "leave at door," risk transfers at drop-off</li>
+                  <li><strong>Purchases:</strong> Risk transfers to you upon successful courier handover (signature / OTP confirmation)</li>
+                  <li><strong>Transit Insurance:</strong> All shipments are fully insured during transit against damage or loss</li>
                 </ul>
               </section>
 

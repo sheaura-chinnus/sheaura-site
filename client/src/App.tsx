@@ -14,7 +14,6 @@ import { ContactPage } from '@/pages/ContactPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { TermsPage } from '@/pages/TermsPage'
-import { RentalPolicyPage } from '@/pages/RentalPolicyPage'
 import { ShippingPolicyPage } from '@/pages/ShippingPolicyPage'
 import { PaymentPolicyPage } from '@/pages/PaymentPolicyPage'
 import { RefundPolicyPage } from '@/pages/RefundPolicyPage'
@@ -59,14 +58,14 @@ export function App() {
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
-          <Route path="/rental-ornaments" element={<ShopPage defaultMode="rental" />} />
+          <Route path="/rental-ornaments" element={<Navigate to="/shop" replace />} />
           <Route path="/product/:slug" element={<ProductDetailPage />} />
           <Route path="/enquiry" element={<EnquiryPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
-          <Route path="/rental-policy" element={<RentalPolicyPage />} />
+          <Route path="/rental-policy" element={<Navigate to="/shipping-policy" replace />} />
           <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
           <Route path="/payment-policy" element={<PaymentPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />

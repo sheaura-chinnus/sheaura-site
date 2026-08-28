@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { useContactInfo } from '@/hooks/useContactInfo'
 
 export function TermsPage() {
-  const { data: settings } = useSiteSettings()
   const contact = useContactInfo()
   const brandName = contact.brandName
   const lastUpdated = 'August 24, 2026'
@@ -74,56 +72,35 @@ export function TermsPage() {
                 </ul>
               </section>
 
-              <section aria-labelledby="rental-terms">
-                <h2 id="rental-terms" className="font-display text-2xl font-medium text-foreground mb-4">5. Rental Terms</h2>
-                <p className="text-muted-foreground mb-4">
-                  Full rental terms are detailed in our <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link>. Key points:
-                </p>
-                <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Eligibility:</strong> 18+ years, valid government photo ID required</li>
-                  <li><strong>Booking:</strong> Enquiry → Confirmation → Agreement → Payment → Delivery</li>
-                  <li><strong>Deposit:</strong> A refundable security deposit is required for all rentals. Refunded within 7 business days after safe return and inspection.</li>
-                  <li><strong>Condition:</strong> Items must be returned in original condition. Damage beyond normal wear incurs repair/replacement charges deducted from deposit.</li>
-                  <li><strong>Late Returns:</strong> Late returns incur daily late fees. Extended delays may result in full retail value charge.</li>
-                  <li><strong>Loss/Theft:</strong> You are responsible for the full replacement value if items are lost, stolen, or irreparably damaged.</li>
-                  <li><strong>Insurance:</strong> We recommend personal insurance for high-value rentals. Our deposit covers minor damages only.</li>
-                  <li><strong>Cancellation:</strong> Cancellations &gt;7 days before rental: full refund. 3-7 days: 50% refund. &lt;3 days: no refund.</li>
-                </ul>
-              </section>
-
               <section aria-labelledby="payment">
-                <h2 id="payment" className="font-display text-2xl font-medium text-foreground mb-4">6. Payment</h2>
+                <h2 id="payment" className="font-display text-2xl font-medium text-foreground mb-4">5. Payment & Invoicing</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li>Accepted methods: Credit/Debit cards, UPI, Net Banking, Bank Transfer (as confirmed by our team)</li>
-                  <li>All payments processed via PCI-DSS compliant payment partners</li>
-                  <li>We do not store full card details on our servers</li>
-                  <li>GST and applicable taxes added as per Indian law</li>
-                  <li>International payments subject to additional fees and exchange rates</li>
+                  <li>Accepted methods: UPI, Credit/Debit cards, Net Banking, Direct Bank Transfer</li>
+                  <li>All payments processed via secure PCI-DSS compliant payment gateways</li>
+                  <li>We do not store full card details or banking credentials on our servers</li>
+                  <li>Prices are in INR, inclusive of applicable taxes</li>
                 </ul>
               </section>
 
               <section aria-labelledby="shipping-delivery">
-                <h2 id="shipping-delivery" className="font-display text-2xl font-medium text-foreground mb-4">7. Shipping & Delivery</h2>
+                <h2 id="shipping-delivery" className="font-display text-2xl font-medium text-foreground mb-4">6. Shipping & Delivery</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li>Delivery within India: 3-7 business days (standard), 1-3 days (express, select pin codes)</li>
-                  <li>Free shipping on orders above ₹{settings?.freeShippingThreshold || '50,000'}</li>
-                  <li>International shipping available on request. Customs/duties are buyer's responsibility</li>
-                  <li>Risk transfers upon delivery (signature/OTP confirmation). Unattended delivery at your risk if authorized</li>
-                  <li>Rental delivery & pickup included in rental fee within standard zones</li>
+                  <li>Delivery across India within 3-7 business days via express courier partners</li>
+                  <li>All shipments are fully insured during transit and dispatched in protective velvet gift boxes</li>
+                  <li>Live tracking ID is provided via WhatsApp/SMS upon courier dispatch</li>
                 </ul>
               </section>
 
               <section aria-labelledby="returns-refunds">
-                <h2 id="returns-refunds" className="font-display text-2xl font-medium text-foreground mb-4">8. Returns & Refunds</h2>
+                <h2 id="returns-refunds" className="font-display text-2xl font-medium text-foreground mb-4">7. Returns & Refunds</h2>
                 <p className="text-muted-foreground mb-4">
-                  Governed by our <Link to="/refund-policy" className="underline hover:text-primary">Refund & Return Policy</Link> and <Link to="/rental-policy" className="underline hover:text-primary">Rental Policy</Link>.
+                  Governed by our <Link to="/refund-policy" className="underline hover:text-primary">Refund & Return Policy</Link>.
                 </p>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li>Standard returns: 14 days from delivery (unused, original packaging, tags attached)</li>
-                  <li>Rental returns: Per rental agreement terms</li>
-                  <li>Custom/engraved items: Non-returnable</li>
-                  <li>Cosmetics: Non-returnable once seals broken (hygiene)</li>
-                  <li>Refunds to original payment method within 5-10 business days</li>
+                  <li>Returns accepted within 7 days of delivery for unused items in original velvet packaging</li>
+                  <li>Transit defects must be reported within 48 hours with unboxing video proof</li>
+                  <li>Custom bridal sets and personalized jewellery are non-returnable</li>
+                  <li>Approved refunds processed to original payment method within 5-7 business days</li>
                 </ul>
               </section>
 

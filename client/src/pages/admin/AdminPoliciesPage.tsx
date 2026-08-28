@@ -10,19 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'react-hot-toast'
 
 const POLICY_TABS = [
-  { key: 'rentalPolicyContent', label: 'Rental Policy', icon: Shield, desc: 'Rental terms, reservation process, inspection, and security deposit guidelines' },
   { key: 'shippingPolicyContent', label: 'Shipping & Delivery', icon: Truck, desc: 'Packaging, transit insurance, delivery zones, and timeline disclosures' },
-  { key: 'paymentPolicyContent', label: 'Payments & Deposits', icon: CreditCard, desc: 'Accepted payment methods, online gateways, and deposit refund terms' },
-  { key: 'refundPolicyContent', label: 'Refunds & Returns', icon: RotateCcw, desc: 'Return windows, conditions for sale products, and cancellation rules' },
+  { key: 'paymentPolicyContent', label: 'Payments & Pricing', icon: CreditCard, desc: 'Accepted payment methods, online gateways, and custom order terms' },
+  { key: 'refundPolicyContent', label: 'Refunds & Returns', icon: RotateCcw, desc: 'Return windows, conditions for jewellery products, and cancellation rules' },
   { key: 'privacyPolicyContent', label: 'Privacy Policy', icon: Lock, desc: 'Customer data collection, order processing, cookies, and protection disclosure' },
   { key: 'termsPolicyContent', label: 'Terms of Service', icon: FileText, desc: 'General customer terms, limitations of liability, and service agreement' },
+  { key: 'rentalPolicyContent', label: 'Rental Policy (Archive)', icon: Shield, desc: 'Archive rental terms, reservation process, inspection, and security deposit guidelines' },
 ] as const
 
 type PolicyKey = typeof POLICY_TABS[number]['key']
 
 export function AdminPoliciesPage() {
   const { data: settings, isLoading, refetch } = useSiteSettings()
-  const [activeTab, setActiveTab] = useState<PolicyKey>('rentalPolicyContent')
+  const [activeTab, setActiveTab] = useState<PolicyKey>('shippingPolicyContent')
   const [policies, setPolicies] = useState<Record<PolicyKey, string>>({
     rentalPolicyContent: '',
     shippingPolicyContent: '',

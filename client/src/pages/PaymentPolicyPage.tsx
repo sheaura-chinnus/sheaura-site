@@ -28,35 +28,42 @@ export function PaymentPolicyPage() {
           <div className="max-w-3xl mx-auto space-y-12">
             <article className="prose prose-sheaura max-w-none">
               <section aria-labelledby="introduction">
-                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
-                <p>
-                  This Payment Policy describes how {brandName} processes payments for jewellery purchases and custom orders.
+                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction & Payment Security</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  This Payment Policy outlines how {brandName} manages secure transactions for our 1-gram micro gold-plated and fashion jewellery collections.
                   It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>,
                   <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>, and
-                  <Link to="/refund-policy" className="underline hover:text-primary">Refund Policy</Link>.
+                  <Link to="/refund-policy" className="underline hover:text-primary">Return & Exchange Policy</Link>.
                 </p>
-                <p>
-                  All payments are processed through secure, PCI-DSS compliant payment gateways and UPI rails. We never store
-                  card details or credentials on our servers.
-                </p>
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-200 mt-4">
+                  <p className="text-sm font-semibold flex items-center gap-2">
+                    <span>🎁 PREPAID INCENTIVE:</span>
+                    <span>Get Flat 5%–10% Instant Discount on all Prepaid UPI & Card Orders</span>
+                  </p>
+                </div>
               </section>
 
               <section aria-labelledby="accepted-methods">
-                <h2 id="accepted-methods" className="font-display text-2xl font-medium text-foreground mb-4">2. Accepted Payment Methods</h2>
+                <h2 id="accepted-methods" className="font-display text-2xl font-medium text-foreground mb-4">2. Payment Gateways & Accepted Methods</h2>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.1 Online Payments (Instant)</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.1 Domestic Payments (Razorpay & Cashfree)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Credit/Debit Cards:</strong> Visa, Mastercard, RuPay, American Express, Diners Club</li>
-                  <li><strong>UPI:</strong> All UPI apps (Google Pay, PhonePe, Paytm, BHIM, etc.)</li>
-                  <li><strong>Net Banking:</strong> 50+ Indian banks supported</li>
-                  <li><strong>Wallets:</strong> Paytm, Amazon Pay, PhonePe, MobiKwik</li>
-                  <li><strong>EMI:</strong> Available on select credit cards for eligible orders</li>
+                  <li><strong>Instant UPI:</strong> Google Pay, PhonePe, Paytm, BHIM, and Cred UPI.</li>
+                  <li><strong>Credit & Debit Cards:</strong> Visa, Mastercard, RuPay, and American Express with 3D Secure OTP verification.</li>
+                  <li><strong>Net Banking:</strong> Instant checkout with 50+ major Indian scheduled banks.</li>
                 </ul>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.2 Offline Payments & Bank Transfer</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.2 International Multi-Currency (Stripe)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Bank Transfer (NEFT/RTGS/IMPS):</strong> Account details provided by our concierge</li>
-                  <li><strong>Direct UPI Transfer:</strong> Verified Sheaura Business UPI handle</li>
+                  <li><strong>Global Cards:</strong> Seamless multi-currency support in USD ($), AED (د.إ), GBP (£), CAD ($), and EUR (€) via Stripe Global.</li>
+                  <li><strong>NRI Concierge Payment:</strong> Secure payment links generated for international clients via WhatsApp.</li>
+                </ul>
+
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.3 Cash on Delivery (COD) Rules</h3>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
+                  <li><strong>Convenience Fee:</strong> A non-refundable convenience charge of <strong>₹50 to ₹100</strong> is applied to all COD orders to cover logistics handling.</li>
+                  <li><strong>Mandatory WhatsApp OTP Verification:</strong> To protect against bogus bookings, every COD order triggers an automated 6-digit WhatsApp OTP verification. Orders are dispatched only after successful OTP confirmation.</li>
+                  <li><strong>Order Value Limit:</strong> Available on eligible domestic pin codes for orders up to ₹15,000.</li>
                 </ul>
               </section>
 

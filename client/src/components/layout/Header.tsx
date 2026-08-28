@@ -328,21 +328,35 @@ export function Header() {
                       className="p-2 rounded-lg text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Shipping Policy
+                      Shipping & Delivery
+                    </Link>
+                    <Link
+                      to="/warranty-policy"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Plating Warranty
                     </Link>
                     <Link
                       to="/refund-policy"
                       className="p-2 rounded-lg text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Returns & Refunds
+                      Returns & Exchange
                     </Link>
                     <Link
                       to="/payment-policy"
                       className="p-2 rounded-lg text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      Payment Methods
+                      Payment & COD
+                    </Link>
+                    <Link
+                      to="/terms"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-amber-900 hover:bg-amber-500/10 transition-colors"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Terms of Service
                     </Link>
                     <Link
                       to="/privacy"

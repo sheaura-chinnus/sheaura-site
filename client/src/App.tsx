@@ -17,6 +17,7 @@ import { TermsPage } from '@/pages/TermsPage'
 import { ShippingPolicyPage } from '@/pages/ShippingPolicyPage'
 import { PaymentPolicyPage } from '@/pages/PaymentPolicyPage'
 import { RefundPolicyPage } from '@/pages/RefundPolicyPage'
+import { WarrantyPolicyPage } from '@/pages/WarrantyPolicyPage'
 import { LoginPage } from '@/pages/LoginPage'
 
 // Admin pages
@@ -69,6 +70,8 @@ export function App() {
           <Route path="/shipping-policy" element={<ShippingPolicyPage />} />
           <Route path="/payment-policy" element={<PaymentPolicyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/warranty-policy" element={<WarrantyPolicyPage />} />
+          <Route path="/care-guide" element={<WarrantyPolicyPage />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
 

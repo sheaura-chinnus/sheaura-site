@@ -28,89 +28,81 @@ export function RefundPolicyPage() {
           <div className="max-w-3xl mx-auto space-y-12">
             <article className="prose prose-sheaura max-w-none">
               <section aria-labelledby="introduction">
-                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
-                <p>
-                  This Refund & Return Policy applies to all jewellery purchases and orders made through {brandName}.
-                  This policy works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link> and
-                  <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>.
+                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction & Overview</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  At {brandName}, each piece of 1-gram micro gold-plated and fashion jewellery is rigorously inspected and securely packed in tamper-evident velvet boxes. This Return & Exchange Policy governs all purchases made through our direct-to-consumer platform.
+                  It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>,
+                  <Link to="/shipping-policy" className="underline hover:text-primary">Shipping Policy</Link>, and
+                  <Link to="/warranty-policy" className="underline hover:text-primary">Plating Warranty & Care Policy</Link>.
                 </p>
               </section>
 
               <section aria-labelledby="return-window">
-                <h2 id="return-window" className="font-display text-2xl font-medium text-foreground mb-4">2. Return Window</h2>
-                <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Standard Returns / Replacement:</strong> 7 calendar days from delivery date in original packaging</li>
-                  <li><strong>Transit Damage / Incorrect Items:</strong> 48 hours notification upon delivery with unboxing video proof</li>
+                <h2 id="return-window" className="font-display text-2xl font-medium text-foreground mb-4">2. Strict Return & Exchange Window (24–72 Hours)</h2>
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-4 text-amber-950 dark:text-amber-200">
+                  <p className="text-sm font-medium">
+                    ⏱ <strong>Strict 24 to 72 Hour Reporting Rule:</strong> All exchange, replacement, or transit damage claims must be initiated within <strong>24 to 72 hours</strong> of package delivery as recorded by courier tracking.
+                  </p>
+                </div>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                  <li>Requests submitted after 72 hours from delivery timestamp cannot be entertained under any circumstances.</li>
+                  <li>Initial communication must be sent to our WhatsApp Concierge or official support email with order details.</li>
                 </ul>
               </section>
 
-              <section aria-labelledby="eligibility">
-                <h2 id="eligibility" className="font-display text-2xl font-medium text-foreground mb-4">3. Eligibility Criteria</h2>
-                <p className="text-muted-foreground mb-4">
-                  Items must meet ALL of the following conditions:
-                </p>
-                <ul className="list-disc list-inside space-y-3 text-muted-foreground mb-4">
-                  <li><strong>Unworn/Unused:</strong> No signs of wear, scratches, makeup, perfume, or alterations</li>
-                  <li><strong>Original Packaging:</strong> All velvet boxes, pouches, tags, and accessories included</li>
-                  <li><strong>No Alterations:</strong> Jewellery must not be altered, bent, or modified</li>
-                </ul>
-                <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                  <p className="text-sm text-primary font-medium">⚠ Items failing inspection will be returned to you at your cost. No refund issued.</p>
+              <section aria-labelledby="unboxing-video">
+                <h2 id="unboxing-video" className="font-display text-2xl font-medium text-foreground mb-4">3. Mandatory 360° Continuous Unboxing Video</h2>
+                <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-xl mb-4 text-rose-950 dark:text-rose-200 space-y-2">
+                  <p className="text-sm font-bold flex items-center gap-2">
+                    <span>📹 STRICT REQUIREMENT FOR DAMAGE / MISSING CLAIMS:</span>
+                  </p>
+                  <p className="text-xs leading-relaxed">
+                    To prevent fraudulent claims and ensure courier accountability, a <strong>single, continuous, 360-degree unedited unboxing video</strong> is strictly mandatory.
+                  </p>
                 </div>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                  <li><strong>Start from Sealed Outer Package:</strong> The video must start showing all 4 sides and the intact shipping label BEFORE the outer poly-bag/box is cut open.</li>
+                  <li><strong>Continuous & Uncut:</strong> The video must be continuous with no pauses, cuts, transitions, or edits.</li>
+                  <li><strong>Clear Product Inspection:</strong> The camera must clearly capture the inner velvet box opening and close-up inspection of the jewellery item and any alleged defect.</li>
+                  <li><strong>Absence of Video:</strong> Claims submitted without a qualifying continuous unboxing video will be automatically declined.</li>
+                </ul>
               </section>
 
               <section aria-labelledby="non-returnable">
-                <h2 id="non-returnable" className="font-display text-2xl font-medium text-foreground mb-4">4. Non-Returnable Items</h2>
+                <h2 id="non-returnable" className="font-display text-2xl font-medium text-foreground mb-4">4. Hygiene & Custom Exemptions (Strictly Non-Returnable)</h2>
                 <p className="text-muted-foreground mb-4">
-                  The following cannot be returned or exchanged (except if defective/incorrect upon delivery):
+                  For customer safety and in accordance with international health & hygiene regulations, the following categories cannot be returned or exchanged:
                 </p>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Custom Designs:</strong> Made-to-order, personalized, or custom-matched bridal sets</li>
-                  <li><strong>Sale/Clearance:</strong> Items marked "Final Sale" or promotional clearance</li>
-                  <li><strong>Pierced Jewellery:</strong> Earrings, nose pins, body jewellery once worn (hygiene safety)</li>
-                  <li><strong>Altered Items:</strong> Resized, modified, or damaged through improper care</li>
+                  <li><strong>Earrings, Jhumkas & Chandbalis:</strong> All pierced ear jewellery is non-returnable once the security seal is opened.</li>
+                  <li><strong>Nose Pins & Nose Rings:</strong> Pierced facial jewellery cannot be returned due to hygiene regulations.</li>
+                  <li><strong>Custom-Sized & Made-to-Order Pieces:</strong> Customized bangle sizes, modified necklace lengths, and personalized bridal sets.</li>
+                  <li><strong>Clearance & Final Sale:</strong> Promotional sale items marked as "Final Sale".</li>
                 </ul>
               </section>
 
-              <section aria-labelledby="return-process">
-                <h2 id="return-process" className="font-display text-2xl font-medium text-foreground mb-4">5. Return Process</h2>
-                <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Initiate:</strong> Email <a href="mailto:returns@sheaura.com" className="underline hover:text-primary">returns@sheaura.com</a> with order number, item(s), and reason</li>
-                  <li><strong>Authorization:</strong> Receive Return Authorization (RA) number and instructions within 24 hours</li>
-                  <li><strong>Pack:</strong> Use original packaging. Include all certificates, accessories, and RA slip</li>
-                  <li><strong>Ship:</strong> Use provided prepaid label (India) or ship to our address (customer-paid, reimbursed if our error)</li>
-                  <li><strong>Inspection:</strong> 3-5 business days after we receive the return</li>
-                  <li><strong>Outcome:</strong> Refund issued or item returned with explanation if rejected</li>
-                </ol>
-              </section>
-
-              <section aria-labelledby="refund-method">
-                <h2 id="refund-method" className="font-display text-2xl font-medium text-foreground mb-4">6. Refund Method & Timeline</h2>
-
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">6.1 Refund Destination</h3>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li>Original payment method (card, UPI, wallet, bank account)</li>
-                  <li>Store credit (optional — 5% bonus added, valid 12 months)</li>
-                  <li>COD orders: Bank transfer (provide cancelled cheque/account details)</li>
-                  <li>Gift purchases: Refund to purchaser's original method (not recipient)</li>
-                </ul>
-
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">6.2 Processing Timelines</h3>
-                <table className="w-full text-sm text-muted-foreground mb-6">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left py-2 px-3 font-medium text-foreground">Method</th>
-                      <th className="text-left py-2 px-3 font-medium text-foreground">Timeline After Approval</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    <tr><td className="py-2 px-3">UPI / Wallets</td><td className="py-2 px-3">24-48 hours</td></tr>
-                    <tr><td className="py-2 px-3">Credit/Debit Card</td><td className="py-2 px-3">5-10 business days (bank dependent)</td></tr>
-                    <tr><td className="py-2 px-3">Net Banking</td><td className="py-2 px-3">3-5 business days</td></tr>
-                    <tr><td className="py-2 px-3">Bank Transfer</td><td className="py-2 px-3">3-5 business days</td></tr>
-                    <tr><td className="py-2 px-3">Store Credit</td><td className="py-2 px-3">Instant</td></tr>
-                  </tbody>
-                </table>
+              <section aria-labelledby="refund-mechanism">
+                <h2 id="refund-mechanism" className="font-display text-2xl font-medium text-foreground mb-4">5. Refund Mechanism: Store Credit & 1-to-1 Replacement Only</h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  All approved return claims are processed strictly through:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose mb-6">
+                  <div className="p-4 rounded-xl border border-amber-900/20 bg-background">
+                    <h3 className="font-semibold text-amber-950 dark:text-amber-200 text-sm mb-1">Option A: 1-to-1 Replacement</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Complimentary express dispatch of a fresh, brand-new identical piece once return is verified.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-amber-900/20 bg-background">
+                    <h3 className="font-semibold text-amber-950 dark:text-amber-200 text-sm mb-1">Option B: Sheaura Store Credit</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Digital Store Credit voucher valid for 12 months with no minimum spend limit.
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  * Please note: We do not issue direct bank cash/UPI refunds. In the event of a verified return, you receive Store Credit or a Replacement.
+                </p>
               </section>
 
               <section aria-labelledby="shipping-costs">

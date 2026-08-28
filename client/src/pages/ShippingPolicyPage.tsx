@@ -28,35 +28,48 @@ export function ShippingPolicyPage() {
           <div className="max-w-3xl mx-auto space-y-12">
             <article className="prose prose-sheaura max-w-none">
               <section aria-labelledby="introduction">
-                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
-                <p>
-                  This Shipping & Delivery Policy outlines how {brandName} handles dispatch, packaging, and pan-India delivery of our handcrafted fashion jewellery. It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link> and
-                  <Link to="/refund-policy" className="underline hover:text-primary">Refund Policy</Link>.
+                <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction & Shipping Promise</h2>
+                <p className="text-muted-foreground leading-relaxed">
+                  This Shipping & Delivery Policy outlines how {brandName} handles dispatch, velvet box packaging, and fast global delivery of our 1-gram micro gold-plated and fashion jewellery. It works alongside our <Link to="/terms" className="underline hover:text-primary">Terms of Service</Link>,
+                  <Link to="/refund-policy" className="underline hover:text-primary">Return & Exchange Policy</Link>, and
+                  <Link to="/warranty-policy" className="underline hover:text-primary">Plating Warranty & Care Policy</Link>.
                 </p>
               </section>
 
               <section aria-labelledby="shipping-zones">
-                <h2 id="shipping-zones" className="font-display text-2xl font-medium text-foreground mb-4">2. Shipping Zones</h2>
-                <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>India (Primary):</strong> All states and union territories via trusted express courier partners (Delhivery, BlueDart, DTDC, India Post)</li>
-                  <li><strong>International:</strong> Available on request. Contact our WhatsApp concierge for custom shipping quotes and delivery schedules</li>
-                </ul>
+                <h2 id="shipping-zones" className="font-display text-2xl font-medium text-foreground mb-4">2. Domestic & Global Shipping Zones</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 not-prose mb-4">
+                  <div className="p-4 rounded-xl border border-amber-900/20 bg-background">
+                    <h3 className="font-semibold text-amber-950 dark:text-amber-200 text-sm mb-1">Domestic (All India)</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Express door-to-door delivery across all 28 states & 8 UTs via premium courier networks (BlueDart, Delhivery, DTDC, Speed Post).
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-amber-900/20 bg-background">
+                    <h3 className="font-semibold text-amber-950 dark:text-amber-200 text-sm mb-1">International (GCC, US, UK, Canada)</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Fast cross-border transit via DHL Express / EMS with full export customs clearance & compliant invoice documentation.
+                    </p>
+                  </div>
+                </div>
               </section>
 
               <section aria-labelledby="purchase-shipping">
-                <h2 id="purchase-shipping" className="font-display text-2xl font-medium text-foreground mb-4">3. Shipping Rates & Delivery Times</h2>
+                <h2 id="purchase-shipping" className="font-display text-2xl font-medium text-foreground mb-4">3. Dispatch & Delivery Timelines</h2>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Standard Shipping</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Domestic Shipping (India)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Free Shipping:</strong> Complimentary pan-India shipping on all orders</li>
-                  <li><strong>Delivery Timeline:</strong> 3-7 business days across India depending on location</li>
-                  <li><strong>Live Tracking:</strong> Courier tracking link shared directly via WhatsApp / SMS within 24 hours of dispatch</li>
+                  <li><strong>Handling & Dispatch:</strong> 24 to 48 hours order processing, quality inspection, and tamper-proof packing.</li>
+                  <li><strong>Delivery Window:</strong> 3 to 5 business days across India.</li>
+                  <li><strong>Live Tracking:</strong> Real-time tracking link automatically shared on WhatsApp and SMS upon courier handover.</li>
+                  <li><strong>Shipping Fee:</strong> Complimentary Free Shipping on all prepaid orders.</li>
                 </ul>
 
-                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 Express Metro Dispatch</h3>
+                <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.2 International Shipping (GCC, US, UK, Canada & Global)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Timeline:</strong> 1-3 business days for major tier-1 metros (Bangalore, Chennai, Mumbai, Delhi, Hyderabad, Kochi)</li>
-                  <li><strong>Priority Handling:</strong> Same-day dispatch available for urgent bridal / event orders upon request</li>
+                  <li><strong>Delivery Timeline:</strong> 5 to 9 business days via DHL Express / FedEx / EMS.</li>
+                  <li><strong>Customs & Duties:</strong> Packaged with formal commercial export invoice. Destination import duties/VAT (if applicable by local country customs) are borne by the recipient.</li>
+                  <li><strong>NRI Concierge:</strong> Coordinated through our dedicated WhatsApp international desk for seamless time-zone scheduling.</li>
                 </ul>
               </section>
 

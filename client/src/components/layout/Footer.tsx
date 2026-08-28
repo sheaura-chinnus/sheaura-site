@@ -18,10 +18,12 @@ const footerLinks = {
     { name: 'Contact & WhatsApp', href: '/contact' },
   ],
   policies: [
-    { name: 'Shipping Policy', href: '/shipping-policy' },
+    { name: 'Shipping & Delivery', href: '/shipping-policy' },
+    { name: 'Plating Warranty & Care', href: '/warranty-policy' },
+    { name: 'Return & Exchange', href: '/refund-policy' },
+    { name: 'Payment & COD Policy', href: '/payment-policy' },
     { name: 'Terms of Service', href: '/terms' },
     { name: 'Privacy Policy', href: '/privacy' },
-    { name: 'Return & Refund Policy', href: '/refund-policy' },
   ],
 }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import crypto from 'crypto'
 import { router, publicProcedure, protectedProcedure, adminProcedure } from '../index.js'
 import { TRPCError } from '@trpc/server'
 import { db } from '../../db/index.js'
@@ -103,10 +104,67 @@ export const authRouter = router({
     return { success: true }
   }),
 
-  // Demo 1-click Login for testing and admin access
+  // Admin Password Login (Secure, timing-safe SHA-256 verification)
+  adminLogin: publicProcedure
+    .input(z.object({
+      password: z.string().min(1, 'Admin password is required'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const configuredPassword = process.env.ADMIN_PASSWORD || 'sheaura@admin2026'
+
+      const inputHash = crypto.createHash('sha256').update(input.password).digest()
+      const expectedHash = crypto.createHash('sha256').update(configuredPassword).digest()
+
+      const isMatch = crypto.timingSafeEqual(inputHash, expectedHash)
+
+      if (!isMatch) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid admin password. Access denied.',
+        })
+      }
+
+      const email = 'sheaura360@gmail.com'
+      const name = 'Sheaura Admin'
+
+      let userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
+      let targetUser = userList[0]
+
+      if (!targetUser) {
+        const created = await db.insert(users).values({
+          id: uuidv4(),
+          email,
+          name,
+          role: 'admin',
+        }).returning()
+        targetUser = created[0]
+      } else if (targetUser.role !== 'admin') {
+        const updated = await db.update(users).set({ role: 'admin' }).where(eq(users.id, targetUser.id)).returning()
+        targetUser = updated[0]
+      }
+
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+      }
+
+      return {
+        id: targetUser.id,
+        email: targetUser.email,
+        name: targetUser.name,
+        role: targetUser.role,
+        image: targetUser.avatarUrl,
+      }
+    }),
+
+  // Automated Test Session Login (Disabled in production mode)
   demoLogin: publicProcedure
     .input(z.object({ role: z.enum(['admin', 'user']).default('admin') }))
     .mutation(async ({ ctx, input }) => {
+      if (process.env.NODE_ENV === 'production') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Demo login is disabled in production. Please use adminLogin with password.' })
+      }
+
       const email = input.role === 'admin' ? 'sheaura360@gmail.com' : 'customer@sheaura.com'
       const name = input.role === 'admin' ? 'Sheaura Admin' : 'Valued Customer'
 

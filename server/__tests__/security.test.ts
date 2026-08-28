@@ -125,19 +125,74 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
     })
   })
 
-  describe('3. Rate Limiting (Max 5 Attempts / 15-Min Window)', () => {
-    it('should enforce rate limiting on auth endpoints with 429 status', async () => {
-      // Send requests to auth endpoint until rate limited
-      let hitRateLimit = false
-      for (let i = 0; i < 10; i++) {
-        const res = await makeRequest('/trpc/auth.demoLogin')
-        if (res.statusCode === 429) {
-          hitRateLimit = true
-          expect(res.body).toContain('Too many authentication attempts')
-          break
-        }
-      }
-      expect(hitRateLimit).toBe(true)
+  describe('3. Admin Password Protection & Unauthorized Access Prevention', () => {
+    it('should reject incorrect admin password with 401 UNAUTHORIZED', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const res = await makeRequest('/trpc/auth.adminLogin?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              password: 'definitely-wrong-password',
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(401)
+      expect(res.body).toContain('Invalid admin password')
+    })
+
+    it('should authenticate as admin when correct password is provided', async () => {
+      const getRes = await makeRequest('/trpc/siteSettings.getPublic?batch=1&input=%7B%220%22%3A%7B%22json%22%3Anull%7D%7D')
+      const setCookies = getRes.headers['set-cookie'] || []
+      let csrfToken = ''
+      let sessionCookie = ''
+      setCookies.forEach((c) => {
+        const m = c.match(/csrf_token=([^;]+)/)
+        if (m) csrfToken = m[1]
+        const s = c.match(/connect\.sid=([^;]+)/)
+        if (s) sessionCookie = s[0]
+      })
+
+      const configuredPassword = process.env.ADMIN_PASSWORD || 'sheaura@admin2026'
+
+      const res = await makeRequest('/trpc/auth.adminLogin?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              password: configuredPassword,
+            },
+          },
+        }),
+      })
+
+      expect(res.statusCode).toBe(200)
+      const data = JSON.parse(res.body)
+      const user = data[0]?.result?.data?.json
+      expect(user.role).toBe('admin')
+      expect(user.email).toBe('sheaura360@gmail.com')
     })
   })
 
@@ -153,6 +208,22 @@ describe('Stage 6 — Security & Authorization Automated Tests', () => {
           expect(content).not.toMatch(hardcodedSecretPattern)
         }
       }
+    })
+  })
+
+  describe('5. Rate Limiting (Max 5 Attempts / 15-Min Window)', () => {
+    it('should enforce rate limiting on auth endpoints with 429 status', async () => {
+      // Send requests to auth endpoint until rate limited
+      let hitRateLimit = false
+      for (let i = 0; i < 10; i++) {
+        const res = await makeRequest('/trpc/auth.adminLogin')
+        if (res.statusCode === 429) {
+          hitRateLimit = true
+          expect(res.body).toContain('Too many authentication attempts')
+          break
+        }
+      }
+      expect(hitRateLimit).toBe(true)
     })
   })
 })

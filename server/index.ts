@@ -147,7 +147,7 @@ const apiRateLimiter = rateLimit({
 })
 
 // Apply stricter rate limiting to auth endpoints
-app.use('/trpc/auth.demoLogin', authRateLimiter)
+app.use(['/trpc/auth.adminLogin', '/trpc/auth.demoLogin'], authRateLimiter)
 app.use('/auth/logout', authRateLimiter)
 
 // Apply general rate limiting to tRPC

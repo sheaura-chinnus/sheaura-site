@@ -3,8 +3,8 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { startTestServer, stopTestServer, makeRequest } from './testHelper.js'
 import { generateWhatsAppMessage, buildWhatsAppUrl, formatWhatsAppNumber } from '../lib/whatsapp.js'
 import { db } from '../db/index.js'
-import { enquiries, enquiryItems } from '../db/schema.js'
-import { eq } from 'drizzle-orm'
+import { enquiries, enquiryItems, categories, products } from '../db/schema.js'
+import { eq, like, sql } from 'drizzle-orm'
 
 describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () => {
   beforeAll(async () => {
@@ -18,6 +18,7 @@ describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () =
       await db.delete(enquiryItems).where(eq(enquiryItems.enquiryId, e.id))
       await db.delete(enquiries).where(eq(enquiries.id, e.id))
     }
+    await db.delete(products).where(like(products.slug, 'rental-test-prod-%'))
     await stopTestServer()
   })
 
@@ -210,37 +211,50 @@ describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () =
       const listRes = await makeRequest('/trpc/products.getList?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22mode%22%3A%22rental%22%2C%22limit%22%3A1%7D%7D%7D')
       const listJson = JSON.parse(listRes.body)
       const items = listJson[0]?.result?.data?.json?.items
-
-      if (items && items.length > 0) {
-        const productId = items[0].id
-
-        const enquiryRes = await makeRequest('/trpc/enquiries.createEnquiry?batch=1', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-csrf-token': csrfToken,
-            Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
-          },
-          body: JSON.stringify({
-            '0': {
-              json: {
-                name: 'Priya Guest',
-                email: 'guest@sheaura.com',
-                preferredContact: 'whatsapp',
-                items: [{ productId, quantity: 1, mode: 'rental' }],
-                message: 'Interested in bridal collection rental',
-              },
-            },
-          }),
-        })
-
-        // Should succeed without 401
-        expect(enquiryRes.statusCode).toBe(200)
-        const enquiryJson = JSON.parse(enquiryRes.body)
-        const data = enquiryJson[0]?.result?.data?.json
-        expect(data.enquiryId).toBeDefined()
-        expect(data.success).toBe(true)
+      let productId = items?.[0]?.id
+      if (!productId) {
+        let cat = await db.select({ id: categories.id }).from(categories).limit(1)
+        let catId = cat[0]?.id
+        if (!catId) {
+          const [newCat] = await db.insert(categories).values({
+            name: 'Rental Test Cat',
+            slug: `rental-test-${Date.now()}`,
+          }).returning()
+          catId = newCat.id
+        }
+        const prodSlug = `rental-test-prod-${Date.now()}`
+        const res = await db.execute(
+          sql`INSERT INTO products (name, slug, category_id, rental_price, mode, stock_quantity, is_published, availability) VALUES ('Rental Test Ornament', ${prodSlug}, ${catId}, '1500', 'rental', 1, true, 'available') RETURNING id`
+        )
+        productId = (res.rows[0] as any)?.id
       }
+
+      const enquiryRes = await makeRequest('/trpc/enquiries.createEnquiry?batch=1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+          Cookie: `${sessionCookie}; csrf_token=${csrfToken}`,
+        },
+        body: JSON.stringify({
+          '0': {
+            json: {
+              name: 'Priya Guest',
+              email: 'guest@sheaura.com',
+              preferredContact: 'whatsapp',
+              items: [{ productId, quantity: 1, mode: 'rental' }],
+              message: 'Interested in bridal collection rental',
+            },
+          },
+        }),
+      })
+
+      // Should succeed without 401
+      expect(enquiryRes.statusCode).toBe(200)
+      const enquiryJson = JSON.parse(enquiryRes.body)
+      const data = enquiryJson[0]?.result?.data?.json
+      expect(data.enquiryId).toBeDefined()
+      expect(data.success).toBe(true)
     })
   })
 

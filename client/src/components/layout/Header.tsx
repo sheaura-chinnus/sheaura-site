@@ -79,7 +79,7 @@ export function Header() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b border-border shadow-xs transition-all duration-300">
       {/* Optional Announcement Banner */}
       {announcementEnabled && (
         <aside aria-label="Announcement" className="bg-primary text-primary-foreground py-1.5 px-4 text-xs sm:text-sm text-center font-medium flex items-center justify-center gap-2">
@@ -207,8 +207,8 @@ export function Header() {
             {/* Three-Bar / Mobile Menu Toggle Button */}
             <button
               className={cn(
-                "lg:hidden p-2.5 rounded-xl border border-border/80 bg-background text-foreground hover:bg-accent hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-primary shrink-0",
-                isMenuOpen && "bg-accent text-primary border-primary/40"
+                "lg:hidden p-2.5 rounded-xl border border-border bg-card text-foreground hover:bg-accent hover:text-primary transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs focus:outline-none focus:ring-2 focus:ring-primary shrink-0",
+                isMenuOpen && "bg-primary text-primary-foreground border-primary"
               )}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-expanded={isMenuOpen}
@@ -216,23 +216,27 @@ export function Header() {
               aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {isMenuOpen ? (
-                <X className="h-6 w-6 stroke-[2.2] text-foreground" />
+                <X className="h-6 w-6 stroke-[2.2]" />
               ) : (
-                <Menu className="h-6 w-6 stroke-[2.2] text-foreground" />
+                <Menu className="h-6 w-6 stroke-[2.2]" />
               )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Three-Bar Menu Full Drawer (100% Scrollable & Touch Friendly) */}
+        {/* Mobile Three-Bar Menu Full Drawer (100% Solid Opaque & Scrollable) */}
         {isMenuOpen && (
           <div
             id="mobile-menu"
             className={cn(
-              "lg:hidden fixed inset-x-0 bottom-0 z-50 bg-background/98 backdrop-blur-md overflow-y-auto overscroll-contain border-t border-border shadow-2xl flex flex-col justify-between",
+              "lg:hidden fixed inset-x-0 bottom-0 z-50 bg-background overflow-y-auto overscroll-contain border-t border-border shadow-2xl flex flex-col justify-between",
               announcementEnabled ? "top-[calc(4rem+2rem)]" : "top-16"
             )}
-            style={{ height: announcementEnabled ? 'calc(100dvh - 6rem)' : 'calc(100dvh - 4rem)' }}
+            style={{
+              backgroundColor: 'hsl(var(--background))',
+              opacity: 1,
+              height: announcementEnabled ? 'calc(100dvh - 6rem)' : 'calc(100dvh - 4rem)',
+            }}
           >
             <div className="container-sheaura py-5 space-y-4">
               {/* Quick Mobile Search */}

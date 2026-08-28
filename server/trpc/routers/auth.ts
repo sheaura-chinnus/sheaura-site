@@ -157,44 +157,6 @@ export const authRouter = router({
       }
     }),
 
-  // Automated Test Session Login (Disabled in production mode)
-  demoLogin: publicProcedure
-    .input(z.object({ role: z.enum(['admin', 'user']).default('admin') }))
-    .mutation(async ({ ctx, input }) => {
-      if (process.env.NODE_ENV === 'production') {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Demo login is disabled in production. Please use adminLogin with password.' })
-      }
-
-      const email = input.role === 'admin' ? 'sheaura360@gmail.com' : 'customer@sheaura.com'
-      const name = input.role === 'admin' ? 'Sheaura Admin' : 'Valued Customer'
-
-      let userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
-      let targetUser = userList[0]
-
-      if (!targetUser) {
-        const created = await db.insert(users).values({
-          id: uuidv4(),
-          email,
-          name,
-          role: input.role === 'admin' ? 'admin' : 'user',
-        }).returning()
-        targetUser = created[0]
-      }
-
-      if (ctx.req.session) {
-        ;(ctx.req as any).session.passport = { user: targetUser.id }
-        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
-      }
-
-      return {
-        id: targetUser.id,
-        email: targetUser.email,
-        name: targetUser.name,
-        role: targetUser.role,
-        image: targetUser.avatarUrl,
-      }
-    }),
-
   // Admin: Get all users
   adminGetUsers: adminProcedure
     .input(z.object({

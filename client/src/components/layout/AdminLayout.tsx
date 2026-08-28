@@ -15,8 +15,6 @@ import {
   Menu,
   X,
   ShieldAlert,
-  KeyRound,
-  UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -28,7 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { useAuth, useDemoLogin, useLogout } from '@/hooks/useAuth'
+import { useAuth, useLogout } from '@/hooks/useAuth'
 
 // Full navigation items for Administrators
 const adminNavigation = [
@@ -55,20 +53,11 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const { user, isAuthenticated } = useAuth()
-  const demoLogin = useDemoLogin()
   const logout = useLogout()
 
   const handleLogout = async () => {
     await logout.mutateAsync()
     navigate('/')
-  }
-
-  const handleAdminLogin = async () => {
-    await demoLogin.mutateAsync({ role: 'admin' })
-  }
-
-  const handleGoogleLogin = () => {
-    window.location.href = '/auth/google'
   }
 
   const isAdmin = user?.role === 'admin'
@@ -190,12 +179,11 @@ export function AdminLayout() {
             {!isAdmin && (
               <Button
                 size="sm"
-                onClick={handleAdminLogin}
-                disabled={demoLogin.isPending}
+                onClick={() => navigate('/login')}
                 className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5 text-xs sm:text-sm font-medium"
               >
-                <KeyRound className="h-4 w-4" />
-                <span>{demoLogin.isPending ? 'Logging in...' : 'Sign in as Admin (1-Click)'}</span>
+                <Shield className="h-4 w-4" />
+                <span>Admin Login</span>
               </Button>
             )}
 
@@ -228,9 +216,9 @@ export function AdminLayout() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button variant="outline" size="sm" onClick={handleGoogleLogin} className="gap-2">
-                <UserPlus className="h-4 w-4" />
-                <span>Sign in with Google</span>
+              <Button variant="outline" size="sm" onClick={() => navigate('/login')} className="gap-2 text-xs">
+                <Shield className="h-3.5 w-3.5" />
+                <span>Admin Login</span>
               </Button>
             )}
           </div>
@@ -241,11 +229,11 @@ export function AdminLayout() {
           <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-amber-800 dark:text-amber-300">
             <div className="flex items-center gap-2 text-sm font-medium">
               <ShieldAlert className="h-5 w-5 flex-shrink-0 text-amber-600" />
-              <span>You are viewing the admin panel as guest. Click to authenticate with Admin privileges to edit site content.</span>
+              <span>Please sign in with your admin password to manage products, enquiries, and settings.</span>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Button size="sm" onClick={handleAdminLogin} disabled={demoLogin.isPending} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
-                1-Click Admin Access
+              <Button size="sm" onClick={() => navigate('/login')} className="bg-amber-600 hover:bg-amber-700 text-white text-xs">
+                Sign In
               </Button>
             </div>
           </div>

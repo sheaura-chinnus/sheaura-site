@@ -11,7 +11,7 @@ import { siteSettings, mediaAssets } from './db/schema.js'
 import { eq } from 'drizzle-orm'
 import { audit } from './trpc/audit.js'
 import { validateImageBuffer, saveMediaAsset, getMediaAssetById } from './media/storage.js'
-import './auth/google.js' // Initialize passport Google strategy
+import './auth/session.js' // Initialize passport session
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import crypto from 'crypto'
@@ -147,7 +147,7 @@ const apiRateLimiter = rateLimit({
 })
 
 // Apply stricter rate limiting to auth endpoints
-app.use(['/trpc/auth.adminLogin', '/trpc/auth.demoLogin'], authRateLimiter)
+app.use('/trpc/auth.adminLogin', authRateLimiter)
 app.use('/auth/logout', authRateLimiter)
 
 // Apply general rate limiting to tRPC

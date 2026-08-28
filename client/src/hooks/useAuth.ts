@@ -51,13 +51,3 @@ export function useAdminLogin() {
     },
   })
 }
-
-export function useDemoLogin() {
-  const queryClient = useQueryClient()
-
-  return trpc.auth.demoLogin.useMutation({
-    onSuccess: () => {
-      queryClient.invalidateQueries()
-    },
-  })
-}

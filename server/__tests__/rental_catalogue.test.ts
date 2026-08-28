@@ -8,6 +8,9 @@ import { eq, like, sql } from 'drizzle-orm'
 
 describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () => {
   beforeAll(async () => {
+    try {
+      await db.execute(sql`ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "item_code" varchar(50);`)
+    } catch {}
     await startTestServer()
   })
 
@@ -207,27 +210,28 @@ describe('Stage 9 — Sheaura Rental-Only Catalogue & WhatsApp Flow Tests', () =
         if (s) sessionCookie = s[0]
       })
 
-      // Step B: Get a valid product ID
-      const listRes = await makeRequest('/trpc/products.getList?batch=1&input=%7B%220%22%3A%7B%22json%22%3A%7B%22mode%22%3A%22rental%22%2C%22limit%22%3A1%7D%7D%7D')
-      const listJson = JSON.parse(listRes.body)
-      const items = listJson[0]?.result?.data?.json?.items
-      let productId = items?.[0]?.id
-      if (!productId) {
-        let cat = await db.select({ id: categories.id }).from(categories).limit(1)
-        let catId = cat[0]?.id
-        if (!catId) {
-          const [newCat] = await db.insert(categories).values({
-            name: 'Rental Test Cat',
-            slug: `rental-test-${Date.now()}`,
-          }).returning()
-          catId = newCat.id
-        }
-        const prodSlug = `rental-test-prod-${Date.now()}`
-        const res = await db.execute(
-          sql`INSERT INTO products (name, slug, category_id, rental_price, mode, stock_quantity, is_published, availability) VALUES ('Rental Test Ornament', ${prodSlug}, ${catId}, '1500', 'rental', 1, true, 'available') RETURNING id`
-        )
-        productId = (res.rows[0] as any)?.id
+      // Step B: Create a dedicated published product ID
+      let cat = await db.select({ id: categories.id }).from(categories).limit(1)
+      let catId = cat[0]?.id
+      if (!catId) {
+        const [newCat] = await db.insert(categories).values({
+          name: 'Rental Test Cat',
+          slug: `rental-test-${Date.now()}`,
+        }).returning({ id: categories.id })
+        catId = newCat.id
       }
+      const prodSlug = `rental-test-prod-${Date.now()}-${Math.random().toString(36).substring(7)}`
+      const [newProd] = await db.insert(products).values({
+        name: 'Rental Test Ornament',
+        slug: prodSlug,
+        categoryId: catId,
+        rentalPrice: '1500',
+        mode: 'rental',
+        stockQuantity: 1,
+        isPublished: true,
+        availability: 'available',
+      }).returning({ id: products.id })
+      const productId = newProd.id
 
       const enquiryRes = await makeRequest('/trpc/enquiries.createEnquiry?batch=1', {
         method: 'POST',

@@ -5,6 +5,7 @@ import { enquiriesRouter } from './routers/enquiries.js'
 import { siteSettingsRouter } from './routers/siteSettings.js'
 import { authRouter } from './routers/auth.js'
 import { auditLogsRouter } from './routers/auditLogs.js'
+import { pincodeRouter } from './routers/pincode.js'
 
 export const appRouter = router({
   products: productsRouter,
@@ -13,6 +14,7 @@ export const appRouter = router({
   siteSettings: siteSettingsRouter,
   auth: authRouter,
   auditLogs: auditLogsRouter,
+  pincode: pincodeRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { router, publicProcedure, protectedProcedure, adminProcedure } from '../index.js'
 import { TRPCError } from '@trpc/server'
 import { db } from '../../db/index.js'
-import { users } from '../../db/schema.js'
+import { users, otpCodes, userAddresses } from '../../db/schema.js'
 import { eq, desc, ilike, count, and, or } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import type { TRPCContext } from '../context.js'
@@ -26,6 +26,22 @@ function hashPassword(password: string, salt: string): string {
   return crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex')
 }
 
+// Helper function to normalize Indian & International mobile numbers
+function normalizePhone(phone: string, countryCode: string = '+91'): string {
+  const clean = phone.trim()
+  if (clean.startsWith('+')) {
+    return clean.replace(/[\s-]/g, '')
+  }
+  const digitsOnly = clean.replace(/\D/g, '')
+  if (digitsOnly.length === 10) {
+    return `${countryCode}${digitsOnly}`
+  }
+  if (digitsOnly.startsWith('91') && digitsOnly.length === 12) {
+    return `+${digitsOnly}`
+  }
+  return `+${digitsOnly}`
+}
+
 export const authRouter = router({
   // Get current user session
   getMe: publicProcedure.query(async ({ ctx }: { ctx: TRPCContext }) => {
@@ -45,8 +61,402 @@ export const authRouter = router({
       city: (userRecord as any).city || null,
       state: (userRecord as any).state || null,
       pincode: (userRecord as any).pincode || null,
+      isFirstOrder: (userRecord as any).isFirstOrder ?? true,
+      welcomeCouponUsed: (userRecord as any).welcomeCouponUsed ?? false,
     }
   }),
+
+  // One-Tap Mobile OTP Auth: Send OTP via SMS / WhatsApp simulation
+  sendOtp: publicProcedure
+    .input(z.object({
+      phone: z.string().min(8, 'Phone number must be at least 8 digits').max(20),
+      countryCode: z.string().default('+91'),
+    }))
+    .mutation(async ({ input }) => {
+      const normalizedPhone = normalizePhone(input.phone, input.countryCode)
+
+      // Generate a 4-digit code (deterministic for tests, randomized for normal execution)
+      const code = process.env.NODE_ENV === 'test'
+        ? '1234'
+        : Math.floor(1000 + Math.random() * 9000).toString()
+
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+
+      // Insert OTP record
+      await db.insert(otpCodes).values({
+        id: uuidv4(),
+        phone: normalizedPhone,
+        code,
+        expiresAt,
+        verified: false,
+      })
+
+      // Check if user already exists
+      const existingUser = await db
+        .select({ id: users.id, name: users.name, isFirstOrder: users.isFirstOrder })
+        .from(users)
+        .where(eq(users.phone, normalizedPhone))
+        .limit(1)
+
+      return {
+        success: true,
+        message: `OTP sent to ${normalizedPhone}`,
+        phone: normalizedPhone,
+        expiresInSeconds: 300,
+        isExistingUser: existingUser.length > 0,
+        demoOtp: code, // Provided for instant preview / testing
+      }
+    }),
+
+  // One-Tap Mobile OTP Auth: Verify 4-Digit Code & Create Instant Headless Account
+  verifyOtp: publicProcedure
+    .input(z.object({
+      phone: z.string().min(8).max(20),
+      countryCode: z.string().default('+91'),
+      code: z.string().length(4, 'OTP must be 4 digits'),
+      fullName: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const normalizedPhone = normalizePhone(input.phone, input.countryCode)
+
+      // Find active matching unverified OTP record
+      const otps = await db
+        .select()
+        .from(otpCodes)
+        .where(
+          and(
+            eq(otpCodes.phone, normalizedPhone),
+            eq(otpCodes.code, input.code.trim()),
+            eq(otpCodes.verified, false)
+          )
+        )
+        .orderBy(desc(otpCodes.createdAt))
+        .limit(1)
+
+      if (otps.length === 0) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid OTP code. Please check the 4 digits and try again.',
+        })
+      }
+
+      const activeOtp = otps[0]
+      if (new Date() > new Date(activeOtp.expiresAt)) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'This OTP has expired. Please tap "Resend Code" to get a new one.',
+        })
+      }
+
+      // Mark OTP as verified
+      await db.update(otpCodes).set({ verified: true }).where(eq(otpCodes.id, activeOtp.id))
+
+      // Locate or auto-create customer account
+      const cleanPhoneDigits = normalizedPhone.replace(/\D/g, '')
+      const emailFallback = `${cleanPhoneDigits}@phone.sheaura.com`
+
+      const existingUsers = await db
+        .select()
+        .from(users)
+        .where(or(eq(users.phone, normalizedPhone), eq(users.email, emailFallback)))
+        .limit(1)
+
+      let targetUser = existingUsers[0]
+      let isNewUser = false
+
+      if (!targetUser) {
+        isNewUser = true
+        const [created] = await db
+          .insert(users)
+          .values({
+            id: uuidv4(),
+            email: emailFallback,
+            phone: normalizedPhone,
+            name: input.fullName?.trim() || 'Valued Shopper',
+            role: 'user',
+            isFirstOrder: true,
+            welcomeCouponUsed: false,
+          })
+          .returning()
+        targetUser = created
+      } else if (input.fullName?.trim() && (!targetUser.name || targetUser.name === 'Valued Shopper')) {
+        const [updated] = await db
+          .update(users)
+          .set({ name: input.fullName.trim(), updatedAt: new Date() })
+          .where(eq(users.id, targetUser.id))
+          .returning()
+        targetUser = updated
+      }
+
+      // Establish session
+      if (ctx.req.session) {
+        ;(ctx.req as any).session.userId = targetUser.id
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        if (typeof (ctx.req.session as any).save === 'function') {
+          await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+        }
+      }
+
+      return {
+        success: true,
+        user: {
+          id: targetUser.id,
+          email: targetUser.email,
+          name: targetUser.name,
+          phone: targetUser.phone,
+          role: targetUser.role,
+          image: targetUser.avatarUrl,
+          deliveryAddress: targetUser.deliveryAddress,
+          city: targetUser.city,
+          state: targetUser.state,
+          pincode: targetUser.pincode,
+          isFirstOrder: targetUser.isFirstOrder,
+          welcomeCouponUsed: targetUser.welcomeCouponUsed,
+        },
+        isNewUser,
+        isFirstOrder: targetUser.isFirstOrder,
+        welcomeCoupon: 'WELCOME10',
+      }
+    }),
+
+  // Claim or Auto-Apply Welcome Incentive Coupon
+  claimWelcomeCoupon: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const [updated] = await db
+        .update(users)
+        .set({ welcomeCouponUsed: true, updatedAt: new Date() })
+        .where(eq(users.id, ctx.user!.id))
+        .returning()
+
+      return {
+        success: true,
+        couponCode: 'WELCOME10',
+        discountPercent: 10,
+        user: updated,
+      }
+    }),
+
+  // Guest-to-Account Silent Auto-Conversion upon Checkout
+  guestAutoConvert: publicProcedure
+    .input(z.object({
+      phone: z.string().min(8),
+      countryCode: z.string().default('+91'),
+      email: z.string().email().optional(),
+      fullName: z.string().min(1, 'Name is required'),
+      streetAddress: z.string().min(3, 'Address is required'),
+      city: z.string().min(1, 'City is required'),
+      state: z.string().min(1, 'State is required'),
+      pincode: z.string().min(6, 'PIN code is required'),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const normalizedPhone = normalizePhone(input.phone, input.countryCode)
+      const cleanPhoneDigits = normalizedPhone.replace(/\D/g, '')
+      const emailFallback = input.email || `${cleanPhoneDigits}@phone.sheaura.com`
+
+      const existingUsers = await db
+        .select()
+        .from(users)
+        .where(or(eq(users.phone, normalizedPhone), eq(users.email, emailFallback)))
+        .limit(1)
+
+      let targetUser = existingUsers[0]
+
+      if (!targetUser) {
+        const [created] = await db
+          .insert(users)
+          .values({
+            id: uuidv4(),
+            email: emailFallback,
+            phone: normalizedPhone,
+            name: input.fullName,
+            deliveryAddress: input.streetAddress,
+            city: input.city,
+            state: input.state,
+            pincode: input.pincode,
+            role: 'user',
+            isFirstOrder: true,
+            welcomeCouponUsed: false,
+          })
+          .returning()
+        targetUser = created
+      } else {
+        const [updated] = await db
+          .update(users)
+          .set({
+            name: input.fullName || targetUser.name,
+            deliveryAddress: input.streetAddress || targetUser.deliveryAddress,
+            city: input.city || targetUser.city,
+            state: input.state || targetUser.state,
+            pincode: input.pincode || targetUser.pincode,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, targetUser.id))
+          .returning()
+        targetUser = updated
+      }
+
+      // Check if address already in address book
+      const existingAddr = await db
+        .select()
+        .from(userAddresses)
+        .where(
+          and(
+            eq(userAddresses.userId, targetUser.id),
+            eq(userAddresses.pincode, input.pincode),
+            eq(userAddresses.streetAddress, input.streetAddress)
+          )
+        )
+        .limit(1)
+
+      if (existingAddr.length === 0) {
+        await db.insert(userAddresses).values({
+          id: uuidv4(),
+          userId: targetUser.id,
+          label: 'home',
+          fullName: input.fullName,
+          phone: normalizedPhone,
+          streetAddress: input.streetAddress,
+          city: input.city,
+          state: input.state,
+          pincode: input.pincode,
+          isDefault: true,
+        })
+      }
+
+      // Log in session if not logged in
+      if (ctx.req.session && !ctx.user) {
+        ;(ctx.req as any).session.userId = targetUser.id
+        ;(ctx.req as any).session.passport = { user: targetUser.id }
+        if (typeof (ctx.req.session as any).save === 'function') {
+          await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+        }
+      }
+
+      return {
+        success: true,
+        userId: targetUser.id,
+        isFirstOrder: targetUser.isFirstOrder,
+        user: targetUser,
+      }
+    }),
+
+  // Get Saved Addresses
+  getAddresses: protectedProcedure.query(async ({ ctx }) => {
+    return db
+      .select()
+      .from(userAddresses)
+      .where(eq(userAddresses.userId, ctx.user.id))
+      .orderBy(desc(userAddresses.isDefault), desc(userAddresses.createdAt))
+  }),
+
+  // Save or Update Address Card
+  saveAddress: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid().optional(),
+      label: z.enum(['home', 'office', 'other']).default('home'),
+      fullName: z.string().min(1, 'Full name is required'),
+      phone: z.string().min(8, 'Phone number is required'),
+      streetAddress: z.string().min(3, 'Street address is required'),
+      city: z.string().min(1, 'City is required'),
+      state: z.string().min(1, 'State is required'),
+      pincode: z.string().min(6, 'Valid 6-digit PIN code is required'),
+      isDefault: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, isDefault, ...data } = input
+
+      if (isDefault) {
+        await db.update(userAddresses).set({ isDefault: false }).where(eq(userAddresses.userId, ctx.user.id))
+      }
+
+      if (id) {
+        const [updated] = await db
+          .update(userAddresses)
+          .set({ ...data, isDefault: isDefault ?? false, updatedAt: new Date() })
+          .where(and(eq(userAddresses.id, id), eq(userAddresses.userId, ctx.user.id)))
+          .returning()
+
+        // Also update primary user address if default
+        if (isDefault) {
+          await db.update(users).set({
+            name: data.fullName,
+            phone: data.phone,
+            deliveryAddress: data.streetAddress,
+            city: data.city,
+            state: data.state,
+            pincode: data.pincode,
+            updatedAt: new Date(),
+          }).where(eq(users.id, ctx.user.id))
+        }
+
+        return updated
+      } else {
+        const existingCount = await db
+          .select({ count: count() })
+          .from(userAddresses)
+          .where(eq(userAddresses.userId, ctx.user.id))
+
+        const shouldBeDefault = isDefault || existingCount[0].count === 0
+
+        const [created] = await db
+          .insert(userAddresses)
+          .values({
+            id: uuidv4(),
+            userId: ctx.user.id,
+            ...data,
+            isDefault: shouldBeDefault,
+          })
+          .returning()
+
+        if (shouldBeDefault) {
+          await db.update(users).set({
+            name: data.fullName,
+            phone: data.phone,
+            deliveryAddress: data.streetAddress,
+            city: data.city,
+            state: data.state,
+            pincode: data.pincode,
+            updatedAt: new Date(),
+          }).where(eq(users.id, ctx.user.id))
+        }
+
+        return created
+      }
+    }),
+
+  // Delete Address Card
+  deleteAddress: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await db.delete(userAddresses).where(and(eq(userAddresses.id, input.id), eq(userAddresses.userId, ctx.user.id)))
+      return { success: true }
+    }),
+
+  // Set Default Address
+  setDefaultAddress: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await db.update(userAddresses).set({ isDefault: false }).where(eq(userAddresses.userId, ctx.user.id))
+      const [updated] = await db
+        .update(userAddresses)
+        .set({ isDefault: true, updatedAt: new Date() })
+        .where(and(eq(userAddresses.id, input.id), eq(userAddresses.userId, ctx.user.id)))
+        .returning()
+
+      if (updated) {
+        await db.update(users).set({
+          name: updated.fullName,
+          phone: updated.phone,
+          deliveryAddress: updated.streetAddress,
+          city: updated.city,
+          state: updated.state,
+          pincode: updated.pincode,
+          updatedAt: new Date(),
+        }).where(eq(users.id, ctx.user.id))
+      }
+
+      return updated
+    }),
 
   // Customer Registration (Email, Password, Name, Phone)
   customerRegister: publicProcedure

@@ -101,3 +101,79 @@ export function useUpdateCustomerProfile() {
     },
   })
 }
+
+export function useSendOtp() {
+  return trpc.auth.sendOtp.useMutation()
+}
+
+export function useVerifyOtp() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.verifyOtp.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+    },
+  })
+}
+
+export function useGuestAutoConvert() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.guestAutoConvert.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+    },
+  })
+}
+
+export function useAddresses() {
+  const { user } = useAuth()
+  return trpc.auth.getAddresses.useQuery(undefined, {
+    enabled: !!user,
+  })
+}
+
+export function useSaveAddress() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.saveAddress.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useDeleteAddress() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.deleteAddress.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useSetDefaultAddress() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.setDefaultAddress.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getAddresses'] })
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}
+
+export function useClaimWelcomeCoupon() {
+  const queryClient = useQueryClient()
+
+  return trpc.auth.claimWelcomeCoupon.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'getMe'] })
+    },
+  })
+}

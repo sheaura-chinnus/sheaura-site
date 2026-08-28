@@ -7,6 +7,7 @@ export const productModeEnum = pgEnum('product_mode', ['sale', 'rental', 'both']
 export const productAvailabilityEnum = pgEnum('product_availability', ['available', 'low_stock', 'out_of_stock', 'discontinued'])
 export const enquiryStatusEnum = pgEnum('enquiry_status', ['new', 'contacted', 'reserved', 'fulfilled', 'cancelled', 'rejected'])
 export const userRoleEnum = pgEnum('user_role', ['user', 'shop_order_receiver', 'admin'])
+export const addressLabelEnum = pgEnum('address_label', ['home', 'office', 'other'])
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -20,11 +21,14 @@ export const users = pgTable('users', {
   city: varchar('city', { length: 100 }),
   state: varchar('state', { length: 100 }),
   pincode: varchar('pincode', { length: 20 }),
+  isFirstOrder: boolean('is_first_order').notNull().default(true),
+  welcomeCouponUsed: boolean('welcome_coupon_used').notNull().default(false),
   role: userRoleEnum('role').notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   emailIdx: uniqueIndex('users_email_idx').on(table.email),
+  phoneIdx: index('users_phone_idx').on(table.phone),
 }))
 
 export const categories = pgTable('categories', {
@@ -175,11 +179,46 @@ export const mediaAssets = pgTable('media_assets', {
   storageKeyIdx: index('media_assets_storage_key_idx').on(table.storageKey),
 }))
 
+export const userAddresses = pgTable('user_addresses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  label: addressLabelEnum('label').notNull().default('home'),
+  fullName: varchar('full_name', { length: 255 }).notNull(),
+  phone: varchar('phone', { length: 50 }).notNull(),
+  streetAddress: text('street_address').notNull(),
+  city: varchar('city', { length: 100 }).notNull(),
+  state: varchar('state', { length: 100 }).notNull(),
+  pincode: varchar('pincode', { length: 20 }).notNull(),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  userIdx: index('user_addresses_user_idx').on(table.userId),
+  pincodeIdx: index('user_addresses_pincode_idx').on(table.pincode),
+}))
+
+export const otpCodes = pgTable('otp_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  phone: varchar('phone', { length: 50 }).notNull(),
+  code: varchar('code', { length: 10 }).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  verified: boolean('verified').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  phoneIdx: index('otp_codes_phone_idx').on(table.phone),
+  expiresAtIdx: index('otp_codes_expires_at_idx').on(table.expiresAt),
+}))
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   enquiries: many(enquiries),
   assignedEnquiries: many(enquiries, { relationName: 'assignedEnquiries' }),
   auditLogs: many(auditLogs),
+  addresses: many(userAddresses),
+}))
+
+export const userAddressesRelations = relations(userAddresses, ({ one }) => ({
+  user: one(users, { fields: [userAddresses.userId], references: [users.id] }),
 }))
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
@@ -214,6 +253,10 @@ export const enquiryItemsRelations = relations(enquiryItems, ({ one }) => ({
 // Types
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type UserAddress = typeof userAddresses.$inferSelect
+export type NewUserAddress = typeof userAddresses.$inferInsert
+export type OtpCode = typeof otpCodes.$inferSelect
+export type NewOtpCode = typeof otpCodes.$inferInsert
 export type Category = typeof categories.$inferSelect
 export type NewCategory = typeof categories.$inferInsert
 export type Product = typeof products.$inferSelect

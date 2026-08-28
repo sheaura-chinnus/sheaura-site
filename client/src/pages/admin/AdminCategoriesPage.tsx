@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Save, X, Loader2, Star } from 'lucide-react'
+import { Plus, Edit, Trash2, ChevronUp, ChevronDown, Save, X, Loader2, Star, Wand2, RefreshCw } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
+import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -81,7 +82,10 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
     },
   })
 
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false)
+
   const resetForm = () => {
+    setIsSlugManuallyEdited(false)
     setFormData({
       name: '',
       slug: '',
@@ -89,6 +93,34 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
       imageUrl: '',
       displayOrder: categories?.items?.length || 0,
     })
+  }
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    setFormData(prev => ({
+      ...prev,
+      name: newName,
+      slug: (!isSlugManuallyEdited || !prev.slug) ? slugify(newName) : prev.slug,
+    }))
+  }
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsSlugManuallyEdited(true)
+    setFormData(prev => ({
+      ...prev,
+      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    }))
+  }
+
+  const handleRegenerateSlug = () => {
+    const autoSlug = slugify(formData.name)
+    setFormData(prev => ({ ...prev, slug: autoSlug }))
+    setIsSlugManuallyEdited(false)
+    if (autoSlug) {
+      toast.success('Slug auto-generated from category name')
+    } else {
+      toast.error('Please enter a category name first')
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,9 +131,11 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
     }
 
     setIsSubmitting(true)
+    const finalSlug = slugify(formData.slug.trim()) || slugify(formData.name.trim()) || `category-${Date.now()}`
+
     const payload = {
-      name: formData.name,
-      slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      name: formData.name.trim(),
+      slug: finalSlug,
       description: formData.description || undefined,
       imageUrl: formData.imageUrl || undefined,
       displayOrder: formData.displayOrder,
@@ -116,6 +150,7 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
 
   const startEdit = (category: CategoryItem) => {
     setEditingId(category.id)
+    setIsSlugManuallyEdited(true)
     setFormData({
       name: category.name,
       slug: category.slug,
@@ -198,19 +233,44 @@ const { data: categories, isLoading, refetch } = trpc.categories.adminGetList.us
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Jewellery"
+                    onChange={handleNameChange}
+                    placeholder="e.g., Bridal Chokers"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="slug" className="block text-sm font-medium mb-1">Slug *</Label>
-                  <Input
-                    id="slug"
-                    value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    placeholder="auto-generated"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="slug" className="block text-sm font-medium">Slug *</Label>
+                    <button
+                      type="button"
+                      onClick={handleRegenerateSlug}
+                      className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 flex items-center gap-1 font-medium cursor-pointer"
+                      title="Auto-generate slug from name"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      <span>Auto-generate</span>
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={handleSlugChange}
+                      placeholder="e.g., bridal-chokers"
+                      className="font-mono text-xs pr-8"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRegenerateSlug}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-amber-700 p-0.5"
+                      title="Sync with name"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1 truncate">
+                    URL: <span className="font-mono text-foreground font-semibold">/shop?category={formData.slug || 'category-slug'}</span>
+                  </p>
                 </div>
               </div>
 

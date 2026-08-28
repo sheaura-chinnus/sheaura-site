@@ -43,11 +43,16 @@ export function formatDateTime(date: Date | string | null | undefined): string {
 }
 
 export function slugify(text: string): string {
+  if (!text) return ''
   return text
+    .toString()
     .toLowerCase()
     .trim()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
 

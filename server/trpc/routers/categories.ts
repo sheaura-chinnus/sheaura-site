@@ -8,12 +8,26 @@ import { audit } from '../audit.js'
 
 const createCategorySchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+  slug: z.string().max(100).optional(),
   description: z.string().optional(),
   imageUrl: z.string().url().optional(),
   displayOrder: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 })
+
+function serverSlugify(text: string): string {
+  if (!text) return ''
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
 
 const updateCategorySchema = createCategorySchema.partial().extend({
   id: z.string().uuid(),
@@ -124,15 +138,23 @@ export const categoriesRouter = router({
   createCategory: adminProcedure
     .input(createCategorySchema)
     .mutation(async ({ input, ctx }) => {
-      const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.slug, input.slug)).limit(1)
-      if (existing.length > 0) {
-        throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+      let finalSlug = serverSlugify(input.slug || input.name) || `category-${Date.now()}`
+      let candidateSlug = finalSlug
+      let suffix = 1
+      while (true) {
+        const existing = await db.select({ id: categories.id }).from(categories).where(eq(categories.slug, candidateSlug)).limit(1)
+        if (existing.length === 0) {
+          break
+        }
+        suffix++
+        candidateSlug = `${finalSlug}-${suffix}`
       }
+      finalSlug = candidateSlug
 
-      const [category] = await db.insert(categories).values(input).returning()
+      const [category] = await db.insert(categories).values({ ...input, slug: finalSlug }).returning()
 
       // Audit log
-      await audit.categoryCreated(ctx, category.id, input)
+      await audit.categoryCreated(ctx, category.id, { ...input, slug: finalSlug })
 
       return category
     }),
@@ -149,10 +171,14 @@ export const categoriesRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Category not found' })
       }
 
-      if (data.slug) {
-        const existing = await db.select({ id: categories.id }).from(categories).where(and(eq(categories.slug, data.slug), sql`${categories.id} != ${id}`)).limit(1)
-        if (existing.length > 0) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+      if (data.slug !== undefined) {
+        const targetSlug = serverSlugify(data.slug || (data.name ? data.name : oldCategory[0].name))
+        if (targetSlug && targetSlug !== oldCategory[0].slug) {
+          const existing = await db.select({ id: categories.id }).from(categories).where(and(eq(categories.slug, targetSlug), sql`${categories.id} != ${id}`)).limit(1)
+          if (existing.length > 0) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+          }
+          data.slug = targetSlug
         }
       }
 

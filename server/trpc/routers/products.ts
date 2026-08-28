@@ -25,7 +25,7 @@ const productFilterSchema = z.object({
 const createProductSchema = z.object({
   itemCode: z.string().min(2).max(50).regex(/^[A-Za-z0-9-_]+$/, 'Item code must contain only letters, numbers, hyphens, or underscores').optional(),
   name: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255).regex(/^[a-z0-9-]+$/),
+  slug: z.string().max(255).optional(),
   categoryId: z.string().uuid(),
   description: z.string().optional(),
   shortDescription: z.string().max(500).optional(),
@@ -51,6 +51,20 @@ async function getItemCodeSql() {
   return hasCol
     ? sql<string>`coalesce(${products.itemCode}, 'SH-' || upper(substring(replace(${products.id}::text, '-', ''), 1, 6)))`
     : sql<string>`'SH-' || upper(substring(replace(${products.id}::text, '-', ''), 1, 6))`
+}
+
+function serverSlugify(text: string): string {
+  if (!text) return ''
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 export const productsRouter = router({
@@ -543,11 +557,21 @@ export const productsRouter = router({
   createProduct: adminProcedure
     .input(createProductSchema)
     .mutation(async ({ input, ctx }) => {
-      // Check slug uniqueness
-      const existing = await db.select({ id: products.id }).from(products).where(eq(products.slug, input.slug)).limit(1)
-      if (existing.length > 0) {
-        throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+      // Sanitize or auto-generate slug
+      let finalSlug = serverSlugify(input.slug || input.name) || `ornament-${Date.now()}`
+
+      // Check slug uniqueness & auto-resolve collisions
+      let candidateSlug = finalSlug
+      let suffix = 1
+      while (true) {
+        const existing = await db.select({ id: products.id }).from(products).where(eq(products.slug, candidateSlug)).limit(1)
+        if (existing.length === 0) {
+          break
+        }
+        suffix++
+        candidateSlug = `${finalSlug}-${suffix}`
       }
+      finalSlug = candidateSlug
 
       const hasCol = await checkHasItemCodeColumn()
 
@@ -570,7 +594,7 @@ export const productsRouter = router({
         }
       }
 
-      const insertValues: any = { ...input }
+      const insertValues: any = { ...input, slug: finalSlug }
       if (hasCol) {
         insertValues.itemCode = itemCode
       } else {
@@ -580,7 +604,7 @@ export const productsRouter = router({
       const [product] = await db.insert(products).values(insertValues).returning()
 
       // Audit log
-      await audit.productCreated(ctx, product.id, { ...input, itemCode })
+      await audit.productCreated(ctx, product.id, { ...input, slug: finalSlug, itemCode })
 
       return product
     }),
@@ -597,11 +621,15 @@ export const productsRouter = router({
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Product not found' })
       }
 
-      // Check slug uniqueness if changing
-      if (data.slug) {
-        const existing = await db.select({ id: products.id }).from(products).where(and(eq(products.slug, data.slug), sql`${products.id} != ${id}`)).limit(1)
-        if (existing.length > 0) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+      // Sanitize and check slug uniqueness if provided or if name changed
+      if (data.slug !== undefined) {
+        const targetSlug = serverSlugify(data.slug || (data.name ? data.name : oldProduct[0].name))
+        if (targetSlug && targetSlug !== oldProduct[0].slug) {
+          const existing = await db.select({ id: products.id }).from(products).where(and(eq(products.slug, targetSlug), sql`${products.id} != ${id}`)).limit(1)
+          if (existing.length > 0) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'Slug already exists' })
+          }
+          data.slug = targetSlug
         }
       }
 

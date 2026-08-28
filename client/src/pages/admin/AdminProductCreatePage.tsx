@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Image as ImageIcon, Plus, Trash2, FolderCheck, Check, Sparkles } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, Plus, Trash2, FolderCheck, Check, Sparkles, Wand2, RefreshCw } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
+import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -57,9 +58,12 @@ export function AdminProductCreatePage() {
     weight: '',
   })
 
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(isEditing)
+
   // Load product data when editing
   useEffect(() => {
     if (productData) {
+      setIsSlugManuallyEdited(true)
       setFormData({
         name: productData.name || '',
         itemCode: productData.itemCode || '',
@@ -94,6 +98,34 @@ export function AdminProductCreatePage() {
       }
     }
   }, [productData])
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    setFormData(prev => ({
+      ...prev,
+      name: newName,
+      slug: (!isSlugManuallyEdited || !prev.slug) ? slugify(newName) : prev.slug,
+    }))
+  }
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsSlugManuallyEdited(true)
+    setFormData(prev => ({
+      ...prev,
+      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+    }))
+  }
+
+  const handleRegenerateSlug = () => {
+    const autoSlug = slugify(formData.name)
+    setFormData(prev => ({ ...prev, slug: autoSlug }))
+    setIsSlugManuallyEdited(false)
+    if (autoSlug) {
+      toast.success('Slug auto-generated from name')
+    } else {
+      toast.error('Please enter an ornament name first')
+    }
+  }
 
   const createMutation = trpc.products.createProduct.useMutation({
     onSuccess: () => {
@@ -131,10 +163,12 @@ export function AdminProductCreatePage() {
 
     setIsSubmitting(true)
 
+    const finalSlug = slugify(formData.slug.trim()) || slugify(formData.name.trim()) || `ornament-${Date.now()}`
+
     const payload = {
       name: formData.name.trim(),
       itemCode: formData.itemCode.trim().toUpperCase() || undefined,
-      slug: formData.slug.trim() || formData.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      slug: finalSlug,
       shortDescription: formData.shortDescription || undefined,
       description: formData.description || undefined,
       categoryId: formData.categoryId,
@@ -233,7 +267,7 @@ export function AdminProductCreatePage() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={handleNameChange}
                   placeholder="e.g., Antique Temple Bridal Set"
                   required
                 />
@@ -252,14 +286,38 @@ export function AdminProductCreatePage() {
               </div>
 
               <div>
-                <Label htmlFor="slug" className="block text-sm font-medium mb-1">Slug *</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  placeholder="auto-generated from name"
-                />
-                <p className="text-xs text-muted-foreground mt-1">URL slug (e.g. temple-bridal-set)</p>
+                <div className="flex items-center justify-between mb-1">
+                  <Label htmlFor="slug" className="block text-sm font-medium">Slug *</Label>
+                  <button
+                    type="button"
+                    onClick={handleRegenerateSlug}
+                    className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 flex items-center gap-1 font-medium cursor-pointer"
+                    title="Auto-generate slug from ornament name"
+                  >
+                    <Wand2 className="h-3 w-3" />
+                    <span>Auto-generate</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="slug"
+                    value={formData.slug}
+                    onChange={handleSlugChange}
+                    placeholder="auto-generated from name"
+                    className="font-mono text-xs pr-8"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRegenerateSlug}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-amber-700 p-0.5"
+                    title="Sync with name"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  URL: <span className="font-mono text-foreground font-semibold">/product/{formData.slug || 'slug-preview'}</span>
+                </p>
               </div>
             </div>
 

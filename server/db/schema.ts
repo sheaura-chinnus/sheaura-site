@@ -11,9 +11,9 @@ export const addressLabelEnum = pgEnum('address_label', ['home', 'office', 'othe
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).unique(),
   name: varchar('name', { length: 255 }),
-  phone: varchar('phone', { length: 50 }),
+  phone: varchar('phone', { length: 50 }).unique(),
   passwordHash: varchar('password_hash', { length: 500 }),
   avatarUrl: varchar('avatar_url', { length: 500 }),
   googleId: varchar('google_id', { length: 255 }),
@@ -28,7 +28,7 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   emailIdx: uniqueIndex('users_email_idx').on(table.email),
-  phoneIdx: index('users_phone_idx').on(table.phone),
+  phoneIdx: uniqueIndex('users_phone_idx').on(table.phone),
 }))
 
 export const categories = pgTable('categories', {

@@ -29,7 +29,8 @@ declare global {
   namespace Express {
     interface User {
       id: string
-      email: string
+      email: string | null
+      phone?: string | null
       name: string | null
       avatarUrl: string | null
       role: 'user' | 'shop_order_receiver' | 'admin'

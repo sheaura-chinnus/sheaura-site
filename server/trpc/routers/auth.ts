@@ -151,14 +151,11 @@ export const authRouter = router({
       // Mark OTP as verified
       await db.update(otpCodes).set({ verified: true }).where(eq(otpCodes.id, activeOtp.id))
 
-      // Locate or auto-create customer account
-      const cleanPhoneDigits = normalizedPhone.replace(/\D/g, '')
-      const emailFallback = `${cleanPhoneDigits}@phone.sheaura.com`
-
+      // Locate or auto-create customer account using phone number as primary ID
       const existingUsers = await db
         .select()
         .from(users)
-        .where(or(eq(users.phone, normalizedPhone), eq(users.email, emailFallback)))
+        .where(eq(users.phone, normalizedPhone))
         .limit(1)
 
       let targetUser = existingUsers[0]
@@ -170,7 +167,7 @@ export const authRouter = router({
           .insert(users)
           .values({
             id: uuidv4(),
-            email: emailFallback,
+            email: null, // Phone number is the sole identifier (no dummy emails)
             phone: normalizedPhone,
             name: input.fullName?.trim() || 'Valued Shopper',
             role: 'user',
@@ -250,13 +247,16 @@ export const authRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       const normalizedPhone = normalizePhone(input.phone, input.countryCode)
-      const cleanPhoneDigits = normalizedPhone.replace(/\D/g, '')
-      const emailFallback = input.email || `${cleanPhoneDigits}@phone.sheaura.com`
+      const userEmail = input.email ? input.email.toLowerCase().trim() : null
 
       const existingUsers = await db
         .select()
         .from(users)
-        .where(or(eq(users.phone, normalizedPhone), eq(users.email, emailFallback)))
+        .where(
+          userEmail
+            ? or(eq(users.phone, normalizedPhone), eq(users.email, userEmail))
+            : eq(users.phone, normalizedPhone)
+        )
         .limit(1)
 
       let targetUser = existingUsers[0]
@@ -266,7 +266,7 @@ export const authRouter = router({
           .insert(users)
           .values({
             id: uuidv4(),
-            email: emailFallback,
+            email: userEmail, // Only if customer provided it, otherwise null
             phone: normalizedPhone,
             name: input.fullName,
             deliveryAddress: input.streetAddress,

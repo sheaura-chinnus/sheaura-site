@@ -3,7 +3,8 @@ import type { Request } from 'express'
 
 export interface UserSession {
   id: string
-  email: string
+  email: string | null
+  phone: string | null
   name: string | null
   avatarUrl: string | null
   role: 'user' | 'shop_order_receiver' | 'admin'
@@ -18,7 +19,7 @@ export interface TRPCContext {
 export async function createContext(opts: { req: Request }): Promise<TRPCContext> {
   const { req } = opts
 
-  // Get user from session cookie (Manus OAuth sets this)
+  // Get user from session cookie (Passport sets this)
   const user = await getUserFromRequest(req)
 
   return {
@@ -32,10 +33,11 @@ async function getUserFromRequest(req: Request): Promise<UserSession | null> {
   try {
     // Get user from Passport session (req.user is set by passport.session() middleware)
     if (req.user && typeof req.user === 'object' && 'id' in req.user) {
-      const user = req.user as { id: string; email: string; name: string | null; avatarUrl: string | null; role: 'user' | 'shop_order_receiver' | 'admin' }
+      const user = req.user as { id: string; email?: string | null; phone?: string | null; name: string | null; avatarUrl: string | null; role: 'user' | 'shop_order_receiver' | 'admin' }
       return {
         id: user.id,
-        email: user.email,
+        email: user.email || null,
+        phone: user.phone || null,
         name: user.name,
         avatarUrl: user.avatarUrl,
         role: user.role,

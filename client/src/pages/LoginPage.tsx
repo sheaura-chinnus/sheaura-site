@@ -48,19 +48,7 @@ export function LoginPage() {
   // Welcome Incentive Modal
   const [isWelcomeModalOpen, setIsWelcomeModalOpen] = useState(false)
 
-  // Redirect staff query parameters directly to dedicated Staff Portal
-  const allowedStaffKeys = ['admin', 'enquiry', 'delivery', 'sheaura', 'staff', 'owner']
-  const paramAccessKey = (
-    searchParams.get('access') ||
-    searchParams.get('key') ||
-    searchParams.get('token') ||
-    searchParams.get('role') ||
-    ''
-  ).toLowerCase().trim()
 
-  if (allowedStaffKeys.includes(paramAccessKey) || searchParams.get('portal') === 'staff') {
-    return <Navigate to="/staff-portal" replace />
-  }
 
   // Customer Primary Tab: 'otp' | 'email'
   const [loginMethod, setLoginMethod] = useState<'otp' | 'email'>('otp')
@@ -233,6 +221,20 @@ export function LoginPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Redirect staff query parameters directly to dedicated Staff Portal
+  const allowedStaffKeys = ['admin', 'enquiry', 'delivery', 'sheaura', 'staff', 'owner']
+  const paramAccessKey = (
+    searchParams.get('access') ||
+    searchParams.get('key') ||
+    searchParams.get('token') ||
+    searchParams.get('role') ||
+    ''
+  ).toLowerCase().trim()
+
+  if (allowedStaffKeys.includes(paramAccessKey) || searchParams.get('portal') === 'staff') {
+    return <Navigate to="/staff-portal" replace />
   }
 
   if (isLoading) {

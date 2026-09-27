@@ -83,10 +83,12 @@ export const enquiriesRouter = router({
         .select()
         .from(enquiries)
         .where(
-          or(
-            eq(enquiries.userId, user.id),
-            eq(enquiries.email, user.email)
-          )
+          user.email
+            ? or(
+                eq(enquiries.userId, user.id),
+                eq(enquiries.email, user.email)
+              )
+            : eq(enquiries.userId, user.id)
         )
         .orderBy(desc(enquiries.createdAt))
 

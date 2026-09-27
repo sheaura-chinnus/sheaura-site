@@ -5,7 +5,7 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist/**', 'node_modules/**', '*.config.*', 'stock.xlsx.xlsx'],
+  ignorePatterns: ['dist/**', 'node_modules/**', '*.config.*', '*.xlsx', 'server/__tests__/**'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',

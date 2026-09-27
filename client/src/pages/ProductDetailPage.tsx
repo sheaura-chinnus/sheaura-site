@@ -31,6 +31,9 @@ export function ProductDetailPage() {
     { enabled: !!product?.id }
   )
 
+  const [orderConfirmed, setOrderConfirmed] = useState(false)
+  const [listConfirmed, setListConfirmed] = useState(false)
+
   if (isLoading) {
     return (
       <div className="animate-pulse container-sheaura py-16">
@@ -65,9 +68,6 @@ export function ProductDetailPage() {
   const itemCode = product.itemCode || `SH-${product.slug.substring(0, 6).toUpperCase()}`
   const inList = isInList(product.id)
   const displayPrice = product.salePrice || product.rentalPrice
-
-  const [orderConfirmed, setOrderConfirmed] = useState(false)
-  const [listConfirmed, setListConfirmed] = useState(false)
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(itemCode)

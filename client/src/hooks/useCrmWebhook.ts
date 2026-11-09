@@ -64,7 +64,9 @@ export function useCrmWebhook(items: AbandonedCartItem[], isCheckingOut: boolean
         // Store in sessionStorage so it can be inspected or used for recovery banner
         try {
           sessionStorage.setItem('sheaura_crm_abandoned_event', JSON.stringify(webhookPayload))
-        } catch {}
+        } catch (_err) {
+          // Ignore sessionStorage availability errors
+        }
       }
     }, 15000)
 

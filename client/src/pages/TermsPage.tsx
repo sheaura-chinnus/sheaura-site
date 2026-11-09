@@ -31,7 +31,7 @@ export function TermsPage() {
                 <h2 id="introduction" className="font-display text-2xl font-medium text-foreground mb-4">1. Introduction</h2>
                 <p>
                   Welcome to {brandName}. These Terms of Service ("Terms") govern your access to and use of our website,
-                  services, and any rental or purchase transactions. By accessing or using our services, you agree to be
+                  services, and any retail purchase transactions. By accessing or using our services, you agree to be
                   bound by these Terms.
                 </p>
                 <p>
@@ -43,17 +43,16 @@ export function TermsPage() {
               <section aria-labelledby="services">
                 <h2 id="services" className="font-display text-2xl font-medium text-foreground mb-4">2. Services Offered</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Retail Sales:</strong> Purchase of jewellery, cosmetics, and ornaments</li>
-                  <li><strong>Rental Services:</strong> Short-term rental of premium items for events and occasions</li>
-                  <li><strong>Enquiry Service:</strong> Submit product enquiries for personalized quotes and consultation</li>
-                  <li><strong>Custom Design:</strong> Bespoke jewellery design and manufacturing (separate agreement required)</li>
+                  <li><strong>Retail Sales:</strong> Direct purchase of imitation jewellery, cosmetics, and occasion ornaments</li>
+                  <li><strong>Concierge Order Service:</strong> Submit product enquiries and WhatsApp orders with personalized guidance</li>
+                  <li><strong>Custom Design & Sizing:</strong> Bespoke sizing and curated styling consultations</li>
                 </ul>
               </section>
 
               <section aria-labelledby="user-accounts">
                 <h2 id="user-accounts" className="font-display text-2xl font-medium text-foreground mb-4">3. User Accounts</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li>Account creation optional for enquiries; required for order tracking and rental management</li>
+                  <li>Account creation is optional for browsing; required for saved addresses and order history tracking</li>
                   <li>You are responsible for maintaining account confidentiality and all activity under your account</li>
                   <li>Provide accurate, current, and complete information. Update promptly if changes occur</li>
                   <li>We may suspend or terminate accounts for violations of these Terms</li>
@@ -164,7 +163,7 @@ export function TermsPage() {
               <section aria-labelledby="general">
                 <h2 id="general" className="font-display text-2xl font-medium text-foreground mb-4">15. General</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Entire Agreement:</strong> These Terms, plus Privacy Policy, Rental Policy, Shipping Policy, Payment Policy, and Refund Policy constitute the entire agreement</li>
+                  <li><strong>Entire Agreement:</strong> These Terms, plus Privacy Policy, Shipping Policy, Payment Policy, and Refund Policy constitute the entire agreement</li>
                   <li><strong>Severability:</strong> If any provision is unenforceable, the remainder remains in effect</li>
                   <li><strong>Waiver:</strong> Failure to enforce a right does not waive it</li>
                   <li><strong>Assignment:</strong> We may assign these Terms. You may not assign without our consent</li>

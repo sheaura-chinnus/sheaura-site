@@ -68,7 +68,7 @@ export function AdminEnquiryDetailPage() {
 
   const markOutOfStockMutation = trpc.enquiries.markItemsOutOfStock.useMutation({
     onSuccess: (result) => {
-      toast.success(`Marked ${result.count} item(s) Out of Stock (In Rental)`)
+      toast.success(`Marked ${result.count} item(s) Out of Stock`)
       refetch()
     },
     onError: (err) => {
@@ -349,7 +349,7 @@ export function AdminEnquiryDetailPage() {
               <div>
                 <CardTitle className="font-display text-lg">Enquiry Items ({enquiry.items.length})</CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Track stock quantity and rental availability for these ornaments.
+                  Track stock quantity and availability for these items.
                 </p>
               </div>
 
@@ -383,7 +383,7 @@ export function AdminEnquiryDetailPage() {
                 <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center gap-2 text-xs text-amber-900 dark:text-amber-200">
                   <Sparkles className="h-4 w-4 text-amber-600 shrink-0" />
                   <span>
-                    This rental is currently active. All included ornaments are automatically marked <strong>Out of Stock</strong> in the public catalogue.
+                    This order is active. Included items have their stock reserved in the public catalogue.
                   </span>
                 </div>
               )}
@@ -426,7 +426,7 @@ export function AdminEnquiryDetailPage() {
                               variant={isItemAvailable ? 'secondary' : 'destructive'}
                               className="text-[10px] uppercase font-bold"
                             >
-                              {isItemAvailable ? 'Available' : 'Out of Stock (In Rental)'}
+                              {isItemAvailable ? 'Available' : 'Out of Stock'}
                             </Badge>
                           </div>
                         </div>

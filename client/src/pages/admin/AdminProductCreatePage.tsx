@@ -153,17 +153,17 @@ export function AdminProductCreatePage() {
     e.preventDefault()
 
     if (!formData.name.trim()) {
-      toast.error('Ornament name is required')
+      toast.error('Product name is required')
       return
     }
     if (!formData.categoryId) {
-      toast.error('Please select a rental catalogue collection for this ornament')
+      toast.error('Please select a collection or category for this product')
       return
     }
 
     setIsSubmitting(true)
 
-    const finalSlug = slugify(formData.slug.trim()) || slugify(formData.name.trim()) || `ornament-${Date.now()}`
+    const finalSlug = slugify(formData.slug.trim()) || slugify(formData.name.trim()) || `product-${Date.now()}`
 
     const payload = {
       name: formData.name.trim(),
@@ -172,7 +172,7 @@ export function AdminProductCreatePage() {
       shortDescription: formData.shortDescription || undefined,
       description: formData.description || undefined,
       categoryId: formData.categoryId,
-      mode: 'rental' as const,
+      mode: (formData.mode || 'sale') as any,
       salePrice: formData.salePrice ? formData.salePrice : undefined,
       rentalPrice: formData.rentalPrice ? formData.rentalPrice : undefined,
       rentalDurationDays: formData.rentalDurationDays || undefined,
@@ -227,10 +227,10 @@ export function AdminProductCreatePage() {
           </Button>
           <div>
             <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground">
-              {isEditing ? 'Edit Rental Ornament' : 'Add Rental Ornament'}
+              {isEditing ? 'Edit Product' : 'Add Product'}
             </h1>
             <p className="text-muted-foreground text-xs sm:text-sm mt-1">
-              Configure ornament details, unique item code, and images
+              Configure product details, selling price, item code, and images
             </p>
           </div>
         </div>
@@ -258,7 +258,7 @@ export function AdminProductCreatePage() {
         {/* Basic Info */}
         <Card className="card-sheaura">
           <CardHeader>
-            <CardTitle className="font-display text-lg">Ornament Information</CardTitle>
+            <CardTitle className="font-display text-lg">Product Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -327,10 +327,10 @@ export function AdminProductCreatePage() {
                 <div>
                   <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
                     <FolderCheck className="h-4 w-4 text-amber-600" />
-                    <span>Select Rental Catalogue *</span>
+                    <span>Select Category *</span>
                   </Label>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Choose which rental collection this ornament belongs to for customer browsing.
+                    Choose which category or collection this product belongs to.
                   </p>
                 </div>
                 <Link
@@ -402,6 +402,23 @@ export function AdminProductCreatePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
+                <Label htmlFor="salePrice" className="block text-sm font-medium mb-1">
+                  Sale Price (₹) *
+                </Label>
+                <Input
+                  id="salePrice"
+                  type="text"
+                  value={formData.salePrice}
+                  onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                  className="font-mono"
+                  placeholder="e.g. 1499"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Retail selling price in INR.
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="stockQuantity" className="block text-sm font-medium mb-1">
                   Stock Quantity (Available) *
                 </Label>
@@ -422,7 +439,7 @@ export function AdminProductCreatePage() {
                   placeholder="1"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Number of rental pieces currently in store.
+                  Number of items currently in inventory.
                 </p>
               </div>
 
@@ -439,18 +456,7 @@ export function AdminProductCreatePage() {
                   </SelectContent>
                 </Select>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Auto-updated to Out of Stock on booking.
-                </p>
-              </div>
-
-              <div>
-                <Label className="block text-sm font-medium mb-1">Service Classification</Label>
-                <div className="p-2.5 rounded-lg border border-border/70 bg-muted/20 text-xs text-muted-foreground flex items-center gap-1.5 h-10">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-600 shrink-0" />
-                  <span><strong className="text-foreground">Rental Ornament</strong></span>
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  Enquiry-only on WhatsApp.
+                  Auto-updated to Out of Stock when stock reaches 0.
                 </p>
               </div>
             </div>

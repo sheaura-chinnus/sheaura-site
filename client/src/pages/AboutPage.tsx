@@ -46,14 +46,14 @@ const values = [
   {
     icon: Truck,
     title: 'Reliability',
-    description: 'Secure pan-India shipping, easy returns, and hassle-free rental returns.',
+    description: 'Secure pan-India shipping, transparent delivery, and dedicated customer care.',
   },
 ]
 
 const milestones = [
   { year: '2020', title: 'Founded', description: 'Sheaura began with a vision to make premium jewellery accessible.' },
-  { year: '2021', title: 'First Boutique', description: 'Opened our flagship store in Mumbai, offering curated collections.' },
-  { year: '2022', title: 'Rental Launch', description: 'Introduced jewellery rental service for weddings and events.' },
+  { year: '2021', title: 'First Boutique', description: 'Opened our flagship boutique, offering curated fashion jewellery.' },
+  { year: '2022', title: 'Bridal & Occasion', description: 'Launched curated occasion ornaments and bridal accessory collections.' },
   { year: '2023', title: 'Cosmetics Line', description: 'Expanded into premium cosmetics and beauty essentials.' },
   { year: '2024', title: 'National Reach', description: 'Pan-India delivery with 10,000+ happy customers served.' },
 ]
@@ -76,8 +76,8 @@ export function AboutPage() {
               {brandName} — {brandTagline}
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Founded with a passion for timeless beauty, we curate exceptional jewellery, premium cosmetics,
-              and exquisite ornaments — available for purchase or rental — so every moment shines.
+              Founded with a passion for timeless beauty, we curate exceptional imitation jewellery, premium cosmetics,
+              and exquisite occasion ornaments — available for direct purchase so every moment shines.
             </p>
           </div>
         </div>
@@ -108,9 +108,8 @@ export function AboutPage() {
                   treating yourself — you deserve access to exquisite pieces that make you feel extraordinary.
                 </p>
                 <p>
-                  Our dual model of sale and rental means you can invest in heirloom pieces to cherish
-                  forever, or rent stunning jewellery for that one magical evening — both with the same
-                  guarantee of authenticity, quality, and personalized service.
+                  Our curated collections allow you to own handcrafted imitation jewellery and occasion pieces to cherish,
+                  with the same guarantee of premium craftsmanship, durability, and personalized service.
                 </p>
                 <p>
                   Every item in our collection is carefully selected by our experts, ensuring

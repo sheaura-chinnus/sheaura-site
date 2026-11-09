@@ -625,7 +625,7 @@ export function AdminProductsPage() {
                               className="flex items-center gap-2 text-amber-700 dark:text-amber-300 cursor-pointer"
                             >
                               <Ban className="h-4 w-4" />
-                              <span>Mark Out of Stock (In Rental)</span>
+                              <span>Mark Out of Stock</span>
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem

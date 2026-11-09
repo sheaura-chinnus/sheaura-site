@@ -72,7 +72,7 @@ export function PrivacyPage() {
               <section aria-labelledby="data-use">
                 <h2 id="data-use" className="font-display text-2xl font-medium text-foreground mb-4">3. How We Use Your Information</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Order & Enquiry Fulfillment:</strong> Process orders, manage rentals, arrange delivery/pickup, communicate status</li>
+                  <li><strong>Order & Enquiry Fulfillment:</strong> Process orders, arrange doorstep delivery, communicate order status</li>
                   <li><strong>Customer Support:</strong> Respond to enquiries, provide product assistance, handle returns</li>
                   <li><strong>Account Management:</strong> Create and maintain your account, authenticate access</li>
                   <li><strong>Personalization:</strong> Recommend products, tailor content, remember preferences</li>

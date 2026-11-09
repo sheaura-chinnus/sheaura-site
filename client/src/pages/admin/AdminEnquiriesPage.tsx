@@ -143,8 +143,8 @@ export function AdminEnquiriesPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground">Rental Enquiries</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage customer enquiries and date bookings</p>
+          <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground">Customer Orders & Enquiries</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage customer orders, enquiries, and fulfillment workflows</p>
         </div>
         <div className="flex items-center gap-3">
           <Button

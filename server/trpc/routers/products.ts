@@ -30,7 +30,7 @@ const createProductSchema = z.object({
   description: z.string().optional(),
   shortDescription: z.string().max(500).optional(),
   tags: z.array(z.string()).default([]),
-  mode: z.enum(['sale', 'rental', 'both']).default('rental'),
+  mode: z.enum(['sale', 'rental', 'both']).default('sale'),
   salePrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(), // decimal as string
   rentalPrice: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
   rentalDurationDays: z.number().int().positive().optional(),

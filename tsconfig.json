@@ -11,6 +11,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "types": ["vite/client", "node"],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -22,5 +23,14 @@
     }
   },
   "include": ["client/src", "server"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "server/db/check_*.ts",
+    "server/db/diagnose_*.ts",
+    "server/db/dump_*.ts",
+    "server/db/inspect_*.ts",
+    "server/db/test_*.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

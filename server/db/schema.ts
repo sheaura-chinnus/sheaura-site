@@ -55,7 +55,7 @@ export const products = pgTable('products', {
   description: text('description'),
   shortDescription: varchar('short_description', { length: 500 }),
   tags: text('tags').array().notNull().default([]),
-  mode: productModeEnum('mode').notNull().default('rental'),
+  mode: productModeEnum('mode').notNull().default('sale'),
   salePrice: decimal('sale_price', { precision: 10, scale: 2 }),
   rentalPrice: decimal('rental_price', { precision: 10, scale: 2 }),
   rentalDurationDays: integer('rental_duration_days'),

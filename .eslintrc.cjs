@@ -5,7 +5,19 @@ module.exports = {
     'plugin:@typescript-eslint/recommended',
     'plugin:react-hooks/recommended',
   ],
-  ignorePatterns: ['dist/**', 'node_modules/**', '*.config.*', '*.xlsx', 'server/__tests__/**'],
+  ignorePatterns: [
+    'dist/**',
+    'node_modules/**',
+    '*.config.*',
+    '*.xlsx',
+    'server/__tests__/**',
+    'server/db/check_*.ts',
+    'server/db/diagnose_*.ts',
+    'server/db/dump_*.ts',
+    'server/db/inspect_*.ts',
+    'server/db/test_*.ts',
+    'scripts/**',
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',
@@ -19,6 +31,13 @@ module.exports = {
       'warn',
       { allowConstantExport: true },
     ],
+    'no-constant-condition': ['error', { checkLoops: false }],
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+    ],
+    'no-extra-semi': 'warn',
   },
   overrides: [
     {

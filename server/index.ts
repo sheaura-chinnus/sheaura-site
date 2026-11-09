@@ -21,6 +21,7 @@ import fs from 'fs'
 declare module 'express-session' {
   interface SessionData {
     csrfToken?: string
+    hasPrivateAccess?: boolean
   }
 }
 
@@ -116,36 +117,6 @@ app.use((req, res, next) => {
   next()
 })
 
-// Staging Access Gate - Enabled only when STAGING_MODE=true
-export function stagingAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (process.env.STAGING_MODE !== 'true') {
-    return next()
-  }
-
-  // Allow /health endpoint without credentials for Render monitoring
-  if (req.path === '/health') {
-    return next()
-  }
-
-  const expectedUser = process.env.STAGING_USERNAME
-  const expectedPass = process.env.STAGING_PASSWORD
-
-  const authHeader = req.headers.authorization
-
-  if (authHeader && authHeader.startsWith('Basic ')) {
-    const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8')
-    const [user, pass] = credentials.split(':')
-
-    if (expectedUser && expectedPass && user === expectedUser && pass === expectedPass) {
-      return next()
-    }
-  }
-
-  res.setHeader('WWW-Authenticate', 'Basic realm="Staging Access Required"')
-  return res.status(401).send('Staging Access Required')
-}
-
-app.use(stagingAuth)
 
 // Rate limiting
 export const authRateLimiter = rateLimit({
@@ -191,6 +162,194 @@ app.use(session({
 // Passport
 app.use(passport.initialize())
 app.use(passport.session())
+
+// Private Access Gate - Protect website so only visitors with the private link can access it
+export function privateAccessAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  // Always allow /health for Render health checks and uptime monitoring
+  if (req.path === '/health') {
+    return next()
+  }
+
+  const secretToken = process.env.PRIVATE_ACCESS_TOKEN || (process.env.STAGING_MODE === 'true' ? (process.env.STAGING_PASSWORD || 'sheaura-vip-2026') : undefined)
+
+  // If no private access token is configured, site is public
+  if (!secretToken) {
+    return next()
+  }
+
+  // Extract cookies
+  const cookies = req.headers.cookie || ''
+  const cookieMatch = cookies.match(/(?:^|;\s*)sheaura_access=([^;]*)/)
+  const cookieAccess = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null
+
+  // 1. Check if user already unlocked via session or persistent cookie
+  if (req.session?.hasPrivateAccess) {
+    return next()
+  }
+  if (cookieAccess && cookieAccess.trim() === secretToken.trim()) {
+    if (req.session) req.session.hasPrivateAccess = true
+    return next()
+  }
+
+  // 2. Check if user arrived via the private access link (e.g. ?access=TOKEN or ?key=TOKEN or ?preview=TOKEN)
+  const queryAccess = (req.query.access as string) || (req.query.key as string) || (req.query.preview as string)
+  if (queryAccess && queryAccess.trim() === secretToken.trim()) {
+    if (req.session) req.session.hasPrivateAccess = true
+    res.cookie('sheaura_access', secretToken.trim(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/',
+    })
+    // Redirect to clean path without the access parameter in URL
+    const cleanUrl = req.path || '/'
+    return res.redirect(cleanUrl)
+  }
+
+  // 3. Fallback: Check HTTP Basic Auth (if credentials supplied)
+  const expectedUser = process.env.STAGING_USERNAME || 'admin'
+  const expectedPass = process.env.STAGING_PASSWORD || secretToken
+  const authHeader = req.headers.authorization
+  if (authHeader && authHeader.startsWith('Basic ')) {
+    const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8')
+    const [user, pass] = credentials.split(':')
+    if (user === expectedUser && pass === expectedPass) {
+      if (req.session) req.session.hasPrivateAccess = true
+      return next()
+    }
+  }
+
+  // 4. If an API request (tRPC or /api), return 401 JSON
+  if (req.path.startsWith('/trpc') || req.path.startsWith('/api')) {
+    return res.status(401).json({ error: 'Private Preview: Access link required' })
+  }
+
+  // 5. Render luxury branded private access screen
+  return res.status(403).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sheaura - Private Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0F0F12;
+      color: #E2DFD8;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #17171C;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(212, 175, 55, 0.12);
+      color: #D4AF37;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 24px;
+      border: 1px solid rgba(212, 175, 55, 0.25);
+    }
+    h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34px;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    p {
+      color: #9E9EA4;
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    input {
+      background: #202026;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: #FFFFFF;
+      font-size: 15px;
+      outline: none;
+      transition: all 0.2s;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+    input:focus {
+      border-color: #D4AF37;
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+    }
+    button {
+      background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%);
+      color: #0F0F12;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    .footer-note {
+      margin-top: 28px;
+      font-size: 12px;
+      color: #63636B;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">🔒 Private Preview</div>
+    <h1>Sheaura</h1>
+    <p>This store is currently in private preview mode. Access is restricted to authorized visitors with an invitation link.</p>
+    <form method="GET" action="/">
+      <input type="password" name="access" placeholder="Enter Access Code" required autofocus />
+      <button type="submit">Unlock Store</button>
+    </form>
+    <div class="footer-note">
+      If you received an access link from the Sheaura team, opening that link in this browser unlocks the store automatically.
+    </div>
+  </div>
+</body>
+</html>`)
+}
+
+export const stagingAuth = privateAccessAuth
+
+app.use(privateAccessAuth)
 
 // CSRF Protection - Double-submit cookie pattern
 function generateCsrfToken(): string {

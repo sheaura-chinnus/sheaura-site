@@ -746,6 +746,7 @@ export const authRouter = router({
       }
 
       if (ctx.req.session) {
+        const existingCsrfToken = (ctx.req.session as any).csrfToken
         await new Promise<void>((resolve, reject) => {
           if (typeof ctx.req.session.regenerate === 'function') {
             ctx.req.session.regenerate((err) => {
@@ -760,6 +761,9 @@ export const authRouter = router({
         sessionData.userId = targetUser.id
         sessionData.role = 'admin'
         sessionData.passport = { user: targetUser.id }
+        if (existingCsrfToken) {
+          sessionData.csrfToken = existingCsrfToken
+        }
         await new Promise<void>((resolve, reject) => {
           ctx.req.session.save((err) => {
             if (err) return reject(err)
@@ -825,6 +829,7 @@ export const authRouter = router({
       }
 
       if (ctx.req.session) {
+        const existingCsrfToken = (ctx.req.session as any).csrfToken
         await new Promise<void>((resolve, reject) => {
           if (typeof ctx.req.session.regenerate === 'function') {
             ctx.req.session.regenerate((err) => {
@@ -839,6 +844,9 @@ export const authRouter = router({
         sessionData.userId = targetUser.id
         sessionData.role = input.role
         sessionData.passport = { user: targetUser.id }
+        if (existingCsrfToken) {
+          sessionData.csrfToken = existingCsrfToken
+        }
         await new Promise<void>((resolve, reject) => {
           ctx.req.session.save((err) => {
             if (err) return reject(err)

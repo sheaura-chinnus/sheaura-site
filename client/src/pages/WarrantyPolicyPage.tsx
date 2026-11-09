@@ -161,7 +161,7 @@ export function WarrantyPolicyPage() {
                   4. How to Submit a Warranty Claim
                 </h2>
                 <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-                  <li><strong>Initiate on WhatsApp:</strong> Message our concierge at <a href={contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary font-medium">{contact.whatsapp}</a> with your Order ID and Item Code.</li>
+                  <li><strong>Initiate on WhatsApp:</strong> Message our support team at <a href={contact.whatsappHref} target="_blank" rel="noopener noreferrer" className="underline hover:text-primary font-medium">{contact.whatsapp}</a> with your Order ID and Item Code.</li>
                   <li><strong>Share Clear Media:</strong> Send 2–3 high-resolution, well-lit photos and a 5-second video highlighting the affected plating area.</li>
                   <li><strong>Evaluation (24–48 Hours):</strong> Our quality assurance team will inspect the images against purchase date and wear history.</li>
                   <li><strong>Resolution:</strong> Upon claim approval, we will arrange a complimentary re-plating service or dispatch a brand-new replacement piece.</li>
@@ -200,7 +200,7 @@ export function WarrantyPolicyPage() {
                 <a href={contact.whatsappHref} target="_blank" rel="noopener noreferrer">
                   <Button className="bg-[#25D366] hover:bg-[#20bd5a] text-white font-medium gap-2 shadow-xs">
                     <MessageCircle className="h-4 w-4" />
-                    Chat with Jewellery Concierge
+                    Chat on WhatsApp
                   </Button>
                 </a>
               </div>

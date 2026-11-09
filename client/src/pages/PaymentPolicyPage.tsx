@@ -37,7 +37,7 @@ export function PaymentPolicyPage() {
                 </p>
                 <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-950 dark:text-emerald-200 mt-4">
                   <p className="text-sm font-semibold flex items-center gap-2">
-                    <span>🎁 PREPAID INCENTIVE:</span>
+                    <span className="font-mono text-xs uppercase px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-800 dark:text-emerald-200">Prepaid Offer:</span>
                     <span>Get Flat 5%–10% Instant Discount on all Prepaid UPI & Card Orders</span>
                   </p>
                 </div>
@@ -55,8 +55,8 @@ export function PaymentPolicyPage() {
 
                 <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.2 International Multi-Currency (Stripe)</h3>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
-                  <li><strong>Global Cards:</strong> Seamless multi-currency support in USD ($), AED (د.إ), GBP (£), CAD ($), and EUR (€) via Stripe Global.</li>
-                  <li><strong>NRI Concierge Payment:</strong> Secure payment links generated for international clients via WhatsApp.</li>
+                  <li><strong>Global Cards:</strong> Multi-currency support in USD ($), AED (د.إ), GBP (£), CAD ($), and EUR (€) via Stripe Global.</li>
+                  <li><strong>International Orders:</strong> Secure payment links generated for international clients via WhatsApp.</li>
                 </ul>
 
                 <h3 className="font-medium text-lg text-foreground mb-2 mt-6">2.3 Cash on Delivery (COD) Rules</h3>
@@ -73,7 +73,7 @@ export function PaymentPolicyPage() {
                 <h3 className="font-medium text-lg text-foreground mb-2 mt-6">3.1 Order Confirmation</h3>
                 <ol className="list-decimal list-inside space-y-3 text-muted-foreground mb-4">
                   <li>Select jewellery items and submit enquiry on WhatsApp or website</li>
-                  <li>Our styling concierge confirms availability, pricing, and dispatch slot</li>
+                  <li>Our support team confirms availability, pricing, and dispatch slot</li>
                   <li>Receive secure UPI / Gateway payment link via WhatsApp</li>
                   <li>Payment confirmed → Order processed → Velvet box dispatch scheduled</li>
                 </ol>

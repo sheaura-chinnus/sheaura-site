@@ -85,19 +85,19 @@ export type AllowedSettingKey = typeof ALLOWED_SETTING_KEYS[number]
 // Default settings with safe, accurate copy
 export const DEFAULT_SITE_SETTINGS: Record<AllowedSettingKey, string> = {
   brandName: 'Sheaura',
-  brandTagline: 'Exquisite Imitation Jewellery, Cosmetics & Occasion Rental Ornaments',
+  brandTagline: 'Exquisite Imitation Jewellery, Cosmetics & Occasion Ornaments',
   logoAssetId: '',
   logoUrl: '',
   logoAltText: 'Sheaura — Timeless Elegance',
   markUrl: '',
 
   heroEyebrow: 'Occasion & Festive Collection',
-  heroHeading: 'Timeless Elegance with Curated Imitation Jewellery & Rental Ornaments',
-  heroSupportingText: 'Discover handcrafted costume jewellery, premium cosmetics, and grand ornaments curated for weddings, parties, and celebrations — available for purchase or rental.',
+  heroHeading: 'Timeless Elegance with Curated Imitation Jewellery & Fashion Ornaments',
+  heroSupportingText: 'Discover handcrafted costume jewellery, premium cosmetics, and grand ornaments curated for weddings, parties, and celebrations — available for direct purchase.',
   heroPrimaryCtaLabel: 'Shop Collection',
   heroPrimaryCtaLink: '/shop',
-  heroSecondaryCtaLabel: 'Rental Ornaments',
-  heroSecondaryCtaLink: '/rental-ornaments',
+  heroSecondaryCtaLabel: 'How to Order',
+  heroSecondaryCtaLink: '#how-to-order',
 
   homepageSectionVisibility: JSON.stringify({
     hero: true,
@@ -108,8 +108,8 @@ export const DEFAULT_SITE_SETTINGS: Record<AllowedSettingKey, string> = {
     cta: true,
   }),
   homepageSectionOrder: JSON.stringify(ALLOWED_HOMEPAGE_SECTIONS),
-  sectionRentalOrnamentsTitle: 'Rental Ornaments',
-  sectionRentalOrnamentsDesc: 'Grand bridal and occasion ornaments available for hassle-free rental',
+  sectionRentalOrnamentsTitle: 'How to Order on WhatsApp',
+  sectionRentalOrnamentsDesc: 'A seamless 4-step concierge experience for ordering your favourite handcrafted jewellery',
   sectionSaleProductsTitle: 'Fashion & Costume Jewellery',
   sectionSaleProductsDesc: 'Intricately designed imitation jewellery crafted for modern celebrations',
   sectionCosmeticsTitle: 'Cosmetics & Beauty',
@@ -117,7 +117,7 @@ export const DEFAULT_SITE_SETTINGS: Record<AllowedSettingKey, string> = {
   sectionOccasionItemsTitle: 'Occasion Accessories',
   sectionOccasionItemsDesc: 'Hair accessories, clutches, and styling accents for your special day',
 
-  aboutStory: 'At Sheaura, we celebrate elegance and festive splendor. Our collections bring you exquisite fashion jewellery, premium beauty products, and curated rental ornaments that make every occasion unforgettable, without the extravagant expense of fine jewellery.',
+  aboutStory: 'At Sheaura, we celebrate elegance and festive splendor. Our collections bring you exquisite fashion jewellery, premium beauty products, and curated occasion ornaments that make every occasion unforgettable, without the extravagant expense of fine jewellery.',
 
   contactEmail: 'hello@sheaura.com',
   contactPhone: '+91 98765 43210',
@@ -128,19 +128,19 @@ export const DEFAULT_SITE_SETTINGS: Record<AllowedSettingKey, string> = {
   facebookUrl: '',
   twitterUrl: '',
 
-  rentalPolicyContent: 'Our rental service offers bridal and occasion ornaments for special celebrations. A refundable security deposit is collected upon booking. Items must be returned in original condition by the agreed return date.',
+  rentalPolicyContent: 'Our customer support team is available on WhatsApp and email to assist with sizing, selection, and orders.',
   shippingPolicyContent: 'We provide insured pan-India delivery. Orders are typically dispatched within 24–48 hours. Express delivery is available for select metropolitan areas.',
-  paymentPolicyContent: 'We accept major debit and credit cards, UPI, net banking, and verified online payments. For rental items, security deposits are refunded within 3–5 business days following safe return.',
-  refundPolicyContent: 'Unused sale items in original packaging may be returned within 7 days of delivery. Custom items and rental reservation fees are non-refundable once dispatched.',
+  paymentPolicyContent: 'We accept major debit and credit cards, UPI, net banking, and verified online payments. Cash on delivery is available for select pincodes.',
+  refundPolicyContent: 'Unused sale items in original packaging may be returned within 7 days of delivery. Custom items and damaged packaging are non-refundable once dispatched.',
   privacyPolicyContent: 'Sheaura values your privacy. We collect only the information necessary to process orders, manage enquiries, and provide customer support. We never sell your personal data.',
-  termsPolicyContent: 'By using Sheaura, you agree to our terms of service. All imitation jewellery, cosmetics, and rental ornaments are provided subject to inventory availability and confirmation.',
+  termsPolicyContent: 'By using Sheaura, you agree to our terms of service. All imitation jewellery, cosmetics, and occasion ornaments are provided subject to inventory availability and confirmation.',
 
-  footerText: 'Timeless elegance for every occasion. Curated fashion & costume jewellery, premium cosmetics, and occasion rental ornaments.',
+  footerText: 'Timeless elegance for every occasion. Curated fashion & costume jewellery, premium cosmetics, and festive occasion ornaments.',
   copyrightText: '© 2026 Sheaura. All rights reserved.',
   navRentalOrnamentsLabel: 'Rental Ornaments',
-  seoMetaTitle: 'Sheaura — Imitation Jewellery, Cosmetics & Rental Ornaments',
-  seoMetaDescription: 'Curated imitation jewellery, premium beauty cosmetics, and grand occasion rental ornaments. Shop online or reserve rentals for your special event.',
-  seoSocialPreviewText: 'Timeless elegance: explore fashion jewellery, cosmetics, and rental ornaments at Sheaura.',
+  seoMetaTitle: 'Sheaura — Imitation Jewellery, Cosmetics & Occasion Ornaments',
+  seoMetaDescription: 'Curated imitation jewellery, premium beauty cosmetics, and festive occasion ornaments. Order online with pan-India delivery.',
+  seoSocialPreviewText: 'Timeless elegance: explore fashion jewellery, cosmetics, and occasion ornaments at Sheaura.',
 
   announcementEnabled: 'false',
   announcementText: '',

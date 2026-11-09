@@ -46,7 +46,7 @@ export function RefundPolicyPage() {
                 </div>
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>Requests submitted after 72 hours from delivery timestamp cannot be entertained under any circumstances.</li>
-                  <li>Initial communication must be sent to our WhatsApp Concierge or official support email with order details.</li>
+                  <li>Initial communication must be sent to our WhatsApp support desk or official support email with order details.</li>
                 </ul>
               </section>
 
@@ -54,7 +54,8 @@ export function RefundPolicyPage() {
                 <h2 id="unboxing-video" className="font-display text-2xl font-medium text-foreground mb-4">3. Mandatory 360° Continuous Unboxing Video</h2>
                 <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-xl mb-4 text-rose-950 dark:text-rose-200 space-y-2">
                   <p className="text-sm font-bold flex items-center gap-2">
-                    <span>📹 STRICT REQUIREMENT FOR DAMAGE / MISSING CLAIMS:</span>
+                    <span className="font-mono text-xs uppercase px-2 py-0.5 rounded bg-rose-600/20 text-rose-800 dark:text-rose-200">Video Requirement:</span>
+                    <span>Mandatory for Damage or Missing Item Claims</span>
                   </p>
                   <p className="text-xs leading-relaxed">
                     To prevent fraudulent claims and ensure courier accountability, a <strong>single, continuous, 360-degree unedited unboxing video</strong> is strictly mandatory.

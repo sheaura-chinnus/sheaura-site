@@ -16,7 +16,7 @@ export function ScrollToTop() {
     }
 
     if (hash) {
-      // If navigating to an anchor hash (like #rental-process), scroll to that element
+      // If navigating to an anchor hash (like #how-to-order), scroll to that element
       const timer = setTimeout(() => {
         const el = document.querySelector(hash)
         if (el) {

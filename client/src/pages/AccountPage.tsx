@@ -143,14 +143,9 @@ export function AccountPage() {
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-display font-semibold text-foreground">
-                {user?.name || 'Valued Shopper'}
-              </h1>
-              <Badge variant="outline" className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/20">
-                Member
-              </Badge>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-display font-semibold text-foreground">
+              {user?.name || 'Customer'}
+            </h1>
             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
               <Mail className="h-3.5 w-3.5" />
               <span>{user?.email}</span>
@@ -214,11 +209,11 @@ export function AccountPage() {
               <div className="space-y-1">
                 <h3 className="text-base font-display font-medium text-foreground">No orders placed yet</h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  Explore our handcrafted 1-gram gold plated jewellery and bridal sets to place your first order.
+                  Browse our imitation jewellery and accessories catalogue to place an order.
                 </p>
               </div>
-              <Button asChild className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium">
-                <Link to="/shop">Explore Jewellery Catalogue</Link>
+              <Button asChild className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-medium">
+                <Link to="/shop">Browse Catalogue</Link>
               </Button>
             </Card>
           ) : (

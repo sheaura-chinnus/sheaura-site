@@ -366,7 +366,7 @@ export function privateAccessAuth(req: express.Request, res: express.Response, n
 </head>
 <body>
   <div class="card">
-    <div class="badge">🔒 Private Preview</div>
+    <div class="badge">Private Preview</div>
     <h1>Sheaura</h1>
     <p>This store is currently in private preview mode. Access is restricted to authorized visitors with an invitation link.</p>
     <form method="GET" action="/">

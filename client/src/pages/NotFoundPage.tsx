@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Home, Search, Sparkles, ArrowLeft } from 'lucide-react'
+import { Home, Search, MessageCircle } from 'lucide-react'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
 
@@ -8,81 +8,56 @@ export function NotFoundPage() {
   const brandName = settings?.brandName || 'Sheaura'
 
   return (
-    <div className="animate-fade-in min-h-[70vh] flex items-center justify-center">
+    <div className="animate-fade-in min-h-[65vh] flex items-center justify-center">
       <div className="container-sheaura text-center py-16">
         <div className="max-w-md mx-auto">
           {/* Error Code */}
-          <div className="mb-8" aria-hidden="true">
-            <span className="font-display text-9xl sm:text-[12xl] font-medium text-primary/20 leading-none">
+          <div className="mb-4" aria-hidden="true">
+            <span className="font-display text-7xl sm:text-8xl font-bold text-amber-900/20 dark:text-amber-400/20 leading-none">
               404
             </span>
           </div>
 
-          {/* Decorative Element */}
-          <div className="w-24 h-24 mx-auto mb-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Sparkles className="h-12 w-12 text-primary" />
-          </div>
-
-          <h1 className="font-display text-3xl sm:text-4xl font-medium text-foreground mb-4">
+          <h1 className="font-display text-2xl sm:text-3xl font-medium text-foreground mb-3">
             Page Not Found
           </h1>
 
-          <p className="text-lg text-muted-foreground mb-10 max-w-lg mx-auto leading-relaxed">
-            Sorry, we couldn't find the page you're looking for. It might have been moved,
-            removed, or the URL might be incorrect.
+          <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
+            The page you are looking for may have been moved, renamed, or is temporarily unavailable.
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
             <Link to="/">
-              <Button size="lg" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-white rounded-xl">
                 <Home className="h-4 w-4 mr-2" />
                 Back to Home
               </Button>
             </Link>
             <Link to="/shop">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto border-amber-700/30 rounded-xl">
                 <Search className="h-4 w-4 mr-2" />
-                Browse Shop
+                Browse Catalogue
               </Button>
             </Link>
           </div>
 
-          {/* Helpful Links */}
-          <div className="space-y-3 text-sm">
-            <p className="text-muted-foreground">Or explore our popular sections:</p>
-            <div className="flex flex-wrap justify-center gap-3 text-primary">
-              <Link to="/shop?category=jewellery" className="hover:underline">Jewellery</Link>
-              <span className="text-muted-foreground">·</span>
-              <Link to="/shop?category=cosmetics" className="hover:underline">Cosmetics</Link>
-              <span className="text-muted-foreground">·</span>
-              <Link to="/shop?category=ornaments" className="hover:underline">Ornaments</Link>
-              <span className="text-muted-foreground">·</span>
-              <Link to="/about" className="hover:underline">About Us</Link>
-              <span className="text-muted-foreground">·</span>
-              <Link to="/contact" className="hover:underline">Contact</Link>
-            </div>
-          </div>
-
-          {/* Contact Suggestion */}
-          <div className="mt-12 p-6 rounded-xl bg-muted/30 border border-border">
-            <p className="text-muted-foreground mb-3">
-              Still can't find what you need?
-            </p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Our team is happy to help. Reach out to us directly.
+          {/* Contact Link */}
+          <div className="pt-6 border-t border-border/60">
+            <p className="text-xs text-muted-foreground mb-3">
+              Need assistance finding a specific jewellery piece?
             </p>
             <Link to="/contact">
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Contact Support
+              <Button variant="ghost" size="sm" className="text-xs text-amber-800 dark:text-amber-300">
+                <MessageCircle className="h-3.5 w-3.5 mr-1.5" />
+                Contact Customer Support
               </Button>
             </Link>
           </div>
 
           {/* Brand Footer */}
-          <p className="mt-10 text-xs text-muted-foreground/60">
-            {brandName} &copy; {new Date().getFullYear()} — Timeless Elegance, Curated for You
+          <p className="mt-8 text-xs text-muted-foreground/60">
+            {brandName} &copy; {new Date().getFullYear()} • Handcrafted Fashion Jewellery
           </p>
         </div>
       </div>

@@ -50,6 +50,7 @@ const AdminHomepageContentPage = lazy(() => import('@/pages/admin/AdminHomepageC
 const AdminNavigationFooterPage = lazy(() => import('@/pages/admin/AdminNavigationFooterPage').then(m => ({ default: m.AdminNavigationFooterPage })))
 const AdminPoliciesPage = lazy(() => import('@/pages/admin/AdminPoliciesPage').then(m => ({ default: m.AdminPoliciesPage })))
 const AdminAuditLogsPage = lazy(() => import('@/pages/admin/AdminAuditLogsPage').then(m => ({ default: m.AdminAuditLogsPage })))
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })))
 
 import { useAuth } from '@/hooks/useAuth'
 
@@ -137,6 +138,7 @@ export function App() {
             <Route path="enquiries" element={<AdminEnquiriesPage />} />
             <Route path="enquiries/:id" element={<AdminEnquiryDetailPage />} />
             <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
           </Route>
 
           {/* 404 */}

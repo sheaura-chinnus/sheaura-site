@@ -44,8 +44,8 @@ export function TermsPage() {
                 <h2 id="services" className="font-display text-2xl font-medium text-foreground mb-4">2. Services Offered</h2>
                 <ul className="list-disc list-inside space-y-3 text-muted-foreground">
                   <li><strong>Retail Sales:</strong> Direct purchase of imitation jewellery, cosmetics, and occasion ornaments</li>
-                  <li><strong>Concierge Order Service:</strong> Submit product enquiries and WhatsApp orders with personalized guidance</li>
-                  <li><strong>Custom Design & Sizing:</strong> Bespoke sizing and curated styling consultations</li>
+                  <li><strong>Assisted Order Service:</strong> Submit product enquiries and WhatsApp orders with personalized guidance</li>
+                  <li><strong>Custom Design & Sizing:</strong> Sizing and styling consultations for bridal and festive pieces</li>
                 </ul>
               </section>
 

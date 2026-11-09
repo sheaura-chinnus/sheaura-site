@@ -256,7 +256,7 @@ export function ProductDetailPage() {
                   <div>
                     <h2 className="font-display font-bold text-amber-950 dark:text-amber-200 text-lg">Direct WhatsApp Ordering</h2>
                     <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                      Connect directly with Sheaura styling concierge to verify sizing, request live video previews, and confirm dispatch.
+                      Connect directly with our team to verify sizing, request video previews, and confirm dispatch details.
                     </p>
                   </div>
                 </div>
@@ -348,17 +348,17 @@ export function ProductDetailPage() {
                 className="inline-flex items-center text-sm font-medium text-amber-800 dark:text-amber-400 hover:underline gap-1"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Return to Fashion Jewellery Catalogue</span>
+                <span>Return to Jewellery Catalogue</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Related Ornaments */}
+        {/* Related Pieces */}
         {related && related.length > 0 && (
           <div className="mt-16 sm:mt-20 pt-10 sm:pt-12 border-t border-amber-900/10">
             <h2 className="font-display text-xl sm:text-2xl font-bold text-amber-950 dark:text-amber-200 mb-6 sm:mb-8 text-center sm:text-left">
-              You May Also Adore
+              Related Pieces
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
               {related.map((item: any) => (

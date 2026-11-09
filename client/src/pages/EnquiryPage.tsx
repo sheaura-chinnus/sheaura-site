@@ -133,7 +133,7 @@ export function EnquiryPage() {
     const cleanCode = couponCodeInput.trim().toUpperCase()
     if (cleanCode === 'WELCOME10' || cleanCode === 'SHEAURA10') {
       setAppliedCoupon({ code: 'WELCOME10', percent: 10 })
-      toast.success('🎉 WELCOME10 applied: Extra 10% discount unlocked!')
+      toast.success('WELCOME10 applied: 10% discount added to order.')
       setCouponCodeInput('')
     } else if (cleanCode) {
       toast.error('Invalid promo code. Try WELCOME10 for first order.')
@@ -162,8 +162,8 @@ export function EnquiryPage() {
             phone: customerPhone.trim(),
             email: customerEmail.trim() || undefined,
             streetAddress: shippingAddress.trim(),
-            city: city.trim() || 'City Hub',
-            state: state.trim() || 'State',
+            city: city.trim() || undefined,
+            state: state.trim() || undefined,
             pincode: pincode.trim(),
           })
         } catch {
@@ -214,11 +214,11 @@ export function EnquiryPage() {
         quantity: 1,
         price: i.price || i.salePrice,
       })),
-      customerName: customerName || (user?.name ?? 'Valued Customer'),
+      customerName: customerName || (user?.name ?? 'Customer'),
       customerPhone: customerPhone || (user as any)?.phone,
       deliveryAddress: shippingAddress,
       pincode: pincode,
-      note: note + (appliedCoupon ? (' (Applied Coupon: ' + appliedCoupon.code + ' for 10% Off)') : ''),
+      note: note + (appliedCoupon ? (' (Applied Coupon: ' + appliedCoupon.code + ')') : ''),
       whatsappNumber: settings?.whatsappNumber,
       brandName: settings?.brandName || 'Sheaura',
     })
@@ -226,8 +226,8 @@ export function EnquiryPage() {
     if (items.length > 0) {
       try {
         createEnquiryMutation.mutate({
-          name: customerName.trim() || (user?.name ?? 'WhatsApp Shopper'),
-          email: customerEmail.trim() || (user?.email ?? 'guest@sheaura.com'),
+          name: customerName.trim() || (user?.name ?? 'Customer'),
+          email: customerEmail.trim() || (user?.email ?? undefined),
           phone: customerPhone.trim() || undefined,
           preferredContact: 'whatsapp',
           paymentMethod: 'whatsapp',
@@ -244,13 +244,13 @@ export function EnquiryPage() {
     }
 
     window.open(url, '_blank', 'noopener,noreferrer')
-    toast.success('Opening WhatsApp Concierge!')
+    toast.success('Opening WhatsApp...')
   }
 
   const handleCopyMessage = () => {
     const message = generateWhatsAppMessage({
       items: items.map(i => ({ itemCode: i.itemCode, name: i.productName, price: i.price || i.salePrice })),
-      customerName: customerName || (user?.name ?? 'Valued Customer'),
+      customerName: customerName || (user?.name ?? 'Customer'),
       note: note + (appliedCoupon ? (' (Applied Coupon: ' + appliedCoupon.code + ')') : ''),
       brandName: settings?.brandName || 'Sheaura',
     })
@@ -320,11 +320,11 @@ export function EnquiryPage() {
         <div className="space-y-2">
           <h2 className="text-2xl font-display font-medium text-foreground">Your Order Bag is Empty</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Explore our curated collections of matte gold bridal chokers, temple jhumkas, and kadas.
+            Browse our collections of temple jewellery, chokers, and festive sets to add items.
           </p>
         </div>
-        <Button asChild className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-10 px-6 font-medium shadow-sm">
-          <Link to="/shop">Explore Jewellery Catalogue</Link>
+        <Button asChild className="bg-amber-700 hover:bg-amber-800 text-white text-xs h-10 px-6 font-medium shadow-sm">
+          <Link to="/shop">Browse Catalogue</Link>
         </Button>
       </div>
     )
@@ -703,9 +703,9 @@ export function EnquiryPage() {
             <TabsContent value="whatsapp" className="space-y-6">
               <Card className="card-sheaura border border-border shadow-sm">
                 <CardHeader className="p-6 pb-4">
-                  <CardTitle className="text-lg font-display">1-Click WhatsApp Order Concierge</CardTitle>
+                  <CardTitle className="text-lg font-display">WhatsApp Order</CardTitle>
                   <CardDescription className="text-xs">
-                    Instantly transmit your items and item codes directly to Sheaura's senior bridal stylists.
+                    Send your selected items and codes directly to our WhatsApp team for quick confirmation.
                   </CardDescription>
                 </CardHeader>
 
@@ -713,10 +713,10 @@ export function EnquiryPage() {
                   <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-300 space-y-2">
                     <div className="flex items-center gap-2 font-semibold">
                       <MessageCircle className="h-4 w-4 text-emerald-600" />
-                      <span>Official Styling Helpline: {settings?.phone || '+91 9995098294'}</span>
+                      <span>Support Helpline: {settings?.phone || '+91 9995098294'}</span>
                     </div>
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Our concierge will immediately review your bridal requirements, check matching necklace lengths, and share payment QR codes.
+                      Our team will review your order details, confirm stock and sizing, and share payment details.
                     </p>
                   </div>
 

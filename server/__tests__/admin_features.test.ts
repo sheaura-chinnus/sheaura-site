@@ -18,9 +18,9 @@ describe('Stage 7 — Sheaura Admin Editor, Media, Navigation & Security Tests',
       expect(DEFAULT_SITE_SETTINGS.brandName).toBe('Sheaura')
       expect(DEFAULT_SITE_SETTINGS.navRentalOrnamentsLabel).toBe('Rental Ornaments')
       expect(DEFAULT_SITE_SETTINGS.heroHeading).toContain('Imitation Jewellery')
-      expect(DEFAULT_SITE_SETTINGS.heroHeading).toContain('Rental Ornaments')
-      expect(DEFAULT_SITE_SETTINGS.rentalPolicyContent).toContain('rental service')
-      expect(DEFAULT_SITE_SETTINGS.rentalPolicyContent).toContain('security deposit')
+      expect(DEFAULT_SITE_SETTINGS.heroHeading).toContain('Fashion Ornaments')
+      expect(DEFAULT_SITE_SETTINGS.shippingPolicyContent).toContain('pan-India delivery')
+      expect(DEFAULT_SITE_SETTINGS.refundPolicyContent).toContain('Unused sale items')
     })
 
     it('should validate allowed setting keys and sanitize plain text', () => {

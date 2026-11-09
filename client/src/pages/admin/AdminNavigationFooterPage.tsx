@@ -150,16 +150,16 @@ export function AdminNavigationFooterPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="navRentalOrnamentsLabel">Rental Catalogue Menu Label</Label>
+            <Label htmlFor="navRentalOrnamentsLabel">Catalogue Navigation Menu Label</Label>
             <Input
               id="navRentalOrnamentsLabel"
               value={formData.navRentalOrnamentsLabel || ''}
               onChange={(e) => handleFieldChange('navRentalOrnamentsLabel', e.target.value)}
-              placeholder="Rental Ornaments"
+              placeholder="Occasion Ornaments"
               maxLength={50}
             />
             <p className="text-xs text-muted-foreground">
-              This replaces generic jewellery terminology in customer navigation to clearly represent rental ornaments.
+              Customize the catalogue label shown in customer navigation menus.
             </p>
           </div>
         </CardContent>

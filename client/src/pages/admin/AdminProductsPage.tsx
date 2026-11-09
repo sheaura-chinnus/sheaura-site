@@ -19,13 +19,6 @@ const ADMIN_STATUS_OPTIONS = [
   { value: 'discontinued', label: 'Discontinued' },
 ]
 
-const MODE_OPTIONS = [
-  { value: '', label: 'All Modes' },
-  { value: 'rental', label: 'Rental' },
-  { value: 'sale', label: 'Sale' },
-  { value: 'both', label: 'Both' },
-]
-
 const ADMIN_SORT_OPTIONS = [
   { value: 'newest', label: 'Newest First' },
   { value: 'oldest', label: 'Oldest First' },
@@ -44,7 +37,6 @@ export function AdminProductsPage() {
   const page = parseInt(searchParams.get('page') || '1')
   const urlSearch = searchParams.get('search') || ''
   const status = searchParams.get('status') || ''
-  const mode = searchParams.get('mode') || ''
   const categoryFilter = searchParams.get('category') || ''
   const featuredFilter = searchParams.get('featured') || ''
   const sortBy = searchParams.get('sortBy') || 'newest'
@@ -70,7 +62,7 @@ export function AdminProductsPage() {
     search: urlSearch || undefined,
     availability: status as any || undefined,
     categoryId: selectedCategoryId,
-    mode: mode as any || undefined,
+    mode: undefined,
     isPublished: undefined,
     isFeatured: featuredFilter === 'true' ? true : featuredFilter === 'false' ? false : undefined,
     sortBy: sortBy as any,
@@ -338,7 +330,7 @@ export function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Products</SelectItem>
-                  <SelectItem value="true">⭐ Main Page Featured</SelectItem>
+                  <SelectItem value="true">Main Page Featured</SelectItem>
                   <SelectItem value="false">Regular Products</SelectItem>
                 </SelectContent>
               </Select>
@@ -350,18 +342,6 @@ export function AdminProductsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {ADMIN_STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Mode Filter */}
-              <Select value={mode} onValueChange={(v) => updateFilters({ mode: v || undefined })}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODE_OPTIONS.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>

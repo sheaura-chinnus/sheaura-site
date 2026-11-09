@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, Sparkles, MapPin, Phone, User, LogOut } from 'lucide-react'
+import { Menu, X, ShoppingBag, Search, ArrowRight, MessageCircle, ShieldCheck, MapPin, Phone, User, LogOut } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -236,12 +236,9 @@ export function Header() {
               <div className="p-5 sm:p-6 space-y-5">
                 {/* Header in Drawer */}
                 <div className="flex items-center justify-between pb-3 border-b border-amber-900/10">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-amber-700" />
-                    <span className="font-display text-base font-bold text-amber-950 dark:text-amber-200">
-                      Sheaura Menu
-                    </span>
-                  </div>
+                  <span className="font-display text-base font-bold text-amber-950 dark:text-amber-200">
+                    Menu
+                  </span>
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-amber-500/10 cursor-pointer"
@@ -403,7 +400,7 @@ export function Header() {
                       <MessageCircle className="h-5 w-5" />
                     </div>
                     <div>
-                      <span className="font-display font-semibold text-foreground block text-sm">WhatsApp Concierge</span>
+                      <span className="font-display font-semibold text-foreground block text-sm">WhatsApp Orders & Support</span>
                       <span className="text-xs text-muted-foreground">+91 9995098294</span>
                     </div>
                   </div>

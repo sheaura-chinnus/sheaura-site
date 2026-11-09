@@ -8,7 +8,6 @@ import {
   Truck,
   Eye,
   EyeOff,
-  Sparkles,
   AlertCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -134,47 +133,43 @@ export function StaffPortalPage() {
           className="inline-flex items-center text-xs text-amber-400/80 hover:text-amber-300 transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-          <span>Back to Sheaura Boutique</span>
+          <span>Back to Store</span>
         </Link>
-        <span className="text-[11px] font-mono text-white/40 uppercase tracking-widest">
-          STAFF-SEC-V2
-        </span>
       </div>
 
       {/* Main Card */}
       <div className="max-w-md mx-auto w-full my-auto animate-fade-in">
-        <Card className="bg-[#142420] border-2 border-amber-500/30 text-white shadow-2xl overflow-hidden rounded-3xl backdrop-blur-md">
-          {/* Top Gold Security Strip */}
-          <div className="h-2 bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 animate-pulse" />
+        <Card className="bg-[#142420] border border-amber-500/30 text-white shadow-xl overflow-hidden rounded-2xl">
+          <div className="h-1 bg-amber-600" />
 
-          <CardHeader className="text-center pb-4 pt-8 space-y-2">
-            <div className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-700/20 border border-amber-500/40 text-amber-400 mx-auto shadow-inner">
-              <Lock className="h-6 w-6" />
+          <CardHeader className="text-center pb-4 pt-6 space-y-2">
+            <div className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-400 mx-auto">
+              <Lock className="h-5 w-5" />
             </div>
             <div className="space-y-1">
               <CardTitle className="text-2xl font-display font-medium text-amber-100 tracking-tight">
-                Staff Authorization Vault
+                Staff Portal
               </CardTitle>
               <CardDescription className="text-white/60 text-xs">
-                Restricted access for Store Administrators & Delivery Operations.
+                Store administration and order management.
               </CardDescription>
             </div>
           </CardHeader>
 
-          <CardContent className="p-6 sm:p-8 space-y-6">
+          <CardContent className="p-6 sm:p-8 space-y-5">
             {/* Role Selection Tabs */}
             <Tabs value={staffRole} onValueChange={(v) => setStaffRole(v as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-black/40 p-1.5 rounded-2xl border border-white/10">
+              <TabsList className="grid w-full grid-cols-2 bg-black/40 p-1 rounded-xl border border-white/10">
                 <TabsTrigger
                   value="admin"
-                  className="gap-2 text-xs py-2.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white font-medium transition-all"
+                  className="gap-2 text-xs py-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white font-medium transition-all"
                 >
                   <ShieldCheck className="h-4 w-4" />
                   <span>Administrator</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="shop_order_receiver"
-                  className="gap-2 text-xs py-2.5 data-[state=active]:bg-amber-600 data-[state=active]:text-white font-medium transition-all"
+                  className="gap-2 text-xs py-2 data-[state=active]:bg-amber-600 data-[state=active]:text-white font-medium transition-all"
                 >
                   <Truck className="h-4 w-4" />
                   <span>Delivery Team</span>
@@ -184,15 +179,15 @@ export function StaffPortalPage() {
 
             {/* Role Info Pill */}
             <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2.5">
-              <Sparkles className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <ShieldCheck className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <div className="text-[11px] leading-relaxed">
                 {staffRole === 'admin' ? (
                   <span>
-                    <strong>Admin Privileges:</strong> Full control over product catalogue, live pricing, image uploads, site settings, and policies.
+                    <strong>Admin Privileges:</strong> Full control over product catalogue, pricing, media, settings, and policies.
                   </span>
                 ) : (
                   <span>
-                    <strong>Delivery Team Privileges:</strong> Direct access to customer shipping queues, WhatsApp orders, and dispatch fulfillment status.
+                    <strong>Delivery Team Privileges:</strong> Access to customer order queues and dispatch fulfillment status.
                   </span>
                 )}
               </div>
@@ -201,8 +196,8 @@ export function StaffPortalPage() {
             {/* Password Form */}
             <form onSubmit={handleStaffLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="staff-portal-password" className="text-xs font-semibold text-white/80 uppercase tracking-wider">
-                  {staffRole === 'admin' ? 'Administrator Key *' : 'Delivery Staff Key *'}
+                <Label htmlFor="staff-portal-password" className="text-xs font-semibold text-white/80">
+                  {staffRole === 'admin' ? 'Administrator Password *' : 'Staff Password *'}
                 </Label>
                 <div className="relative">
                   <Input
@@ -210,7 +205,7 @@ export function StaffPortalPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={staffPassword}
                     onChange={(e) => setStaffPassword(e.target.value)}
-                    placeholder="Enter security access password..."
+                    placeholder="Enter password..."
                     className="h-11 bg-black/40 border-white/20 focus:border-amber-500 text-white text-xs pr-10 rounded-xl font-mono"
                     autoFocus
                     required
@@ -228,10 +223,10 @@ export function StaffPortalPage() {
               <Button
                 type="submit"
                 disabled={isSubmitting || !staffPassword.trim()}
-                className="w-full h-11 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-700 hover:to-amber-700 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-900/50 transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <KeyRound className="h-4 w-4" />
-                <span>{isSubmitting ? 'Verifying Security Token...' : 'Unlock Staff Workspace'}</span>
+                <span>{isSubmitting ? 'Signing in...' : 'Sign In'}</span>
               </Button>
             </form>
 
@@ -239,7 +234,7 @@ export function StaffPortalPage() {
             <div className="pt-2 border-t border-white/10 flex items-start gap-2 text-[10px] text-white/50 leading-normal">
               <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
               <span>
-                All staff logins are encrypted (256-bit) and recorded in immutable audit logs with timestamp & IP address.
+                Staff access is authenticated and operations are recorded in the audit log.
               </span>
             </div>
           </CardContent>

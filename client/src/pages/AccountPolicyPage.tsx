@@ -34,7 +34,7 @@ export function AccountPolicyPage() {
             <CardTitle className="text-lg font-display">Fast & Secure Signup</CardTitle>
           </CardHeader>
           <CardContent className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            One-click Google Sign-In or direct email account creation. Manage past orders, save domestic shipping addresses, and track consignments seamlessly.
+            One-click Google Sign-In or direct email account creation. Manage past orders, save domestic shipping addresses, and track consignments.
           </CardContent>
         </Card>
 
@@ -95,12 +95,12 @@ export function AccountPolicyPage() {
           </div>
           <div className="space-y-3 text-sm text-muted-foreground leading-relaxed pl-0 sm:pl-10">
             <p>
-              Sheaura offers two seamless order workflows:
+              Sheaura offers two convenient order options:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 my-2">
               <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-1.5">
-                <span className="font-semibold text-foreground text-xs uppercase tracking-wider block">Option A: Instant WhatsApp Concierge</span>
-                <p className="text-xs">Transmit your selected jewellery codes directly to our personal bridal stylist for custom sizing, real photos, and customized order checkout.</p>
+                <span className="font-semibold text-foreground text-xs uppercase tracking-wider block">Option A: WhatsApp Ordering</span>
+                <p className="text-xs">Send your selected jewellery codes directly to our team for custom sizing, real photos, and direct order checkout.</p>
               </div>
               <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-1.5">
                 <span className="font-semibold text-foreground text-xs uppercase tracking-wider block">Option B: Online Payment & Delivery</span>
@@ -172,7 +172,7 @@ export function AccountPolicyPage() {
             className="border-white/40 text-white hover:bg-white/10 gap-2"
           >
             <a
-              href={`https://wa.me/${whatsappNum}?text=${encodeURIComponent('Hello Sheaura Concierge, I have a question regarding my account or order delivery.')}`}
+              href={`https://wa.me/${whatsappNum}?text=${encodeURIComponent('Hello Sheaura, I have a question regarding my account or order delivery.')}`}
               target="_blank"
               rel="noopener noreferrer"
             >

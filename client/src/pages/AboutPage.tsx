@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Sparkles, Gem, Leaf, Heart, Truck, Shield, Award, Users } from 'lucide-react'
+import { Gem, Leaf, Heart, Truck, Shield, Award, Users } from 'lucide-react'
 import { useSiteSettings } from '@/hooks/useSiteSettings'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -7,13 +7,13 @@ import { Card, CardContent } from '@/components/ui/card'
 const features = [
   {
     icon: Gem,
-    title: 'Curated Collections',
-    description: 'Handpicked jewellery, cosmetics, and ornaments from trusted artisans and premium brands.',
+    title: 'Signature Collections',
+    description: 'Imitation jewellery, cosmetics, and occasion ornaments sourced from skilled artisans.',
   },
   {
-    icon: Sparkles,
-    title: 'Sale & Rental Options',
-    description: 'Choose to own your favourites forever or rent exquisite pieces for special occasions.',
+    icon: Award,
+    title: 'Direct Purchase & Delivery',
+    description: 'Every piece is available for direct purchase with express pan-India doorstep delivery.',
   },
   {
     icon: Leaf,
@@ -23,7 +23,7 @@ const features = [
   {
     icon: Heart,
     title: 'Personalized Service',
-    description: 'Dedicated consultants to help you find the perfect piece for every moment.',
+    description: 'Direct styling advice, photo/video previews, and sizing help via WhatsApp.',
   },
 ]
 
@@ -36,12 +36,12 @@ const values = [
   {
     icon: Shield,
     title: 'Trust',
-    description: 'Transparent pricing, authenticity guarantees, and honest guidance always.',
+    description: 'Transparent pricing, accurate descriptions, and reliable customer guidance.',
   },
   {
     icon: Users,
     title: 'Community',
-    description: 'Building lasting relationships with clients who appreciate timeless beauty.',
+    description: 'Building lasting relationships with clients who appreciate traditional and modern jewellery.',
   },
   {
     icon: Truck,
@@ -51,17 +51,17 @@ const values = [
 ]
 
 const milestones = [
-  { year: '2020', title: 'Founded', description: 'Sheaura began with a vision to make premium jewellery accessible.' },
-  { year: '2021', title: 'First Boutique', description: 'Opened our flagship boutique, offering curated fashion jewellery.' },
-  { year: '2022', title: 'Bridal & Occasion', description: 'Launched curated occasion ornaments and bridal accessory collections.' },
-  { year: '2023', title: 'Cosmetics Line', description: 'Expanded into premium cosmetics and beauty essentials.' },
-  { year: '2024', title: 'National Reach', description: 'Pan-India delivery with 10,000+ happy customers served.' },
+  { year: '2020', title: 'Founded', description: 'Sheaura began with a vision to make premium occasion jewellery accessible.' },
+  { year: '2021', title: 'First Boutique', description: 'Opened our boutique offering quality fashion and imitation jewellery.' },
+  { year: '2022', title: 'Bridal & Occasion', description: 'Introduced complete occasion ornaments and bridal accessory collections.' },
+  { year: '2023', title: 'Cosmetics Line', description: 'Expanded into select cosmetics and beauty accessories.' },
+  { year: '2024', title: 'National Reach', description: 'Pan-India delivery serving customers across all states.' },
 ]
 
 export function AboutPage() {
   const { data: settings } = useSiteSettings()
   const brandName = settings?.brandName || 'Sheaura'
-  const brandTagline = settings?.brandTagline || 'Timeless Elegance, Curated for You'
+  const brandTagline = settings?.brandTagline || 'Handcrafted Fashion & Imitation Jewellery'
 
   return (
     <div className="animate-fade-in">
@@ -108,31 +108,29 @@ export function AboutPage() {
                   treating yourself — you deserve access to exquisite pieces that make you feel extraordinary.
                 </p>
                 <p>
-                  Our curated collections allow you to own handcrafted imitation jewellery and occasion pieces to cherish,
-                  with the same guarantee of premium craftsmanship, durability, and personalized service.
+                  Our collections allow you to own handcrafted imitation jewellery and occasion pieces to cherish,
+                  with our standard of quality craftsmanship, durability, and customer care.
                 </p>
                 <p>
-                  Every item in our collection is carefully selected by our experts, ensuring
-                  conflict-free sourcing, exceptional craftsmanship, and timeless design that
-                  transcends fleeting trends.
+                  Every piece is selected for its craftsmanship, plating quality, and aesthetic appeal,
+                  ensuring long-lasting elegance for weddings and family celebrations.
                 </p>
               </div>
               <Link to="/shop">
-                <Button size="lg" className="mt-2">
-                  Explore Our Collection
+                <Button size="lg" className="mt-2 bg-amber-700 hover:bg-amber-800 text-white rounded-xl">
+                  Browse Catalogue
                 </Button>
               </Link>
             </div>
 
             <div className="relative">
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted/50 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
+              <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted/50 relative border border-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-amber-700/5" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Sparkles className="h-24 w-24 text-primary/20" />
+                  <Gem className="h-20 w-20 text-amber-700/30" />
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-background to-transparent" />
               </div>
-              <div className="absolute -bottom-6 -left-6 w-72 h-72 bg-primary/10 rounded-full blur-3xl" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -211,8 +209,8 @@ export function AboutPage() {
             <div className="space-y-10">
               {milestones.map((milestone, index) => (
                 <div key={index} className="relative flex gap-6">
-                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full bg-primary border-4 border-background flex items-center justify-center z-10">
-                    <span className="text-xs font-bold text-primary">{milestone.year}</span>
+                  <div className="relative flex-shrink-0 w-12 h-12 rounded-full bg-amber-700 border-4 border-background flex items-center justify-center z-10 shadow-sm">
+                    <span className="text-xs font-bold text-white">{milestone.year}</span>
                   </div>
                   <div className="pt-1 flex-1">
                     <h3 className="font-medium text-lg text-foreground mb-1">{milestone.title}</h3>
@@ -228,22 +226,22 @@ export function AboutPage() {
       {/* CTA Section */}
       <section className="section-spacing" aria-labelledby="cta-title">
         <div className="container-sheaura">
-          <div className="max-w-3xl mx-auto text-center p-8 lg:p-12 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
-            <h2 id="cta-title" className="font-display text-3xl sm:text-4xl font-medium text-foreground mb-4">
-              Ready to Find Your Perfect Piece?
+          <div className="max-w-3xl mx-auto text-center p-8 lg:p-12 rounded-2xl bg-amber-50/50 dark:bg-muted/20 border border-amber-900/15">
+            <h2 id="cta-title" className="font-display text-2xl sm:text-3xl font-medium text-foreground mb-3">
+              Explore Our Jewellery Collections
             </h2>
-            <p className="text-muted-foreground text-lg mb-8 max-w-lg mx-auto">
-              Browse our curated collections, add favourites to your enquiry basket,
-              and let our team guide you to the perfect choice.
+            <p className="text-muted-foreground text-sm sm:text-base mb-6 max-w-lg mx-auto">
+              Browse our collections, add favourite items to your order list,
+              and connect with our team on WhatsApp for quick confirmation.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/shop">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Shop Collection
+                <Button size="lg" className="w-full sm:w-auto bg-amber-700 hover:bg-amber-800 text-white rounded-xl">
+                  Browse Catalogue
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto border-amber-700/30 rounded-xl">
                   Contact Us
                 </Button>
               </Link>

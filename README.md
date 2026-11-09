@@ -51,12 +51,13 @@ Sheaura is a modern, high-performance sales-only e-commerce platform specializin
 - **Address Book & Order History:** Saved customer shipping addresses and live order tracking.
 
 ### Admin Dashboard (`/admin`)
-- **Product Management:** Full CRUD, image uploads (with DB storage fallback), stock tracking, price management.
+- **Product Management:** Full CRUD, multi-image gallery upload & synchronization with `productImages` table, inventory tracking, sale price, and featured item toggle.
 - **Category & Collection Management:** Dynamic hierarchy, slug generation, active/inactive toggles.
-- **Inventory Control:** Automatic atomic stock deduction upon order creation, automatic stock restoration upon cancellation or rejection, and real-time low-stock alerts.
-- **Enquiry & Order Management:** Status lifecycle (`pending`, `confirmed`, `packed`, `shipped`, `delivered`, `cancelled`, `rejected`), customer lookup, and WhatsApp direct messaging.
-- **Site Settings & Media:** Customizable banners, brand metadata, and theme customization.
-- **Security & Audit Logs:** Role-based access control (`user`, `shop_order_receiver`, `admin`), action auditing.
+- **Inventory Control:** Automatic atomic stock deduction upon order creation, automatic stock restoration upon cancellation or rejection, and real-time low-stock (`<= 3` units) alert badges.
+- **Enquiry & Order Management:** Status lifecycle (`pending`, `confirmed`, `packed`, `shipped`, `delivered`, `cancelled`, `rejected`), customer lookup, total revenue estimation, and WhatsApp direct messaging.
+- **Users & Role Management (`/admin/users`):** Search users, filter by role (`user`, `shop_order_receiver`, `admin`), assign privileges, view customer avatars, with built-in self-demotion protection.
+- **Site Settings & Media:** Customizable banners, brand metadata, navigation menus, and logo media upload with binary magic-byte validation.
+- **Security & Audit Logs:** Role-based access control (`user`, `shop_order_receiver`, `admin`), action auditing with correlation IDs.
 
 ---
 
@@ -143,10 +144,18 @@ npm run dev
 - Backend API & tRPC: `http://localhost:4000`
 
 ### Testing
-Run the complete automated test suite (67 unit & integration tests):
+Run the complete automated test suite (75 unit & integration tests across 7 test suites):
 ```bash
 npm test
 ```
+The test suite covers:
+1. `admin_features.test.ts` — Settings allowlist, logo binary validation, RBAC, CSRF, security headers, stock management
+2. `security.test.ts` — Rate limiting, session fixation, secret scanning, timing-safe auth
+3. `rental_catalogue.test.ts` — Catalogue browsing, enquiry creation, enquiry deletion & test cleanup
+4. `session_persistence.test.ts` — PostgreSQL session durability across restarts, cookie sliding expiry
+5. `product_editor_audit.test.ts` — Product editing mutations, audit logging
+6. `enquiry_pipeline.test.ts` — Customer enquiry ingestion, status progression, WhatsApp generation
+7. `sales_production.test.ts` — Multi-image persistence, atomic stock deduction, restoration lifecycle, admin user management, self-demotion prevention, dashboard revenue analytics
 
 ### Production Build
 ```bash

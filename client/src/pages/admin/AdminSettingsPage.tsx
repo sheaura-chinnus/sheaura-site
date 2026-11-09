@@ -200,7 +200,7 @@ export function AdminSettingsPage() {
                   id="brandTagline"
                   value={formData.brandTagline || ''}
                   onChange={(e) => handleFieldChange('brandTagline', e.target.value)}
-                  placeholder="Exquisite Imitation Jewellery, Cosmetics & Occasion Rental Ornaments"
+                  placeholder="Handcrafted Fashion Jewellery, Cosmetics & Occasion Accessories"
                   maxLength={255}
                 />
               </div>

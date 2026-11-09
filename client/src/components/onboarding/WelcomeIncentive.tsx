@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Sparkles, Gift, Check, Copy, ArrowRight, X, Percent, ShoppingBag } from 'lucide-react'
+import { Gift, Check, Copy, ArrowRight, X, Percent, ShoppingBag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
 import { useClaimWelcomeCoupon } from '@/hooks/useAuth'
@@ -35,7 +35,7 @@ export function WelcomeIncentive({ isOpen, onClose, onApplyCoupon }: WelcomeInce
     }
     setApplied(true)
     onApplyCoupon?.(couponCode, discountPercent)
-    toast.success(`10% OFF Welcome Discount Applied to Your Cart!`)
+    toast.success('Welcome discount code applied.')
     setTimeout(() => {
       onClose()
     }, 1200)
@@ -57,39 +57,35 @@ export function WelcomeIncentive({ isOpen, onClose, onApplyCoupon }: WelcomeInce
           <X className="h-5 w-5" />
         </button>
 
-        {/* Shimmer Background Glow */}
-        <div className="absolute top-0 inset-x-0 h-36 bg-gradient-to-b from-amber-500/20 to-transparent pointer-events-none" />
-
         <div className="p-6 sm:p-8 text-center space-y-5 relative">
-          {/* Animated Gift / Sparkle Icon */}
+          {/* Gift Icon */}
           <div className="relative inline-block">
-            <div className="h-16 w-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30 rotate-3 transition-transform hover:rotate-0">
-              <Gift className="h-8 w-8 text-amber-950" />
+            <div className="h-14 w-14 mx-auto rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center shadow-md">
+              <Gift className="h-7 w-7 text-amber-300" />
             </div>
-            <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold animate-bounce">
-              <Percent className="h-3.5 w-3.5" />
+            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-emerald-600 flex items-center justify-center text-white text-[10px] font-bold">
+              <Percent className="h-3 w-3" />
             </div>
           </div>
 
           {/* Heading */}
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Exclusive Member Welcome Gift</span>
-            </div>
+            <span className="inline-block text-xs font-semibold text-amber-300 uppercase tracking-wider">
+              Welcome Offer
+            </span>
             <h2 className="font-display text-2xl sm:text-3xl font-medium text-amber-100 tracking-tight pt-1">
-              You've Unlocked 10% OFF
+              10% Off First Order
             </h2>
             <p className="text-xs text-amber-200/80 max-w-xs mx-auto">
-              Welcome to the Sheaura family. Enjoy an instant 10% discount on your first artisanal jewellery purchase.
+              Use your welcome code to save on your order of jewellery, accessories, and cosmetics.
             </p>
           </div>
 
           {/* Luxury Coupon Voucher Card */}
-          <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-amber-400/40 space-y-3 relative overflow-hidden backdrop-blur-md">
+          <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-amber-400/40 space-y-3 relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="text-left">
-                <span className="text-[10px] text-amber-300/80 uppercase font-semibold tracking-wider block">First Order Promo Code</span>
+                <span className="text-xs text-amber-300/80 font-medium block">Promo Code</span>
                 <span className="font-mono text-xl sm:text-2xl font-bold tracking-widest text-amber-300">{couponCode}</span>
               </div>
               <button
@@ -121,17 +117,17 @@ export function WelcomeIncentive({ isOpen, onClose, onApplyCoupon }: WelcomeInce
           <Button
             onClick={handleApply}
             disabled={applied}
-            className="w-full h-12 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:to-amber-600 text-amber-950 font-bold text-sm rounded-xl shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
+            className="w-full h-11 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
           >
             {applied ? (
               <>
-                <Check className="h-5 w-5 text-emerald-900" />
-                <span>Applied to Cart!</span>
+                <Check className="h-4 w-4 text-white" />
+                <span>Applied to Bag</span>
               </>
             ) : (
               <>
                 <ShoppingBag className="h-4 w-4" />
-                <span>Apply 10% OFF & Continue Shopping</span>
+                <span>Apply Code & Continue</span>
                 <ArrowRight className="h-4 w-4" />
               </>
             )}

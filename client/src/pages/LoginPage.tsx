@@ -7,7 +7,6 @@ import {
   EyeOff,
   Truck,
   User,
-  Sparkles,
   Smartphone,
   Mail
 } from 'lucide-react'
@@ -15,7 +14,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   useAuth,
@@ -133,7 +131,7 @@ export function LoginPage() {
         code,
         fullName: otpFullName.trim() || undefined,
       })
-      toast.success(res.isNewUser ? 'Welcome to Sheaura! 10% OFF coupon unlocked.' : 'Welcome back!')
+      toast.success(res.isNewUser ? 'Welcome to Sheaura!' : 'Signed in successfully.')
       if (res.isFirstOrder) {
         setIsWelcomeModalOpen(true)
       } else {
@@ -161,7 +159,7 @@ export function LoginPage() {
         email: customerEmail.trim(),
         password: customerPassword.trim(),
       })
-      toast.success('Welcome back to Sheaura!')
+      toast.success('Signed in successfully.')
       navigate(redirect.startsWith('/admin') ? '/account' : redirect)
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : 'Login failed. Please check your credentials.'
@@ -298,16 +296,11 @@ export function LoginPage() {
         <span>Back to Sheaura Home</span>
       </Link>
 
-      <Card className="card-sheaura shadow-xl border border-border overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-amber-600 via-primary to-amber-700" />
-        <CardHeader className="text-center pb-4 pt-8">
-          <Badge variant="secondary" className="w-fit mx-auto mb-2.5 gap-1.5 bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[11px]">
-            <Sparkles className="h-3 w-3 text-amber-600" />
-            <span>Frictionless Member Access</span>
-          </Badge>
+      <Card className="card-sheaura shadow-lg border border-border overflow-hidden">
+        <CardHeader className="text-center pb-4 pt-6">
           <CardTitle className="text-2xl sm:text-3xl font-display font-medium">Customer Sign In</CardTitle>
           <CardDescription className="text-muted-foreground text-xs sm:text-sm mt-1.5">
-            One-tap zero-password authentication. Unlock an extra 10% OFF on your first order.
+            Sign in to access your orders, delivery tracking, and saved addresses.
           </CardDescription>
         </CardHeader>
 
@@ -317,7 +310,7 @@ export function LoginPage() {
             <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1.5 rounded-2xl mb-4">
               <TabsTrigger value="otp" className="gap-1.5 text-xs py-2">
                 <Smartphone className="h-3.5 w-3.5" />
-                <span>One-Tap Mobile OTP</span>
+                <span>Mobile OTP</span>
               </TabsTrigger>
               <TabsTrigger value="email" className="gap-1.5 text-xs py-2">
                 <Mail className="h-3.5 w-3.5" />
@@ -325,15 +318,10 @@ export function LoginPage() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Tab 1: One-Tap Mobile OTP Auth */}
+            {/* Tab 1: Mobile OTP Auth */}
             <TabsContent value="otp" className="space-y-4">
               {otpStep === 'phone' ? (
                 <form onSubmit={handleSendOtp} className="space-y-4">
-                  {/* Incentive Badge */}
-                  <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-emerald-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-300 text-xs flex items-center gap-2 shadow-xs">
-                    <Sparkles className="h-4 w-4 text-amber-600 shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
-                    <span>Enter mobile number to unlock <strong>10% OFF</strong> on your first order!</span>
-                  </div>
 
                   <div>
                     <Label className="block text-xs font-semibold mb-1">Full Name (Optional)</Label>
@@ -355,7 +343,7 @@ export function LoginPage() {
                           onClick={() => setShowCountryDropdown(!showCountryDropdown)}
                           className="flex items-center gap-1.5 h-10 px-3 bg-muted/30 border border-border rounded-xl text-xs font-medium"
                         >
-                          <span>{selectedCountry.flag}</span>
+                          <span className="font-semibold text-xs tracking-wider text-muted-foreground">{selectedCountry.code}</span>
                           <span className="font-mono">{selectedCountry.dialCode}</span>
                         </button>
                         {showCountryDropdown && (
@@ -370,7 +358,7 @@ export function LoginPage() {
                                 }}
                                 className="w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-muted"
                               >
-                                <span>{c.flag}</span>
+                                <span className="font-semibold text-[11px] text-muted-foreground w-6">{c.code}</span>
                                 <span className="flex-1">{c.name}</span>
                                 <span className="font-mono text-muted-foreground">{c.dialCode}</span>
                               </button>
@@ -421,17 +409,17 @@ export function LoginPage() {
                   </div>
 
                   {demoCodeHint && (
-                    <p className="text-center text-[11px] text-amber-700 dark:text-amber-400 font-mono">
-                      💡 Demo OTP: <strong>{demoCodeHint}</strong>
+                    <p className="text-center text-[11px] text-muted-foreground font-mono">
+                      Demo verification code: <strong className="text-amber-800 dark:text-amber-300">{demoCodeHint}</strong>
                     </p>
                   )}
 
                   <Button
                     onClick={() => handleVerifyOtp()}
                     disabled={isSubmitting}
-                    className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs h-10 shadow-sm cursor-pointer"
+                    className="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium text-xs h-10 shadow-sm cursor-pointer"
                   >
-                    <span>{isSubmitting ? 'Verifying...' : 'Verify & Unlock 10% OFF'}</span>
+                    <span>{isSubmitting ? 'Verifying...' : 'Verify Code'}</span>
                   </Button>
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">

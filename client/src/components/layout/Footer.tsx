@@ -45,7 +45,7 @@ export function Footer() {
               {settings?.brandName || 'Sheaura'}
             </Link>
             <p className="text-xs sm:text-sm text-muted-foreground mb-4 max-w-sm leading-relaxed">
-              {settings?.footerText || 'Curated handcrafted fashion, imitation, and occasion jewellery. Browse exclusive designs and order directly on WhatsApp with your chosen item codes.'}
+              {settings?.footerText || 'Handcrafted fashion, imitation, and occasion jewellery. Browse our catalogue and order directly on WhatsApp with your selected item codes.'}
             </p>
             <p className="text-[11px] text-muted-foreground/80 mb-5 italic">
               * Sheaura offers premium imitation, fashion, and costume jewellery for weddings, celebrations, and festive occasions. We do not sell or trade real gold, diamonds, or precious gemstones.

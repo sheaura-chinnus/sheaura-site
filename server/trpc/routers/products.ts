@@ -40,6 +40,12 @@ const createProductSchema = z.object({
   isFeatured: z.boolean().default(false),
   isPublished: z.boolean().default(false),
   careInstructions: z.string().optional(),
+  images: z.array(z.object({
+    url: z.string().min(1),
+    altText: z.string().optional(),
+    isPrimary: z.boolean().default(false),
+    displayOrder: z.number().int().default(0),
+  })).optional(),
 })
 
 const updateProductSchema = createProductSchema.partial().extend({
@@ -77,7 +83,6 @@ export const productsRouter = router({
 
       const conditions = [
         eq(products.isPublished, true),
-        eq(products.availability, 'available'),
       ]
 
       if (category) {
@@ -120,6 +125,8 @@ export const productsRouter = router({
 
       if (availability) {
         conditions.push(eq(products.availability, availability))
+      } else {
+        conditions.push(inArray(products.availability, ['available', 'low_stock']))
       }
 
       if (featured !== undefined) {
@@ -219,7 +226,7 @@ export const productsRouter = router({
       const conditions = [
         eq(products.isPublished, true),
         eq(products.isFeatured, true),
-        eq(products.availability, 'available'),
+        inArray(products.availability, ['available', 'low_stock']),
       ]
       if (input.categoryId) {
         conditions.push(eq(products.categoryId, input.categoryId))
@@ -594,7 +601,8 @@ export const productsRouter = router({
         }
       }
 
-      const insertValues: any = { ...input, slug: finalSlug }
+      const { images: inputImages, ...productFields } = input
+      const insertValues: any = { ...productFields, slug: finalSlug }
       if (hasCol) {
         insertValues.itemCode = itemCode
       } else {
@@ -602,6 +610,18 @@ export const productsRouter = router({
       }
 
       const [product] = await db.insert(products).values(insertValues).returning()
+
+      if (inputImages && inputImages.length > 0) {
+        await db.insert(productImages).values(
+          inputImages.map((img, idx) => ({
+            productId: product.id,
+            url: img.url,
+            altText: img.altText || product.name,
+            isPrimary: img.isPrimary ?? (idx === 0),
+            displayOrder: img.displayOrder ?? idx,
+          }))
+        )
+      }
 
       // Audit log
       await audit.productCreated(ctx, product.id, { ...input, slug: finalSlug, itemCode })
@@ -613,7 +633,7 @@ export const productsRouter = router({
   updateProduct: adminProcedure
     .input(updateProductSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, ...data } = input
+      const { id, images: inputImages, ...data } = input
 
       // Get old data for audit
       const oldProduct = await db.select().from(products).where(eq(products.id, id)).limit(1)
@@ -658,6 +678,21 @@ export const productsRouter = router({
         .set({ ...data, updatedAt: new Date() })
         .where(eq(products.id, id))
         .returning()
+
+      if (inputImages !== undefined) {
+        await db.delete(productImages).where(eq(productImages.productId, id))
+        if (inputImages.length > 0) {
+          await db.insert(productImages).values(
+            inputImages.map((img, idx) => ({
+              productId: id,
+              url: img.url,
+              altText: img.altText || product.name,
+              isPrimary: img.isPrimary ?? (idx === 0),
+              displayOrder: img.displayOrder ?? idx,
+            }))
+          )
+        }
+      }
 
       // Audit log
       await audit.productUpdated(ctx, id, oldProduct[0], product)

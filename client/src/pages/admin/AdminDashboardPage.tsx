@@ -45,12 +45,13 @@ export function AdminDashboardPage() {
   const { data: productsStats } = trpc.products.adminGetList.useQuery({ limit: 1, page: 1 })
   const { data: categoriesStats } = trpc.categories.adminGetList.useQuery({ limit: 100 })
   const { data: enquiriesStats } = trpc.enquiries.getStats.useQuery()
+  const { data: recentEnquiries } = trpc.enquiries.adminGetList.useQuery({ limit: 5 })
 
   const totalProducts = productsStats?.total || 0
   const totalCategories = categoriesStats?.total || 0
-  const totalEnquiries = enquiriesStats?.totalProducts || 0 // Using totalProducts as total enquiries count
+  const totalEnquiries = enquiriesStats?.totalEnquiries || 0
   const pendingEnquiries = enquiriesStats?.newEnquiries || 0
-  const estimatedRevenue = 0 // Not available in current stats
+  const estimatedRevenue = enquiriesStats?.estimatedRevenue || 0
 
   const updatedStatsCards = [
     {
@@ -69,13 +70,6 @@ export function AdminDashboardPage() {
       ...statsCards[3],
       value: formatCurrency(estimatedRevenue, 'INR'),
     },
-  ]
-
-  const recentActivity = [
-    { type: 'enquiry', label: 'New enquiry received', time: '2 min ago', status: 'pending' },
-    { type: 'product', label: 'Product "Diamond Necklace" updated', time: '1 hour ago', status: 'updated' },
-    { type: 'enquiry', label: 'Enquiry #ENQ-001 status changed', time: '3 hours ago', status: 'completed' },
-    { type: 'category', label: 'New category "Watches" created', time: '1 day ago', status: 'created' },
   ]
 
   return (
@@ -183,39 +177,44 @@ export function AdminDashboardPage() {
         <div className="lg:col-span-2">
           <Card className="card-sheaura">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="font-display text-lg">Recent Activity</CardTitle>
+              <CardTitle className="font-display text-lg">Recent Orders & Enquiries</CardTitle>
               <Link to="/admin/enquiries" className="text-sm text-primary hover:text-primary/80 transition-colors">
                 View all
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border border-border">
-                    <div className={cn(
-                      'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
-                      activity.type === 'enquiry' && 'bg-blue-500/10 text-blue-500',
-                      activity.type === 'product' && 'bg-green-500/10 text-green-500',
-                      activity.type === 'category' && 'bg-purple-500/10 text-purple-500',
-                    )}>
-                      {activity.type === 'enquiry' && <Mail className="h-5 w-5" />}
-                      {activity.type === 'product' && <Package className="h-5 w-5" />}
-                      {activity.type === 'category' && <Tag className="h-5 w-5" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{activity.label}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
-                    <Badge variant={
-                      activity.status === 'pending' ? 'warning' :
-                      activity.status === 'completed' ? 'success' :
-                      activity.status === 'updated' ? 'secondary' : 'outline'
-                    }>
-                      {activity.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
+              {recentEnquiries?.items && recentEnquiries.items.length > 0 ? (
+                <div className="space-y-4">
+                  {recentEnquiries.items.map((item) => (
+                    <Link
+                      key={item.id}
+                      to={`/admin/enquiries/${item.id}`}
+                      className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border border-border hover:bg-muted/60 transition-colors block"
+                    >
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-500/10 text-blue-500">
+                        <Mail className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {item.phone || item.email} • {new Date(item.createdAt).toLocaleDateString('en-IN')}
+                        </p>
+                      </div>
+                      <Badge variant={
+                        item.status === 'new' ? 'warning' :
+                        item.status === 'fulfilled' ? 'success' :
+                        item.status === 'cancelled' || item.status === 'rejected' ? 'destructive' : 'secondary'
+                      }>
+                        {item.status}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground text-sm">
+                  No orders or enquiries recorded yet.
+                </div>
+              )}
             </CardContent>
           </Card>
 

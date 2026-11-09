@@ -250,7 +250,7 @@ export function AdminHomepageContentPage() {
               id="heroHeading"
               value={formData.heroHeading || ''}
               onChange={(e) => handleFieldChange('heroHeading', e.target.value)}
-              placeholder="e.g. Timeless Elegance with Curated Imitation Jewellery & Rental Ornaments"
+              placeholder="e.g. Handcrafted Fashion & Imitation Jewellery"
               maxLength={255}
             />
           </div>
@@ -261,7 +261,7 @@ export function AdminHomepageContentPage() {
               id="heroSupportingText"
               value={formData.heroSupportingText || ''}
               onChange={(e) => handleFieldChange('heroSupportingText', e.target.value)}
-              placeholder="Describe your collections of imitation jewellery, cosmetics, and occasion rental ornaments..."
+              placeholder="Describe your collections of imitation jewellery, cosmetics, and occasion ornaments..."
               rows={3}
               maxLength={1000}
             />
@@ -297,7 +297,7 @@ export function AdminHomepageContentPage() {
                 id="heroSecondaryCtaLabel"
                 value={formData.heroSecondaryCtaLabel || ''}
                 onChange={(e) => handleFieldChange('heroSecondaryCtaLabel', e.target.value)}
-                placeholder="Rental Ornaments"
+                placeholder="How to Order"
                 maxLength={50}
               />
             </div>
@@ -307,7 +307,7 @@ export function AdminHomepageContentPage() {
                 id="heroSecondaryCtaLink"
                 value={formData.heroSecondaryCtaLink || ''}
                 onChange={(e) => handleFieldChange('heroSecondaryCtaLink', e.target.value)}
-                placeholder="/rental-ornaments"
+                placeholder="#how-to-order"
                 maxLength={200}
               />
             </div>
@@ -332,7 +332,7 @@ export function AdminHomepageContentPage() {
             { key: 'trustBadges', label: 'Trust & Value Badges', desc: 'Craftsmanship, delivery, styling, and support promises' },
             { key: 'categories', label: 'Explore by Category Grid', desc: 'Imitation jewellery, cosmetics, and ornaments category cards' },
             { key: 'featuredProducts', label: 'Featured Collection Showcase', desc: 'Grid of handpicked featured items from catalogue' },
-            { key: 'rentalProcess', label: 'How Rental Works Guide', desc: '4-step guide explaining the rental reservation and return workflow' },
+            { key: 'rentalProcess', label: 'How to Order Guide', desc: '4-step guide explaining the WhatsApp ordering and delivery workflow' },
             { key: 'cta', label: 'Bottom Call to Action Banner', desc: 'Gradient banner encouraging catalogue browsing and enquiries' },
           ].map((sec) => (
             <div key={sec.key} className="py-3.5 flex items-center justify-between gap-4">
@@ -488,9 +488,9 @@ export function AdminHomepageContentPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Rental ornaments section */}
+          {/* How to Order on WhatsApp section */}
           <div className="space-y-2 p-4 bg-muted/30 rounded-xl border border-border">
-            <h3 className="text-sm font-semibold text-foreground">Rental Ornaments Section</h3>
+            <h3 className="text-sm font-semibold text-foreground">How to Order Section</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="sectionRentalOrnamentsTitle" className="text-xs">Section Heading</Label>
@@ -498,7 +498,7 @@ export function AdminHomepageContentPage() {
                   id="sectionRentalOrnamentsTitle"
                   value={formData.sectionRentalOrnamentsTitle || ''}
                   onChange={(e) => handleFieldChange('sectionRentalOrnamentsTitle', e.target.value)}
-                  placeholder="Rental Ornaments"
+                  placeholder="How to Order on WhatsApp"
                   maxLength={100}
                 />
               </div>
@@ -508,7 +508,7 @@ export function AdminHomepageContentPage() {
                   id="sectionRentalOrnamentsDesc"
                   value={formData.sectionRentalOrnamentsDesc || ''}
                   onChange={(e) => handleFieldChange('sectionRentalOrnamentsDesc', e.target.value)}
-                  placeholder="Curated bridal and occasion ornaments for special celebrations"
+                  placeholder="Simple 4-step process to order your selected jewellery pieces"
                   maxLength={500}
                 />
               </div>

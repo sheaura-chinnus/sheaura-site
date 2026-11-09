@@ -152,6 +152,14 @@ export function AddressManager({ selectedAddress, onSelectAddress, onAddressVali
       toast.error('Please enter a valid 6-digit Indian PIN code')
       return
     }
+    if (!formData.city.trim()) {
+      toast.error('City is required')
+      return
+    }
+    if (!formData.state.trim()) {
+      toast.error('State is required')
+      return
+    }
 
     if (!user) {
       // Guest mode - pass address directly
@@ -168,8 +176,8 @@ export function AddressManager({ selectedAddress, onSelectAddress, onAddressVali
         fullName: formData.fullName.trim(),
         phone: formData.phone.trim(),
         streetAddress: formData.streetAddress.trim(),
-        city: formData.city.trim() || 'City Hub',
-        state: formData.state.trim() || 'State',
+        city: formData.city.trim(),
+        state: formData.state.trim(),
         pincode: formData.pincode.trim(),
         isDefault: formData.isDefault,
       })

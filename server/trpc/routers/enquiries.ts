@@ -557,31 +557,6 @@ export const enquiriesRouter = router({
         }
       }
 
-      // Auto-update availability for rental items
-      const isSendingToRental = status === 'reserved' || status === 'fulfilled'
-      const isReleasingRental = (oldStatus === 'reserved' || oldStatus === 'fulfilled') && (status === 'cancelled' || status === 'rejected')
-
-      if (isSendingToRental || isReleasingRental) {
-        const enqItems = await db
-          .select({ productId: enquiryItems.productId })
-          .from(enquiryItems)
-          .where(eq(enquiryItems.enquiryId, id))
-
-        const targetProductIds = enqItems.map(i => i.productId).filter(Boolean) as string[]
-
-        if (targetProductIds.length > 0) {
-          const newAvailability = isSendingToRental ? 'out_of_stock' : 'available'
-          await db
-            .update(products)
-            .set({ availability: newAvailability, updatedAt: new Date() })
-            .where(inArray(products.id, targetProductIds))
-
-          for (const pid of targetProductIds) {
-            await audit.productUpdated(ctx, pid, {}, { availability: newAvailability, reason: `Enquiry ${id} status set to ${status}` })
-          }
-        }
-      }
-
       // Audit log
       await audit.enquiryStatusUpdated(ctx, id, oldStatus, status, adminNotes)
 
@@ -673,29 +648,45 @@ export const enquiriesRouter = router({
     .query(async ({ ctx }) => {
       const whereClause = ctx.user.role === 'shop_order_receiver' ? eq(enquiries.assignedTo, ctx.user.id) : undefined
 
+      const revenueConditions = [
+        sql`${enquiries.status} NOT IN ('cancelled', 'rejected')`,
+      ]
+      if (whereClause) revenueConditions.push(whereClause)
+
       const [
         totalProducts,
         publishedProducts,
         featuredProducts,
+        totalEnquiries,
         newEnquiries,
         activeEnquiries,
         lowStockProducts,
+        revenueResult,
       ] = await Promise.all([
         db.select({ count: count() }).from(products),
         db.select({ count: count() }).from(products).where(eq(products.isPublished, true)),
         db.select({ count: count() }).from(products).where(and(eq(products.isPublished, true), eq(products.isFeatured, true))),
+        db.select({ count: count() }).from(enquiries).where(whereClause),
         db.select({ count: count() }).from(enquiries).where(and(whereClause, eq(enquiries.status, 'new'))),
         db.select({ count: count() }).from(enquiries).where(and(whereClause, inArray(enquiries.status, ['new', 'contacted', 'reserved']))),
         db.select({ count: count() }).from(products).where(inArray(products.availability, ['low_stock', 'out_of_stock'])),
+        db.select({
+          totalRevenue: sql<string>`coalesce(sum(${enquiryItems.unitPrice} * ${enquiryItems.quantity}), 0)::text`,
+        })
+          .from(enquiryItems)
+          .innerJoin(enquiries, eq(enquiryItems.enquiryId, enquiries.id))
+          .where(and(...revenueConditions)),
       ])
 
       return {
         totalProducts: totalProducts[0].count,
         publishedProducts: publishedProducts[0].count,
         featuredProducts: featuredProducts[0].count,
+        totalEnquiries: totalEnquiries[0].count,
         newEnquiries: newEnquiries[0].count,
         activeEnquiries: activeEnquiries[0].count,
         lowStockProducts: lowStockProducts[0].count,
+        estimatedRevenue: parseFloat(revenueResult[0]?.totalRevenue || '0'),
       }
     }),
 

@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react'
-import { X, Sparkles, Smartphone, CheckCircle2, ArrowRight, RefreshCw, MessageSquare, ShieldCheck, ChevronDown } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { X, Smartphone, CheckCircle2, ArrowRight, RefreshCw, MessageSquare, ShieldCheck, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'react-hot-toast'
@@ -9,19 +9,18 @@ export interface CountryOption {
   code: string
   dialCode: string
   name: string
-  flag: string
 }
 
 export const COUNTRIES: CountryOption[] = [
-  { code: 'IN', dialCode: '+91', name: 'India', flag: '🇮🇳' },
-  { code: 'AE', dialCode: '+971', name: 'UAE', flag: '🇦🇪' },
-  { code: 'US', dialCode: '+1', name: 'United States', flag: '🇺🇸' },
-  { code: 'GB', dialCode: '+44', name: 'United Kingdom', flag: '🇬🇧' },
-  { code: 'SG', dialCode: '+65', name: 'Singapore', flag: '🇸🇬' },
-  { code: 'SA', dialCode: '+966', name: 'Saudi Arabia', flag: '🇸🇦' },
-  { code: 'CA', dialCode: '+1', name: 'Canada', flag: '🇨🇦' },
-  { code: 'AU', dialCode: '+61', name: 'Australia', flag: '🇦🇺' },
-  { code: 'MY', dialCode: '+60', name: 'Malaysia', flag: '🇲🇾' },
+  { code: 'IN', dialCode: '+91', name: 'India' },
+  { code: 'AE', dialCode: '+971', name: 'UAE' },
+  { code: 'US', dialCode: '+1', name: 'United States' },
+  { code: 'GB', dialCode: '+44', name: 'United Kingdom' },
+  { code: 'SG', dialCode: '+65', name: 'Singapore' },
+  { code: 'SA', dialCode: '+966', name: 'Saudi Arabia' },
+  { code: 'CA', dialCode: '+1', name: 'Canada' },
+  { code: 'AU', dialCode: '+61', name: 'Australia' },
+  { code: 'MY', dialCode: '+60', name: 'Malaysia' },
 ]
 
 interface AuthModalProps {
@@ -153,11 +152,11 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
         fullName: fullName.trim() || undefined,
       })
 
-      toast.success(res.isNewUser ? 'Welcome to Sheaura! 10% OFF applied.' : 'Welcome back!')
+      toast.success(res.isNewUser ? 'Welcome to Sheaura!' : 'Signed in successfully.')
       onSuccess?.(res.user, res.isNewUser, res.isFirstOrder)
       onClose()
     } catch (err: any) {
-      toast.error(err.message || 'Invalid or expired OTP')
+      toast.error(err.message || 'Invalid or expired verification code')
       setOtpDigits(['', '', '', ''])
       inputRefs[0].current?.focus()
     }
@@ -166,7 +165,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
   const handleResendViaWhatsApp = () => {
     const cleanPhone = phone.replace(/\D/g, '')
     const target = `${selectedCountry.dialCode}${cleanPhone}`
-    toast.success(`Simulating WhatsApp OTP to ${target}`)
+    toast.success(`Resending code to ${target}`)
     handleSendOtp()
   }
 
@@ -174,12 +173,12 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Modal / Drawer Box */}
       <div 
-        className="w-full md:max-w-md bg-[#FAF8F5] dark:bg-[#11221F] border border-amber-900/20 dark:border-amber-500/20 rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col"
+        className="w-full md:max-w-md bg-background border border-border rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden transition-all duration-300 max-h-[90vh] flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         {/* Top Header & Close */}
-        <div className="relative px-6 pt-6 pb-4 bg-gradient-to-b from-amber-500/10 to-transparent">
+        <div className="relative px-6 pt-6 pb-4 border-b border-border/50">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 p-1.5 rounded-full text-foreground/60 hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
@@ -188,27 +187,19 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
             <X className="h-5 w-5" />
           </button>
 
-          {/* Luxury Brand Header */}
+          {/* Header */}
           <div className="text-center space-y-1">
-            <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-300 mb-1 shadow-sm">
-              <Sparkles className="h-5 w-5" />
+            <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-amber-500/10 border border-amber-600/20 text-amber-800 dark:text-amber-300 mb-1">
+              <Smartphone className="h-5 w-5" />
             </div>
             <h2 className="font-display text-2xl font-medium text-foreground tracking-tight">
-              {step === 'phone' ? 'Instant One-Tap Sign In' : 'Verify Mobile Number'}
+              {step === 'phone' ? 'Sign In' : 'Verify Mobile Number'}
             </h2>
             <p className="text-xs text-muted-foreground">
               {step === 'phone'
-                ? 'Zero passwords. Instant 1-click checkout & order updates.'
-                : `Enter 4-digit code sent to ${selectedCountry.dialCode} ${phone}`}
+                ? 'Sign in to access your orders and saved delivery details.'
+                : `Enter the 4-digit code sent to ${selectedCountry.dialCode} ${phone}`}
             </p>
-          </div>
-
-          {/* Animated 10% Off Incentive Pill */}
-          <div className="mt-3 flex items-center justify-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-emerald-500/20 border border-amber-500/30 text-amber-900 dark:text-amber-300 text-[11px] font-medium animate-pulse shadow-sm">
-              <Sparkles className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-              <span>Unlock <strong>EXTRA 10% OFF</strong> on your first order</span>
-            </div>
           </div>
         </div>
 
@@ -243,7 +234,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
                       onClick={() => setShowCountryDropdown(!showCountryDropdown)}
                       className="flex items-center gap-1.5 h-11 px-3 bg-white dark:bg-[#1A302B] border border-amber-900/20 rounded-xl text-xs font-medium text-foreground hover:bg-amber-500/5 transition-colors focus:ring-1 focus:ring-amber-500"
                     >
-                      <span className="text-base leading-none">{selectedCountry.flag}</span>
+                      <span className="font-semibold text-xs tracking-wider text-muted-foreground">{selectedCountry.code}</span>
                       <span className="font-mono">{selectedCountry.dialCode}</span>
                       <ChevronDown className="h-3 w-3 text-muted-foreground" />
                     </button>
@@ -260,7 +251,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
                             }}
                             className="w-full text-left px-3 py-2 text-xs flex items-center gap-2 hover:bg-amber-500/10 transition-colors"
                           >
-                            <span>{c.flag}</span>
+                            <span className="font-semibold text-[11px] text-muted-foreground w-6">{c.code}</span>
                             <span className="font-medium text-foreground flex-1">{c.name}</span>
                             <span className="font-mono text-muted-foreground text-[11px]">{c.dialCode}</span>
                           </button>
@@ -289,7 +280,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
               <Button
                 type="submit"
                 disabled={sendOtpMutation.isLoading}
-                className="w-full h-12 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 hover:from-amber-800 hover:to-amber-800 text-white font-medium text-sm rounded-xl shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-amber-700 hover:bg-amber-800 text-white font-medium text-sm rounded-xl shadow-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
               >
                 {sendOtpMutation.isLoading ? (
                   <>
@@ -298,7 +289,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
                   </>
                 ) : (
                   <>
-                    <span>Get 4-Digit OTP</span>
+                    <span>Continue</span>
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -331,8 +322,8 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
                 </div>
 
                 {demoCodeHint && (
-                  <p className="text-center text-[11px] text-amber-700 dark:text-amber-400 mt-2 font-mono">
-                    💡 Demo OTP for instant login: <strong>{demoCodeHint}</strong>
+                  <p className="text-center text-[11px] text-muted-foreground mt-2 font-mono">
+                    Demo verification code: <strong className="text-amber-800 dark:text-amber-300">{demoCodeHint}</strong>
                   </p>
                 )}
               </div>
@@ -341,7 +332,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
               <Button
                 onClick={() => handleVerifyOtp()}
                 disabled={verifyOtpMutation.isLoading}
-                className="w-full h-12 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 hover:from-amber-800 hover:to-amber-800 text-white font-medium text-sm rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-2"
+                className="w-full h-11 bg-amber-700 hover:bg-amber-800 text-white font-medium text-sm rounded-xl shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 {verifyOtpMutation.isLoading ? (
                   <>
@@ -350,8 +341,8 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="h-4 w-4 text-amber-200" />
-                    <span>Verify & Unlock 10% OFF</span>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Verify Code</span>
                   </>
                 )}
               </Button>
@@ -394,9 +385,9 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialPhone = '' }: Aut
           )}
 
           {/* Privacy & Trust Badge */}
-          <div className="pt-3 border-t border-amber-900/10 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-            <span>256-Bit Encrypted OTP. No Spam. Zero Password Hassle.</span>
+          <div className="pt-3 border-t border-border/60 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Secure mobile verification</span>
           </div>
         </div>
       </div>

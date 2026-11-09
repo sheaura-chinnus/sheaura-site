@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Image as ImageIcon, Plus, Trash2, FolderCheck, Check, Sparkles, Wand2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Image as ImageIcon, Plus, Trash2, FolderCheck, Check, Wand2, RefreshCw } from 'lucide-react'
 import { trpc } from '@/lib/trpc'
 import { slugify } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -42,7 +42,7 @@ export function AdminProductCreatePage() {
     shortDescription: '',
     description: '',
     categoryId: '',
-    mode: 'rental' as 'sale' | 'rental' | 'both',
+    mode: 'sale' as 'sale' | 'rental' | 'both',
     salePrice: '',
     rentalPrice: '',
     rentalDurationDays: 7,
@@ -71,7 +71,7 @@ export function AdminProductCreatePage() {
         shortDescription: productData.shortDescription || '',
         description: productData.description || '',
         categoryId: productData.categoryId || '',
-        mode: (productData.mode as any) || 'rental',
+        mode: (productData.mode as any) || 'sale',
         salePrice: productData.salePrice || '',
         rentalPrice: productData.rentalPrice || '',
         rentalDurationDays: productData.rentalDurationDays || 7,
@@ -129,7 +129,7 @@ export function AdminProductCreatePage() {
 
   const createMutation = trpc.products.createProduct.useMutation({
     onSuccess: () => {
-      toast.success(isEditing ? 'Rental ornament updated successfully' : 'Rental ornament created successfully')
+      toast.success(isEditing ? 'Product updated successfully' : 'Product created successfully')
       navigate('/admin/products')
     },
     onError: (error) => {
@@ -140,7 +140,7 @@ export function AdminProductCreatePage() {
 
   const updateMutation = trpc.products.updateProduct.useMutation({
     onSuccess: () => {
-      toast.success('Rental ornament updated successfully')
+      toast.success('Product updated successfully')
       navigate('/admin/products')
     },
     onError: (error) => {
@@ -247,7 +247,7 @@ export function AdminProductCreatePage() {
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                {isEditing ? 'Update' : 'Save'} Ornament
+                {isEditing ? 'Update' : 'Save'} Product
               </>
             )}
           </Button>
@@ -263,7 +263,7 @@ export function AdminProductCreatePage() {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <Label htmlFor="name" className="block text-sm font-medium mb-1">Ornament Name *</Label>
+                <Label htmlFor="name" className="block text-sm font-medium mb-1">Product Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -292,7 +292,7 @@ export function AdminProductCreatePage() {
                     type="button"
                     onClick={handleRegenerateSlug}
                     className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 flex items-center gap-1 font-medium cursor-pointer"
-                    title="Auto-generate slug from ornament name"
+                    title="Auto-generate slug from product name"
                   >
                     <Wand2 className="h-3 w-3" />
                     <span>Auto-generate</span>

@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   ShieldAlert,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -39,6 +40,7 @@ const adminNavigation = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Categories', href: '/admin/categories', icon: Tag },
   { name: 'Enquiries / Orders', href: '/admin/enquiries', icon: Mail },
+  { name: 'Users & Roles', href: '/admin/users', icon: Users },
   { name: 'Audit Log', href: '/admin/audit-logs', icon: FileText },
 ]
 

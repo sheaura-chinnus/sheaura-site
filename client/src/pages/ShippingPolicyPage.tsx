@@ -69,7 +69,7 @@ export function ShippingPolicyPage() {
                 <ul className="list-disc list-inside space-y-2 text-muted-foreground mb-4">
                   <li><strong>Delivery Timeline:</strong> 5 to 9 business days via DHL Express / FedEx / EMS.</li>
                   <li><strong>Customs & Duties:</strong> Packaged with formal commercial export invoice. Destination import duties/VAT (if applicable by local country customs) are borne by the recipient.</li>
-                  <li><strong>NRI Concierge:</strong> Coordinated through our dedicated WhatsApp international desk for seamless time-zone scheduling.</li>
+                  <li><strong>International Support:</strong> Coordinated through our dedicated WhatsApp international desk for convenient time-zone scheduling.</li>
                 </ul>
               </section>
 

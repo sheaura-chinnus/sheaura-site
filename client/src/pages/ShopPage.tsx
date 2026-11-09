@@ -21,7 +21,7 @@ const AVAILABILITY_OPTIONS = [
   { value: 'low_stock', label: 'Limited Quantity' },
 ]
 
-export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = {}) {
+export function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
@@ -77,18 +77,18 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
       <section className="py-12 lg:py-16 bg-amber-50/40 dark:bg-muted/20 border-b border-amber-900/10" aria-labelledby="shop-title">
         <div className="container-sheaura">
           <div className="max-w-3xl mx-auto text-center">
-            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-widest block mb-2">
-              Exquisite Handcrafted Jewellery
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider block mb-1.5">
+              Jewellery Catalogue
             </span>
-            <h1 id="shop-title" className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-amber-950 dark:text-amber-200 mb-4">
+            <h1 id="shop-title" className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-amber-950 dark:text-amber-200 mb-3">
               {category
                 ? `${CATEGORIES.find(c => c.value === category)?.label || 'Category'} Collection`
                 : 'Fashion & Imitation Jewellery Catalogue'}
             </h1>
-            <p className="text-muted-foreground text-sm sm:text-base lg:text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
               {search
                 ? `Showing jewellery pieces matching "${search}"`
-                : 'Browse our curated collection of antique chokers, temple bridal sets, and celebration jewellery. Click to order on WhatsApp with your chosen item codes.'
+                : 'Browse antique chokers, temple bridal sets, and celebration jewellery. Click to order on WhatsApp with your chosen item codes.'
               }
             </p>
           </div>
@@ -225,7 +225,7 @@ export function ShopPage(_props: { defaultMode?: 'sale' | 'rental' | 'both' } = 
                   <Gem className="h-10 w-10 mx-auto text-amber-700/50 mb-3" />
                   <h3 className="font-display text-lg font-bold text-amber-950 dark:text-amber-200 mb-1">No Jewellery Pieces Found</h3>
                   <p className="text-sm text-muted-foreground mb-6">
-                    Try adjusting your search query or reset filters to discover our designs.
+                    Try adjusting your search query or reset filters to view all available pieces.
                   </p>
                   <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-xl border-amber-700/30">
                     Clear Filters

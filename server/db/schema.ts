@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, integer, boolean, timestamp, decimal, pgEnum, index, uniqueIndex } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, text, integer, boolean, timestamp, decimal, pgEnum, index, uniqueIndex, json } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Enums
@@ -113,6 +113,8 @@ export const enquiries = pgTable('enquiries', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
+  userIdIdx: index('enquiries_user_id_idx').on(table.userId),
+  phoneIdx: index('enquiries_phone_idx').on(table.phone),
   emailIdx: index('enquiries_email_idx').on(table.email),
   statusIdx: index('enquiries_status_idx').on(table.status),
   createdAtIdx: index('enquiries_created_at_idx').on(table.createdAt),
@@ -273,3 +275,14 @@ export type AuditLog = typeof auditLogs.$inferSelect
 export type NewAuditLog = typeof auditLogs.$inferInsert
 export type MediaAsset = typeof mediaAssets.$inferSelect
 export type NewMediaAsset = typeof mediaAssets.$inferInsert
+
+export const sessions = pgTable('session', {
+  sid: varchar('sid', { length: 255 }).primaryKey(),
+  sess: json('sess').notNull(),
+  expire: timestamp('expire', { precision: 6 }).notNull(),
+}, (table) => ({
+  expireIdx: index('IDX_session_expire').on(table.expire),
+}))
+
+export type Session = typeof sessions.$inferSelect
+export type NewSession = typeof sessions.$inferInsert

@@ -934,4 +934,61 @@ export const productsRouter = router({
 
       return { count: deleted.length }
     }),
+
+  // Phase 9: Admin Inventory Intelligence — Low Stock Alerts
+  getLowStockAlerts: adminProcedure
+    .input(z.object({
+      threshold: z.number().int().min(1).default(5),
+    }).optional().default({ threshold: 5 }))
+    .query(async ({ input }) => {
+      const threshold = input?.threshold ?? 5
+      const itemCodeCol = await getItemCodeSql()
+
+      const alertProducts = await db
+        .select({
+          id: products.id,
+          name: products.name,
+          slug: products.slug,
+          itemCode: itemCodeCol,
+          stockQuantity: products.stockQuantity,
+          availability: products.availability,
+          salePrice: products.salePrice,
+          categoryName: categories.name,
+        })
+        .from(products)
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(
+          or(
+            sql`${products.stockQuantity} <= ${threshold}`,
+            eq(products.availability, 'low_stock'),
+            eq(products.availability, 'out_of_stock')
+          )
+        )
+        .orderBy(asc(products.stockQuantity))
+        .limit(100)
+
+      return alertProducts
+    }),
+
+  // Phase 9: Admin Inventory Summary & Valuations
+  getInventorySummary: adminProcedure
+    .query(async () => {
+      const stats = await db
+        .select({
+          totalProducts: count(products.id),
+          totalStock: sql<number>`coalesce(sum(${products.stockQuantity}), 0)::int`,
+          outOfStockCount: sql<number>`count(*) filter (where ${products.stockQuantity} <= 0 or ${products.availability} = 'out_of_stock')::int`,
+          lowStockCount: sql<number>`count(*) filter (where ${products.stockQuantity} > 0 and ${products.stockQuantity} <= 3)::int`,
+          totalValuation: sql<string>`coalesce(sum(case when ${products.salePrice} is not null then ${products.salePrice} * ${products.stockQuantity} else 0 end), 0)::numeric(12,2)::text`,
+        })
+        .from(products)
+
+      return stats[0] || {
+        totalProducts: 0,
+        totalStock: 0,
+        outOfStockCount: 0,
+        lowStockCount: 0,
+        totalValuation: '0.00',
+      }
+    }),
 })

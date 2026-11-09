@@ -1,12 +1,13 @@
 import 'dotenv/config'
 import express from 'express'
 import session from 'express-session'
+import connectPgSimple from 'connect-pg-simple'
 import passport from 'passport'
 import rateLimit from 'express-rate-limit'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
 import { createContext } from './trpc/context.js'
 import { appRouter } from './trpc/router.js'
-import { db, closePool } from './db/index.js'
+import { db, closePool, pool } from './db/index.js'
 import { siteSettings, mediaAssets, users } from './db/schema.js'
 import { eq } from 'drizzle-orm'
 import { audit } from './trpc/audit.js'
@@ -104,9 +105,21 @@ app.use(express.urlencoded({ extended: true }))
 // Static file serving for product images
 app.use('/uploads', express.static(join(process.cwd(), 'uploads')))
 
-// CORS - Strict Origin Configuration
+// CORS - Dynamic & Multi-Origin Configuration
+const allowedOrigins = [
+  CLIENT_URL,
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.ADDITIONAL_ALLOWED_ORIGINS?.split(',').map((s: string) => s.trim()) || [],
+].flat().filter(Boolean)
+
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', CLIENT_URL)
+  const origin = req.headers.origin
+  if (origin && (allowedOrigins.includes(origin) || (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) || origin.endsWith('.pages.dev'))) {
+    res.header('Access-Control-Allow-Origin', origin)
+  } else {
+    res.header('Access-Control-Allow-Origin', CLIENT_URL)
+  }
   res.header('Access-Control-Allow-Credentials', 'true')
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token, x-request-id')
@@ -145,17 +158,29 @@ app.use('/api/admin/media/upload-logo', authRateLimiter)
 // Apply general rate limiting to tRPC
 app.use('/trpc', apiRateLimiter)
 
-// Session with sliding expiration
+// PostgreSQL-backed Session Store
+const PgSessionStore = connectPgSimple(session)
+const sessionStore = new PgSessionStore({
+  pool,
+  tableName: 'session',
+  createTableIfMissing: true,
+  pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
+})
+
+const isCrossSite = process.env.CROSS_SITE_COOKIES === 'true'
+
+// Session with PostgreSQL persistence and sliding expiration
 app.use(session({
+  store: sessionStore,
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   rolling: true, // Enable sliding expiration
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: isCrossSite || process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: SESSION_MAX_AGE,
-    sameSite: 'lax', // Strict CSRF protection with reverse proxy support
+    sameSite: isCrossSite ? 'none' : 'lax', // Support cross-site cookies if deploying split CF Pages + Render
   },
 }))
 
@@ -170,7 +195,29 @@ export function privateAccessAuth(req: express.Request, res: express.Response, n
     return next()
   }
 
-  const secretToken = process.env.PRIVATE_ACCESS_TOKEN || (process.env.STAGING_MODE === 'true' ? (process.env.STAGING_PASSWORD || 'sheaura-vip-2026') : undefined)
+  // 1. If STAGING_MODE is active, enforce HTTP Basic Auth
+  if (process.env.STAGING_MODE === 'true') {
+    const expectedUser = process.env.STAGING_USERNAME || 'admin'
+    const expectedPass = process.env.STAGING_PASSWORD || 'password'
+    const authHeader = req.headers.authorization
+    if (authHeader && authHeader.startsWith('Basic ')) {
+      const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8')
+      const [user, pass] = credentials.split(':')
+      if (user === expectedUser && pass === expectedPass) {
+        if (req.session) req.session.hasPrivateAccess = true
+        return next()
+      }
+    }
+    res.setHeader('WWW-Authenticate', 'Basic realm="Staging Access Required"')
+    return res.status(401).send('Staging Access Required')
+  }
+
+  // 2. Bypass private preview gate during automated test runs
+  if (process.env.NODE_ENV === 'test') {
+    return next()
+  }
+
+  const secretToken = process.env.PRIVATE_ACCESS_TOKEN
 
   // If no private access token is configured, site is public
   if (!secretToken) {
@@ -182,7 +229,7 @@ export function privateAccessAuth(req: express.Request, res: express.Response, n
   const cookieMatch = cookies.match(/(?:^|;\s*)sheaura_access=([^;]*)/)
   const cookieAccess = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null
 
-  // 1. Check if user already unlocked via session or persistent cookie
+  // Check if user already unlocked via session or persistent cookie
   if (req.session?.hasPrivateAccess) {
     return next()
   }
@@ -191,7 +238,7 @@ export function privateAccessAuth(req: express.Request, res: express.Response, n
     return next()
   }
 
-  // 2. Check if user arrived via the private access link (e.g. ?access=TOKEN or ?key=TOKEN or ?preview=TOKEN)
+  // Check if user arrived via the private access link (e.g. ?access=TOKEN or ?key=TOKEN or ?preview=TOKEN)
   const queryAccess = (req.query.access as string) || (req.query.key as string) || (req.query.preview as string)
   if (queryAccess && queryAccess.trim() === secretToken.trim()) {
     if (req.session) req.session.hasPrivateAccess = true
@@ -207,20 +254,7 @@ export function privateAccessAuth(req: express.Request, res: express.Response, n
     return res.redirect(cleanUrl)
   }
 
-  // 3. Fallback: Check HTTP Basic Auth (if credentials supplied)
-  const expectedUser = process.env.STAGING_USERNAME || 'admin'
-  const expectedPass = process.env.STAGING_PASSWORD || secretToken
-  const authHeader = req.headers.authorization
-  if (authHeader && authHeader.startsWith('Basic ')) {
-    const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf-8')
-    const [user, pass] = credentials.split(':')
-    if (user === expectedUser && pass === expectedPass) {
-      if (req.session) req.session.hasPrivateAccess = true
-      return next()
-    }
-  }
-
-  // 4. If an API request (tRPC or /api), return 401 JSON
+  // If an API request (tRPC or /api), return 401 JSON
   if (req.path.startsWith('/trpc') || req.path.startsWith('/api')) {
     return res.status(401).json({ error: 'Private Preview: Access link required' })
   }
@@ -364,8 +398,8 @@ app.use((req, res, next) => {
 
     res.cookie('csrf_token', token, {
       httpOnly: false, // Frontend reads for mutation headers
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isCrossSite || process.env.NODE_ENV === 'production',
+      sameSite: isCrossSite ? 'none' : 'lax',
       maxAge: SESSION_MAX_AGE,
       path: '/',
     })

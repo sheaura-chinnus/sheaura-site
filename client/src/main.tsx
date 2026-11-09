@@ -20,11 +20,19 @@ const queryClient = new QueryClient({
   },
 })
 
+const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 const trpcClient = trpc.createClient({
   transformer: superjson,
   links: [
     httpBatchLink({
-      url: '/trpc',
+      url: `${apiBaseUrl}/trpc`,
+      fetch(url, options) {
+        return fetch(url, {
+          ...options,
+          credentials: 'include',
+        })
+      },
       headers() {
         const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/)
         const token = match ? decodeURIComponent(match[1]) : ''

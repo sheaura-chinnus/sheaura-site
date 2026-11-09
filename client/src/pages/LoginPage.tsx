@@ -202,7 +202,8 @@ export function LoginPage() {
 
   // Handle Google Sign-In
   const handleGoogleSignIn = () => {
-    window.location.href = '/auth/google'
+    const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+    window.location.href = `${apiBaseUrl}/auth/google`
   }
 
   // Redirect staff query parameters directly to dedicated Staff Portal

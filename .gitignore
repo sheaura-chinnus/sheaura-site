@@ -9,6 +9,7 @@ coverage/
 *.xlsx
 *.docx
 *.md
+!README.md
 cookies.txt
 .claude/settings.local.json
 scratch/

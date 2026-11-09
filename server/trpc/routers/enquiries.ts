@@ -220,6 +220,22 @@ export const enquiriesRouter = router({
         }))
       )
 
+      // Phase 9: Automatically deduct product inventory and update availability
+      for (const item of input.items) {
+        await db
+          .update(products)
+          .set({
+            stockQuantity: sql`GREATEST(0, ${products.stockQuantity} - ${item.quantity})`,
+            availability: sql`CASE 
+              WHEN ${products.stockQuantity} - ${item.quantity} <= 0 THEN 'out_of_stock'::product_availability
+              WHEN ${products.stockQuantity} - ${item.quantity} <= 3 THEN 'low_stock'::product_availability
+              ELSE 'available'::product_availability
+            END`,
+            updatedAt: new Date(),
+          })
+          .where(eq(products.id, item.productId))
+      }
+
       return { success: true, enquiryId: enquiry.id }
     }),
 
@@ -513,6 +529,32 @@ export const enquiriesRouter = router({
 
       if (!enquiry) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Enquiry not found' })
+      }
+
+      // Phase 9: Restore inventory when an active order is cancelled or rejected
+      const isCancelling = (oldStatus !== 'cancelled' && oldStatus !== 'rejected') && (status === 'cancelled' || status === 'rejected')
+      if (isCancelling) {
+        const itemsToRestore = await db
+          .select({ productId: enquiryItems.productId, quantity: enquiryItems.quantity })
+          .from(enquiryItems)
+          .where(eq(enquiryItems.enquiryId, id))
+
+        for (const it of itemsToRestore) {
+          if (it.productId) {
+            await db
+              .update(products)
+              .set({
+                stockQuantity: sql`${products.stockQuantity} + ${it.quantity}`,
+                availability: sql`CASE 
+                  WHEN ${products.stockQuantity} + ${it.quantity} > 3 THEN 'available'::product_availability
+                  WHEN ${products.stockQuantity} + ${it.quantity} > 0 THEN 'low_stock'::product_availability
+                  ELSE 'out_of_stock'::product_availability
+                END`,
+                updatedAt: new Date(),
+              })
+              .where(eq(products.id, it.productId))
+          }
+        }
       }
 
       // Auto-update availability for rental items

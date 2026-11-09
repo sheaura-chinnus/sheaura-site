@@ -93,8 +93,10 @@ export function AdminLogoMediaPage() {
       const base64Data = await base64Promise
       const csrfToken = getCsrfToken()
 
-      const response = await fetch('/api/admin/media/upload-logo', {
+      const apiBaseUrl = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+      const response = await fetch(`${apiBaseUrl}/api/admin/media/upload-logo`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'x-csrf-token': csrfToken,

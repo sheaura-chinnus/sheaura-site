@@ -104,7 +104,7 @@ export const authRouter = router({
         phone: normalizedPhone,
         expiresInSeconds: 300,
         isExistingUser: existingUser.length > 0,
-        demoOtp: code, // Provided for instant preview / testing
+        demoOtp: process.env.NODE_ENV === 'production' ? undefined : code, // Excluded in production for security
       }
     }),
 

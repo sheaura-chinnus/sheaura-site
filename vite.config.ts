@@ -1,10 +1,26 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+function adminSecretsGuard(): Plugin {
+  return {
+    name: 'admin-secrets-guard',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id.includes('node_modules')) return null
+      if (code.includes('ADMIN_PASSWORD') || code.includes('process.env.ADMIN_PASSWORD')) {
+        throw new Error(
+          `[SECURITY VIOLATION] Client bundle attempted to reference or import ADMIN_PASSWORD in: ${id}`
+        )
+      }
+      return null
+    },
+  }
+}
+
 export default defineConfig({
   root: './client',
-  plugins: [react()],
+  plugins: [adminSecretsGuard(), react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './client/src'),

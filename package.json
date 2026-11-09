@@ -19,8 +19,13 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx server/db/seed.ts",
+    "db:import-stock": "tsx server/db/import_inventory.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "stock:inspect": "tsx server/db/import_docx_stock.ts --inspect",
+    "stock:dry-run": "tsx server/db/import_docx_stock.ts --dry-run",
+    "stock:import": "tsx server/db/import_docx_stock.ts",
+    "render": "tsx scripts/render.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -50,6 +55,7 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/pg": "^8.23.1",
     "@types/uuid": "^10.0.0",
+    "adm-zip": "^0.6.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^0.2.1",
@@ -73,14 +79,17 @@
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^14.0.2",
+    "xml2js": "^0.6.2",
     "zod": "^3.22.4",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/express-rate-limit": "^5.1.3",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
+    "@types/xml2js": "^0.4.14",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
     "@typescript-eslint/parser": "^7.1.0",
     "@vitejs/plugin-react": "^4.2.1",

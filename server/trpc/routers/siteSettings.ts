@@ -45,6 +45,41 @@ export const siteSettingsRouter = router({
       return merged
     }),
 
+  // Public: Alias for reading public logo and brand settings with read-only strings
+  getPublicSettings: publicProcedure
+    .query(async () => {
+      const dbSettings = await db
+        .select({
+          key: siteSettings.key,
+          value: siteSettings.value,
+        })
+        .from(siteSettings)
+
+      const dbMap = new Map<string, string>()
+      for (const s of dbSettings) {
+        if (s.value !== null && s.value !== undefined) {
+          dbMap.set(s.key, s.value)
+        }
+      }
+
+      const merged: Record<string, string> = {}
+      for (const key of ALLOWED_SETTING_KEYS) {
+        merged[key] = dbMap.has(key) && dbMap.get(key) !== ''
+          ? dbMap.get(key)!
+          : DEFAULT_SITE_SETTINGS[key]
+      }
+
+      return {
+        logoUrl: merged.logoUrl || '',
+        logoAltText: merged.logoAltText || 'Sheaura Brand Logo',
+        siteName: merged.brandName || 'Sheaura',
+        brandName: merged.brandName || 'Sheaura',
+        contactPhone: merged.contactPhone || '+91 98765 43210',
+        contactEmail: merged.contactEmail || 'sheaura360@gmail.com',
+        whatsappNumber: merged.whatsappNumber || '+91 98765 43210',
+      }
+    }),
+
   // Admin: Get all settings (merged with defaults for editor display)
   adminGetList: adminProcedure
     .query(async () => {
@@ -97,6 +132,73 @@ export const siteSettingsRouter = router({
       await audit.settingUpdated(ctx, input.key, oldValue, input.value ?? null)
 
       return setting
+    }),
+
+  // Admin: Alias for updateSetting
+  update: adminProcedure
+    .input(updateSettingSchema)
+    .mutation(async ({ input, ctx }) => {
+      const validation = validateSetting(input.key, input.value)
+      if (!validation.valid) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: validation.error || 'Invalid setting format or disallowed key',
+        })
+      }
+
+      const oldSetting = await db
+        .select({ value: siteSettings.value })
+        .from(siteSettings)
+        .where(eq(siteSettings.key, input.key))
+        .limit(1)
+      const oldValue = oldSetting[0]?.value ?? null
+
+      const [setting] = await db
+        .insert(siteSettings)
+        .values({ key: input.key, value: input.value ?? '' })
+        .onConflictDoUpdate({
+          target: siteSettings.key,
+          set: { value: input.value ?? '', updatedAt: new Date() },
+        })
+        .returning()
+
+      await audit.settingUpdated(ctx, input.key, oldValue, input.value ?? null)
+
+      return setting
+    }),
+
+  // Admin: Update Brand Logo & Alt Text
+  updateLogo: adminProcedure
+    .input(z.object({
+      logoUrl: z.string().min(1).max(500),
+      logoAltText: z.string().max(255).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      await db
+        .insert(siteSettings)
+        .values({ key: 'logoUrl', value: input.logoUrl })
+        .onConflictDoUpdate({
+          target: siteSettings.key,
+          set: { value: input.logoUrl, updatedAt: new Date() },
+        })
+
+      if (input.logoAltText !== undefined) {
+        await db
+          .insert(siteSettings)
+          .values({ key: 'logoAltText', value: input.logoAltText })
+          .onConflictDoUpdate({
+            target: siteSettings.key,
+            set: { value: input.logoAltText, updatedAt: new Date() },
+          })
+      }
+
+      await audit.settingUpdated(ctx, 'logoUrl', null, input.logoUrl)
+
+      return {
+        success: true,
+        logoUrl: input.logoUrl,
+        logoAltText: input.logoAltText ?? 'Sheaura Brand Logo',
+      }
     }),
 
   // Admin: Bulk update settings (transactional)

@@ -208,8 +208,16 @@ export function EnquiryPage() {
   // Handle WhatsApp Concierge Submit
   const handleOpenWhatsApp = () => {
     const url = buildWhatsAppUrl({
-      items: items.map(i => ({ itemCode: i.itemCode, name: i.productName, price: i.price || i.salePrice })),
+      items: items.map(i => ({
+        itemCode: i.itemCode,
+        name: i.productName,
+        quantity: 1,
+        price: i.price || i.salePrice,
+      })),
       customerName: customerName || (user?.name ?? 'Valued Customer'),
+      customerPhone: customerPhone || (user as any)?.phone,
+      deliveryAddress: shippingAddress,
+      pincode: pincode,
       note: note + (appliedCoupon ? (' (Applied Coupon: ' + appliedCoupon.code + ' for 10% Off)') : ''),
       whatsappNumber: settings?.whatsappNumber,
       brandName: settings?.brandName || 'Sheaura',

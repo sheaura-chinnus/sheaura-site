@@ -7,8 +7,20 @@ coverage/
 !.env.example
 *.log
 *.xlsx
+*.docx
 *.md
 cookies.txt
 .claude/settings.local.json
 scratch/
+
+# Temporary diagnostic scripts
+server/db/check_*.ts
+server/db/diagnose_*.ts
+server/db/dump_*.ts
+server/db/inspect_*.ts
+server/db/test_*.ts
+
+# Product image uploads (binaries excluded, directory tracked)
+uploads/products/*
+!uploads/products/.gitkeep
 

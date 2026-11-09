@@ -580,63 +580,7 @@ export const authRouter = router({
       }
     }),
 
-  // Google OAuth / One-Tap Authentication
-  googleLogin: publicProcedure
-    .input(z.object({
-      email: z.string().email().toLowerCase().trim(),
-      name: z.string().optional(),
-      avatarUrl: z.string().url().optional(),
-      googleId: z.string().optional(),
-    }))
-    .mutation(async ({ ctx, input }) => {
-      const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1)
-      let targetUser = existing[0]
 
-      if (targetUser) {
-        const [updated] = await db
-          .update(users)
-          .set({
-            name: targetUser.name || input.name,
-            avatarUrl: input.avatarUrl || targetUser.avatarUrl,
-            googleId: input.googleId || targetUser.googleId,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, targetUser.id))
-          .returning()
-        targetUser = updated
-      } else {
-        const [created] = await db
-          .insert(users)
-          .values({
-            id: uuidv4(),
-            email: input.email,
-            name: input.name || 'Shopper',
-            avatarUrl: input.avatarUrl,
-            googleId: input.googleId,
-            role: 'user',
-          })
-          .returning()
-        targetUser = created
-      }
-
-      if (ctx.req.session) {
-        ;(ctx.req as any).session.passport = { user: targetUser.id }
-        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
-      }
-
-      return {
-        id: targetUser.id,
-        email: targetUser.email,
-        name: targetUser.name,
-        phone: targetUser.phone,
-        role: targetUser.role,
-        image: targetUser.avatarUrl,
-        deliveryAddress: targetUser.deliveryAddress,
-        city: targetUser.city,
-        state: targetUser.state,
-        pincode: targetUser.pincode,
-      }
-    }),
 
   // Customer Profile & Delivery Address Update
   updateCustomerProfile: protectedProcedure
@@ -762,7 +706,13 @@ export const authRouter = router({
       password: z.string().min(1, 'Admin password is required'),
     }))
     .mutation(async ({ ctx, input }) => {
-      const configuredPassword = process.env.ADMIN_PASSWORD || 'sheaura@admin2026'
+      const configuredPassword = process.env.ADMIN_PASSWORD
+      if (!configuredPassword) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Admin password is not configured on this server.',
+        })
+      }
 
       const inputHash = crypto.createHash('sha256').update(input.password).digest()
       const expectedHash = crypto.createHash('sha256').update(configuredPassword).digest()
@@ -772,14 +722,14 @@ export const authRouter = router({
       if (!isMatch) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
-          message: 'Invalid admin password. Access denied.',
+          message: 'Invalid credentials',
         })
       }
 
       const email = 'sheaura360@gmail.com'
       const name = 'Sheaura Admin'
 
-      let userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
+      const userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
       let targetUser = userList[0]
 
       if (!targetUser) {
@@ -796,9 +746,28 @@ export const authRouter = router({
       }
 
       if (ctx.req.session) {
-        ;(ctx.req as any).session.passport = { user: targetUser.id }
-        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+        await new Promise<void>((resolve, reject) => {
+          if (typeof ctx.req.session.regenerate === 'function') {
+            ctx.req.session.regenerate((err) => {
+              if (err) return reject(err)
+              resolve()
+            })
+          } else {
+            resolve()
+          }
+        })
+        const sessionData = ctx.req.session as unknown as Record<string, unknown>
+        sessionData.userId = targetUser.id
+        sessionData.role = 'admin'
+        sessionData.passport = { user: targetUser.id }
+        await new Promise<void>((resolve, reject) => {
+          ctx.req.session.save((err) => {
+            if (err) return reject(err)
+            resolve()
+          })
+        })
       }
+      ;(ctx.req as unknown as { user?: unknown }).user = targetUser
 
       return {
         id: targetUser.id,
@@ -816,7 +785,13 @@ export const authRouter = router({
       role: z.enum(['admin', 'shop_order_receiver']).default('admin'),
     }))
     .mutation(async ({ ctx, input }) => {
-      const configuredPassword = process.env.ADMIN_PASSWORD || 'sheaura@admin2026'
+      const configuredPassword = process.env.ADMIN_PASSWORD
+      if (!configuredPassword) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Staff password is not configured on this server.',
+        })
+      }
 
       const inputHash = crypto.createHash('sha256').update(input.password).digest()
       const expectedHash = crypto.createHash('sha256').update(configuredPassword).digest()
@@ -826,14 +801,14 @@ export const authRouter = router({
       if (!isMatch) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
-          message: 'Invalid staff password. Access denied.',
+          message: 'Invalid credentials',
         })
       }
 
       const email = input.role === 'admin' ? 'sheaura360@gmail.com' : 'delivery@sheaura.com'
       const name = input.role === 'admin' ? 'Sheaura Admin' : 'Delivery & Enquiry Team'
 
-      let userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
+      const userList = await db.select().from(users).where(eq(users.email, email)).limit(1)
       let targetUser = userList[0]
 
       if (!targetUser) {
@@ -850,9 +825,28 @@ export const authRouter = router({
       }
 
       if (ctx.req.session) {
-        ;(ctx.req as any).session.passport = { user: targetUser.id }
-        await new Promise<void>((resolve) => ctx.req.session.save(() => resolve()))
+        await new Promise<void>((resolve, reject) => {
+          if (typeof ctx.req.session.regenerate === 'function') {
+            ctx.req.session.regenerate((err) => {
+              if (err) return reject(err)
+              resolve()
+            })
+          } else {
+            resolve()
+          }
+        })
+        const sessionData = ctx.req.session as unknown as Record<string, unknown>
+        sessionData.userId = targetUser.id
+        sessionData.role = input.role
+        sessionData.passport = { user: targetUser.id }
+        await new Promise<void>((resolve, reject) => {
+          ctx.req.session.save((err) => {
+            if (err) return reject(err)
+            resolve()
+          })
+        })
       }
+      ;(ctx.req as unknown as { user?: unknown }).user = targetUser
 
       return {
         id: targetUser.id,

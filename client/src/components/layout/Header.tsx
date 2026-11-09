@@ -31,10 +31,10 @@ export function Header() {
   const logout = useLogout()
 
   const brandName = settings?.brandName || 'Sheaura'
-  const logoUrl = settings?.siteLogoMediaId
+  const logoUrl = settings?.logoUrl || (settings?.siteLogoMediaId
     ? `/api/media/${settings.siteLogoMediaId}`
-    : settings?.siteLogoUrl || null
-  const logoAltText = settings?.siteLogoAltText || `${brandName} Logo`
+    : settings?.siteLogoUrl || null)
+  const logoAltText = settings?.logoAltText || settings?.siteLogoAltText || `${brandName} Logo`
   const announcementEnabled = settings?.announcementEnabled === 'true' && !!settings?.announcementText
   const whatsappNum = settings?.whatsappNumber?.replace(/[^0-9]/g, '') || '919995098294'
 

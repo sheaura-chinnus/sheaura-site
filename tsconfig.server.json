@@ -20,5 +20,5 @@
     }
   },
   "include": ["server/**/*"],
-  "exclude": ["node_modules", "dist", "server/__tests__"]
+  "exclude": ["node_modules", "dist", "server/__tests__", "server/db/test_*.ts"]
 }

@@ -12,6 +12,11 @@ const pool = new Pool({
     : false,
 })
 
+// Prevent unhandled error events on idle clients from crashing the process
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle PostgreSQL client pool:', err.message || err)
+})
+
 export const db = drizzle(pool, { schema })
 
 export type Database = typeof db

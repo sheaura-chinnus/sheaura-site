@@ -7,7 +7,7 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express'
 import { createContext } from './trpc/context.js'
 import { appRouter } from './trpc/router.js'
 import { db, closePool } from './db/index.js'
-import { siteSettings, mediaAssets } from './db/schema.js'
+import { siteSettings, mediaAssets, users } from './db/schema.js'
 import { eq } from 'drizzle-orm'
 import { audit } from './trpc/audit.js'
 import { validateImageBuffer, saveMediaAsset, getMediaAssetById } from './media/storage.js'
@@ -15,6 +15,7 @@ import './auth/session.js' // Initialize passport session
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import crypto from 'crypto'
+import fs from 'fs'
 
 // Extend express-session types
 declare module 'express-session' {
@@ -44,6 +45,10 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const PROJECT_ROOT = join(__dirname, '..', '..')
 
+// Ensure persistent upload directory exists
+const UPLOADS_DIR = join(process.cwd(), 'uploads', 'products')
+fs.mkdirSync(UPLOADS_DIR, { recursive: true })
+
 const app = express()
 const PORT = Number(process.env.PORT) || 4000
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173'
@@ -54,6 +59,15 @@ const missingVars = requiredEnvVars.filter(key => !process.env[key])
 if (missingVars.length > 0) {
   console.error(`❌ Startup Error: Missing required environment variables: ${missingVars.join(', ')}`)
   throw new Error(`SESSION_SECRET environment variable is required. Generate a secure random string (32+ chars).`)
+}
+
+if (!process.env.ADMIN_PASSWORD) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Startup Error: Missing required environment variable: ADMIN_PASSWORD')
+    throw new Error('ADMIN_PASSWORD environment variable is required in production.')
+  } else {
+    console.warn('⚠️ Warning: ADMIN_PASSWORD environment variable is not configured. Admin portal access will be disabled until set.')
+  }
 }
 
 // Session secret
@@ -85,6 +99,9 @@ app.use((_req, res, next) => {
 // Middleware
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
+
+// Static file serving for product images
+app.use('/uploads', express.static(join(process.cwd(), 'uploads')))
 
 // CORS - Strict Origin Configuration
 app.use((req, res, next) => {
@@ -131,9 +148,10 @@ export function stagingAuth(req: express.Request, res: express.Response, next: e
 app.use(stagingAuth)
 
 // Rate limiting
-const authRateLimiter = rateLimit({
+export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each client/IP to 5 requests per 15-minute window for auth endpoints
+  max: 5, // Maximum 5 failed attempts per 15 minutes per IP
+  skipSuccessfulRequests: true, // Only failed attempts (status >= 400) count against limit
   message: { error: 'Too many authentication attempts, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -147,9 +165,11 @@ const apiRateLimiter = rateLimit({
   legacyHeaders: false,
 })
 
-// Apply stricter rate limiting to auth endpoints
+// Apply stricter rate limiting to auth endpoints and admin media uploads
 app.use('/trpc/auth.adminLogin', authRateLimiter)
+app.use('/trpc/auth.staffLogin', authRateLimiter)
 app.use('/auth/logout', authRateLimiter)
+app.use('/api/admin/media/upload-logo', authRateLimiter)
 
 // Apply general rate limiting to tRPC
 app.use('/trpc', apiRateLimiter)
@@ -249,14 +269,55 @@ app.get(['/api/media/:id', '/api/media/:id/:filename'], async (req, res) => {
   }
 })
 
-// Admin Media Upload Endpoint (CSRF protected, Admin auth checked, Magic bytes validated)
-app.post('/api/admin/media/upload-logo', async (req, res) => {
+// Admin Authentication Middleware
+export async function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (req.path.includes('.')) {
+    return next()
+  }
   try {
-    if (!req.user) {
+    // 1. Fast path: check Passport deserialized user
+    if (req.user && req.user.role === 'admin') {
+      return next()
+    }
+
+    // 2. Check session userId or passport session
+    const sessionData = req.session as unknown as Record<string, unknown> | undefined
+    const userId = (sessionData?.userId as string | undefined) || ((sessionData?.passport as any)?.user as string | undefined)
+
+    if (!userId) {
+      if (req.originalUrl?.includes('/api/admin') || req.path?.includes('/api/admin')) {
+        return res.status(403).json({ error: 'Access denied: Administrator privileges required.' })
+      }
       return res.status(401).json({ error: 'Not authenticated' })
     }
-    if (req.user.role !== 'admin') {
+
+    // Verify user and role directly in the database
+    const userList = await db.select().from(users).where(eq(users.id, userId)).limit(1)
+    const user = userList[0]
+
+    if (!user || user.role !== 'admin') {
+      if (req.originalUrl?.includes('/api/admin') || req.path?.includes('/api/admin')) {
+        return res.status(403).json({ error: 'Access denied: Administrator privileges required.' })
+      }
       return res.status(403).json({ error: 'Admin access required' })
+    }
+
+    req.user = user
+    return next()
+  } catch (err) {
+    console.error('requireAdminAuth error:', err)
+    if (req.originalUrl?.includes('/api/admin') || req.path?.includes('/api/admin')) {
+      return res.status(403).json({ error: 'Access denied: Administrator privileges required.' })
+    }
+    return res.status(401).json({ error: 'Not authenticated' })
+  }
+}
+
+// Admin Media Upload Endpoint (CSRF protected, Admin auth checked, Magic bytes validated)
+app.post('/api/admin/media/upload-logo', authRateLimiter, requireAdminAuth, async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied: Administrator privileges required.' })
     }
 
     const { fileBase64, originalFilename, altText } = req.body
@@ -361,9 +422,35 @@ app.get('/auth/me', (req, res) => {
   }
 })
 
+// Google OAuth 2.0 Endpoints
+app.get('/auth/google', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.redirect('/login?error=google_not_configured')
+  }
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    prompt: 'select_account',
+  })(req, res, next)
+})
+
+app.get('/auth/google/callback', (req, res, next) => {
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return res.redirect('/login?error=google_not_configured')
+  }
+  const successRedirect = process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL ? '/' : `${CLIENT_URL.replace(/\/$/, '')}/`
+  const failureRedirect = process.env.NODE_ENV === 'production' && !process.env.CLIENT_URL ? '/login?error=google_failed' : `${CLIENT_URL.replace(/\/$/, '')}/login?error=google_failed`
+
+  passport.authenticate('google', {
+    successRedirect,
+    failureRedirect,
+  })(req, res, next)
+})
+
 // Serve static files from client build in production
 if (process.env.NODE_ENV === 'production') {
-  const clientDist = join(PROJECT_ROOT, 'dist', 'client')
+  const clientDist = fs.existsSync(join(process.cwd(), 'dist', 'client'))
+    ? join(process.cwd(), 'dist', 'client')
+    : join(PROJECT_ROOT, 'dist', 'client')
   app.use(express.static(clientDist))
 }
 
@@ -382,26 +469,15 @@ app.use(
 )
 
 // Admin route protection middleware for API routes
-function requireAdminAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
-  if (req.path.includes('.')) {
-    return next()
-  }
-
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' })
-  }
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' })
-  }
-  next()
-}
-
 app.use('/admin', requireAdminAuth)
 
 // SPA fallback
 if (process.env.NODE_ENV === 'production') {
+  const clientDist = fs.existsSync(join(process.cwd(), 'dist', 'client'))
+    ? join(process.cwd(), 'dist', 'client')
+    : join(PROJECT_ROOT, 'dist', 'client')
   app.get('/{*splat}', (_, res) => {
-    res.sendFile('index.html', { root: join(PROJECT_ROOT, 'dist', 'client') })
+    res.sendFile('index.html', { root: clientDist })
   })
 }
 

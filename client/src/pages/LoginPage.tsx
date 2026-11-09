@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { useNavigate, useSearchParams, Link, Navigate } from 'react-router-dom'
 import {
   ShieldCheck,
-  Lock,
   ArrowLeft,
   Eye,
   EyeOff,
@@ -22,7 +21,6 @@ import {
   useAuth,
   useCustomerLogin,
   useCustomerRegister,
-  useGoogleLogin,
   useLogout,
   useSendOtp,
   useVerifyOtp
@@ -40,7 +38,6 @@ export function LoginPage() {
   // Mutations
   const customerLogin = useCustomerLogin()
   const customerRegister = useCustomerRegister()
-  const googleLogin = useGoogleLogin()
   const sendOtpMutation = useSendOtp()
   const verifyOtpMutation = useVerifyOtp()
   const logout = useLogout()
@@ -99,8 +96,9 @@ export function LoginPage() {
       setOtpStep('otp')
       setCountdown(30)
       toast.success('OTP sent to ' + res.phone)
-    } catch (err: any) {
-      toast.error(err?.message || 'Failed to send OTP')
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Failed to send OTP'
+      toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -141,8 +139,9 @@ export function LoginPage() {
       } else {
         navigate(redirect.startsWith('/admin') ? '/account' : redirect)
       }
-    } catch (err: any) {
-      toast.error(err?.message || 'Invalid or expired OTP')
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Invalid or expired OTP'
+      toast.error(errMsg)
       setOtpDigits(['', '', '', ''])
     } finally {
       setIsSubmitting(false)
@@ -164,8 +163,9 @@ export function LoginPage() {
       })
       toast.success('Welcome back to Sheaura!')
       navigate(redirect.startsWith('/admin') ? '/account' : redirect)
-    } catch (err: any) {
-      toast.error(err?.message || 'Login failed. Please check your credentials.')
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Login failed. Please check your credentials.'
+      toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
     }
@@ -192,35 +192,17 @@ export function LoginPage() {
       })
       toast.success('Account created successfully! Welcome to Sheaura.')
       setIsWelcomeModalOpen(true)
-    } catch (err: any) {
-      toast.error(err?.message || 'Account creation failed.')
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Account creation failed.'
+      toast.error(errMsg)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   // Handle Google Sign-In
-  const handleGoogleSignIn = async () => {
-    setIsSubmitting(true)
-    try {
-      const mockEmail = prompt('Enter your Google Account Email for instant sign in:', customerEmail || 'customer@gmail.com')
-      if (!mockEmail || !mockEmail.includes('@')) {
-        setIsSubmitting(false)
-        return
-      }
-      await googleLogin.mutateAsync({
-        email: mockEmail.trim().toLowerCase(),
-        name: mockEmail.split('@')[0].replace('.', ' '),
-        avatarUrl: 'https://api.dicebear.com/7.x/initials/svg?seed=' + mockEmail,
-        googleId: 'google_' + Date.now(),
-      })
-      toast.success('Signed in via Google successfully!')
-      navigate(redirect.startsWith('/admin') ? '/account' : redirect)
-    } catch (err: any) {
-      toast.error(err?.message || 'Google sign in failed')
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handleGoogleSignIn = () => {
+    window.location.href = '/auth/google'
   }
 
   // Redirect staff query parameters directly to dedicated Staff Portal
@@ -330,7 +312,7 @@ export function LoginPage() {
 
         <CardContent className="p-6 sm:p-8 space-y-6">
           {/* Primary Login Method Switcher */}
-          <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as any)} className="w-full">
+          <Tabs value={loginMethod} onValueChange={(v) => setLoginMethod(v as 'otp' | 'email')} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1.5 rounded-2xl mb-4">
               <TabsTrigger value="otp" className="gap-1.5 text-xs py-2">
                 <Smartphone className="h-3.5 w-3.5" />
@@ -469,7 +451,7 @@ export function LoginPage() {
 
             {/* Tab 2: Email & Password Auth */}
             <TabsContent value="email" className="space-y-4">
-              <Tabs value={emailAuthMode} onValueChange={(v) => setEmailAuthMode(v as any)} className="w-full">
+              <Tabs value={emailAuthMode} onValueChange={(v) => setEmailAuthMode(v as 'signin' | 'signup')} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 bg-muted/60 p-1 rounded-xl mb-4">
                   <TabsTrigger value="signin" className="text-xs py-1.5">Sign In</TabsTrigger>
                   <TabsTrigger value="signup" className="text-xs py-1.5">Register</TabsTrigger>
@@ -639,17 +621,6 @@ export function LoginPage() {
                 </ul>
               </div>
             </details>
-          </div>
-
-          {/* Dedicated Staff Portal Link */}
-          <div className="pt-2 text-center">
-            <Link
-              to="/staff-portal"
-              className="text-[11px] text-muted-foreground hover:text-amber-700 dark:hover:text-amber-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <Lock className="h-3 w-3" />
-              <span>Store Administrator & Staff Portal</span>
-            </Link>
           </div>
         </CardContent>
       </Card>

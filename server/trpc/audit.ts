@@ -205,7 +205,7 @@ export const audit = {
 
   logoUploaded: (ctx: TRPCContext, mediaId: string, filename: string, mimeType: string, fileSize: number) =>
     createAuditLog(ctx, {
-      action: 'LOGO_UPLOADED',
+      action: 'UPLOAD_LOGO',
       entityType: 'media_asset',
       entityId: mediaId,
       newData: { filename, mimeType, fileSize },

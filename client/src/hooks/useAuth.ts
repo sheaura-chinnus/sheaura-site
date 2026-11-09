@@ -39,7 +39,7 @@ export function useLogout() {
   return trpc.auth.logoutUser.useMutation({
     onSuccess: async () => {
       // 1. Immediately reset the getMe user cache to null for instantaneous UI update
-      utils.auth.getMe.setData(undefined, null as any)
+      utils.auth.getMe.setData(undefined, () => null)
       // 2. Invalidate all auth and user queries
       await utils.auth.invalidate()
       // 3. Clear all cached React Query data
@@ -83,16 +83,6 @@ export function useCustomerLogin() {
   const utils = trpc.useUtils()
 
   return trpc.auth.customerLogin.useMutation({
-    onSuccess: async () => {
-      await utils.auth.invalidate()
-    },
-  })
-}
-
-export function useGoogleLogin() {
-  const utils = trpc.useUtils()
-
-  return trpc.auth.googleLogin.useMutation({
     onSuccess: async () => {
       await utils.auth.invalidate()
     },

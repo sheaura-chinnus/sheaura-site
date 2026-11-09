@@ -6,14 +6,20 @@
 export interface EnquiryItemRef {
   itemCode: string
   name: string
+  quantity?: number
   price?: string | number | null
 }
 
 export interface WhatsAppEnquiryOptions {
   items: EnquiryItemRef[]
   customerName?: string
+  customerPhone?: string
+  phone?: string
+  deliveryAddress?: string
+  pincode?: string
   preferredDate?: string
   note?: string
+  customSizing?: string
   whatsappNumber?: string
   brandName?: string
 }
@@ -49,8 +55,10 @@ export function generateWhatsAppMessage(options: WhatsAppEnquiryOptions): string
     for (const item of options.items) {
       const code = item.itemCode ? item.itemCode.trim() : 'N/A'
       const name = item.name ? item.name.trim() : 'Fashion Jewellery'
-      const priceStr = item.price ? ` — ₹${Number(item.price).toLocaleString('en-IN')}` : ''
-      lines.push(`• [${code}] ${name}${priceStr}`)
+      const qtyStr = item.quantity && item.quantity > 1 ? ` (Qty: ${item.quantity})` : ''
+      const numPrice = item.price ? Number(item.price) : 0
+      const priceStr = numPrice > 0 ? `₹${numPrice.toLocaleString('en-IN')}` : 'Price on Request'
+      lines.push(`• [${code}] ${name}${qtyStr} — ${priceStr}`)
     }
   }
 
@@ -60,14 +68,28 @@ export function generateWhatsAppMessage(options: WhatsAppEnquiryOptions): string
     lines.push(`Customer Name: ${options.customerName.trim()}`)
   }
 
+  const custPhone = (options.customerPhone || options.phone)?.trim()
+  if (custPhone) {
+    lines.push(`Phone: ${custPhone}`)
+  }
+
+  const address = options.deliveryAddress?.trim()
+  const pin = options.pincode?.trim()
+  if (address || pin) {
+    const fullAddr = [address, pin ? `PIN: ${pin}` : ''].filter(Boolean).join(', ')
+    lines.push(`Delivery Address: ${fullAddr}`)
+  }
+
   if (options.preferredDate && options.preferredDate.trim()) {
     lines.push(`Required By: ${options.preferredDate.trim()}`)
   }
 
-  if (options.note && options.note.trim()) {
-    lines.push(`Special Request / Size: ${options.note.trim()}`)
+  const specialNote = options.customSizing?.trim() || options.note?.trim()
+  if (specialNote) {
+    lines.push(`Special Request / Custom Sizing: ${specialNote}`)
   }
 
+  lines.push('')
   lines.push(`Please confirm product availability, custom sizing, and dispatch timelines. Thank you!`)
 
   return lines.join('\n')

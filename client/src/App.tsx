@@ -51,7 +51,7 @@ function PublicLayout(): React.ReactElement {
   )
 }
 
-function AdminRoute() {
+export function AdminRouteGuard() {
   const { user, isAuthenticated, isLoading } = useAuth()
 
   if (isLoading) {
@@ -67,9 +67,9 @@ function AdminRoute() {
     return <Navigate to="/staff-portal" replace />
   }
 
-  // If authenticated but not staff role, show 404 Not Found
+  // If authenticated but not authorized staff/admin, redirect immediately to Home
   if (user?.role !== 'admin' && user?.role !== 'shop_order_receiver') {
-    return <NotFoundPage />
+    return <Navigate to="/" replace />
   }
 
   return <AdminLayout />
@@ -109,7 +109,7 @@ export function App() {
         <Route path="/admin/login" element={<Navigate to="/staff-portal" replace />} />
 
         {/* Admin routes */}
-        <Route path="/admin" element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminRouteGuard />}>
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
